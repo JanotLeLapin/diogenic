@@ -48,4 +48,33 @@ pub const NodeType = enum {
     expr,
 };
 
-pub const Node = struct { text: []const u8, children: std.ArrayList(Node) };
+pub const Node = struct { text: ?[]const u8, children: ?std.ArrayList(*Node) };
+
+pub fn parse(ast_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocator, tokenizer: *Tokenizer) !*Node {
+    var stack = try std.ArrayList(*Node).initCapacity(stack_allocator, 8);
+    defer stack.deinit(stack_allocator);
+
+    const root = try ast_allocator.create(Node);
+    root.* = .{
+        .text = null,
+        .children = try std.ArrayList(*Node).initCapacity(ast_allocator, 4),
+    };
+    try stack.append(stack_allocator, root);
+
+    while (tokenizer.next()) |token| {
+        if (std.mem.eql(u8, "(", token)) {
+            const new = try ast_allocator.create(Node);
+            new.* = .{ .text = null, .children = try std.ArrayList(*Node).initCapacity(ast_allocator, 8) };
+            try stack.getLast().children.?.append(ast_allocator, new);
+            try stack.append(stack_allocator, new);
+        } else if (std.mem.eql(u8, ")", token)) {
+            _ = stack.pop();
+        } else {
+            const new = try ast_allocator.create(Node);
+            new.* = .{ .text = token, .children = null };
+            try stack.getLast().children.?.append(ast_allocator, new);
+        }
+    }
+
+    return root;
+}
