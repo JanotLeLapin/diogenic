@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const Node = @import("types.zig");
+
 fn isWhitespace(c: u8) bool {
     return switch (c) {
         ' ', '\t', '\n' => true,
@@ -40,15 +42,6 @@ pub const Tokenizer = struct {
         }
     }
 };
-
-pub const NodeType = enum {
-    ident,
-    value,
-    atom,
-    expr,
-};
-
-pub const Node = struct { text: ?[]const u8, children: ?std.ArrayList(*Node) };
 
 pub fn parse(ast_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocator, tokenizer: *Tokenizer) !*Node {
     var stack = try std.ArrayList(*Node).initCapacity(stack_allocator, 8);
