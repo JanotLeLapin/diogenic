@@ -1,8 +1,7 @@
 //! By convention, root.zig is the root source file when making a library.
 const std = @import("std");
 
-pub const parser = @import("dsl/parser.zig");
-pub const types = @import("dsl/types.zig");
+pub const dsl = @import("dsl/root.zig");
 
 pub fn bufferedPrint() !void {
     // Stdout is for the actual output of your application, for example if you
