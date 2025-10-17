@@ -1,13 +1,10 @@
 const std = @import("std");
 
-pub const NodeType = enum {
-    ident,
-    value,
-    atom,
-    expr,
+pub const Node = union(enum) {
+    List: std.ArrayList(*Node),
+    Symbol: []const u8,
+    Value: f32,
 };
-
-pub const Node = struct { text: ?[]const u8, children: ?std.ArrayList(*Node) };
 
 pub const EdgeType = enum { osc, value };
 
