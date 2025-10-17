@@ -2,6 +2,7 @@
 const std = @import("std");
 
 pub const dsl = @import("dsl/root.zig");
+pub const dsp = @import("dsp/root.zig");
 
 pub fn bufferedPrint() !void {
     // Stdout is for the actual output of your application, for example if you
