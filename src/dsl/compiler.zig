@@ -47,6 +47,7 @@ const Add = BinaryOp("Add");
 const Mul = BinaryOp("Mul");
 const Min = BinaryOp("Min");
 const Max = BinaryOp("Max");
+const Quantize = BinaryOp("Quantize");
 
 const Logn = UnaryOp("Logn");
 const Log2 = UnaryOp("Log2");
@@ -62,6 +63,7 @@ pub const Expression = union(enum) {
     Mul: *Mul,
     Min: *Min,
     Max: *Max,
+    Quantize: *Quantize,
     Logn: *Logn,
     Log2: *Log2,
     Exp: *Exp,
@@ -87,6 +89,7 @@ const compilers = std.StaticStringMap(CompileFn).initComptime(.{
     .{ "*", Mul.compile },
     .{ "min", Min.compile },
     .{ "max", Max.compile },
+    .{ "quantize", Quantize.compile },
     .{ "logn", Logn.compile },
     .{ "log2", Log2.compile },
     .{ "exp", Exp.compile },

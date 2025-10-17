@@ -26,6 +26,7 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
         Mul,
         Min,
         Max,
+        Quantize,
         Logn,
         Log2,
         Exp,
@@ -104,6 +105,11 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
                     .Max => generateBinaryExpr(struct {
                         fn func(a: Vec, b: Vec) Vec {
                             return @max(a, b);
+                        }
+                    }.func)(&self.stack, &self.sp),
+                    .Quantize => generateBinaryExpr(struct {
+                        fn func(a: Vec, b: Vec) Vec {
+                            return @round(a * b) / b;
                         }
                     }.func)(&self.stack, &self.sp),
                     .Logn => generateUnaryExpr(struct {
