@@ -26,9 +26,15 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
         Mul,
         Min,
         Max,
+        Logn,
+        Log2,
+        Exp,
+        FreqToMidi,
+        MidiToFreq,
     };
 
     const BinaryOp = fn (Vec, Vec) Vec;
+    const UnaryOp = fn (Vec) Vec;
     const Expr = fn ([]Block, *usize) void;
 
     return struct {
@@ -51,6 +57,24 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
 
                     stack[sp.* - 2] = result;
                     sp.* -= 1;
+                }
+            }.res;
+        }
+
+        fn generateUnaryExpr(op: UnaryOp) Expr {
+            return struct {
+                fn res(stack: []Block, sp: *usize) void {
+                    const block = &stack[sp.* - 1];
+
+                    var result: Block = undefined;
+
+                    for (block.channels, 0..) |channel, i| {
+                        for (channel, 0..) |vec, j| {
+                            result.channels[i][j] = op(vec);
+                        }
+                    }
+
+                    stack[sp.* - 1] = result;
                 }
             }.res;
         }
@@ -80,6 +104,31 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
                     .Max => generateBinaryExpr(struct {
                         fn func(a: Vec, b: Vec) Vec {
                             return @max(a, b);
+                        }
+                    }.func)(&self.stack, &self.sp),
+                    .Logn => generateUnaryExpr(struct {
+                        fn func(v: Vec) Vec {
+                            return @log(v);
+                        }
+                    }.func)(&self.stack, &self.sp),
+                    .Log2 => generateUnaryExpr(struct {
+                        fn func(v: Vec) Vec {
+                            return @log2(v);
+                        }
+                    }.func)(&self.stack, &self.sp),
+                    .Exp => generateUnaryExpr(struct {
+                        fn func(v: Vec) Vec {
+                            return @exp(v);
+                        }
+                    }.func)(&self.stack, &self.sp),
+                    .FreqToMidi => generateUnaryExpr(struct {
+                        fn func(v: Vec) Vec {
+                            return @as(Vec, @splat(69)) + @as(Vec, @splat(12)) * @log2(v / @as(Vec, @splat(440)));
+                        }
+                    }.func)(&self.stack, &self.sp),
+                    .MidiToFreq => generateUnaryExpr(struct {
+                        fn func(v: Vec) Vec {
+                            return @as(Vec, @splat(440)) * @exp2((v - @as(Vec, @splat(69))) / @as(Vec, @splat(12)));
                         }
                     }.func)(&self.stack, &self.sp),
                 }
