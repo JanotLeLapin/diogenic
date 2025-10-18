@@ -11,6 +11,16 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
             return @This(){ .channels = std.mem.zeroes([channel_count][vecs_per_block]Vec) };
         }
 
+        pub fn initValue(value: f32) @This() {
+            var res = @This(){ .channels = undefined };
+            for (res.channels, 0..) |channel, i| {
+                for (channel, 0..) |_, j| {
+                    res.channels[i][j] = @splat(value);
+                }
+            }
+            return res;
+        }
+
         pub fn get(self: *const @This(), channel: u8, idx: u32) f32 {
             return self.channels[channel][idx / simd_length][idx % simd_length];
         }
