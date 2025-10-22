@@ -43,11 +43,13 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
         FreqToMidi,
         MidiToFreq,
         SineOsc: usize,
+        SquareOsc: usize,
     };
 
     const BinaryOp = fn (Vec, Vec) Vec;
     const UnaryOp = fn (Vec) Vec;
-    const Expr = fn ([]Block, *usize) void;
+    const OscOp = fn (*f32, f32) f32;
+    const Expr = fn (Operation, []Block, []f32, *usize) void;
 
     return struct {
         sp: usize,
@@ -56,7 +58,7 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
 
         fn generateBinaryExpr(op: BinaryOp) Expr {
             return struct {
-                fn res(stack: []Block, sp: *usize) void {
+                fn res(_: Operation, stack: []Block, _: []f32, sp: *usize) void {
                     const b = &stack[sp.* - 1];
                     const a = &stack[sp.* - 2];
 
@@ -76,7 +78,7 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
 
         fn generateUnaryExpr(op: UnaryOp) Expr {
             return struct {
-                fn res(stack: []Block, sp: *usize) void {
+                fn res(_: Operation, stack: []Block, _: []f32, sp: *usize) void {
                     const block = &stack[sp.* - 1];
 
                     var result: Block = undefined;
@@ -92,6 +94,31 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
             }.res;
         }
 
+        fn generateOscExpr(op: OscOp, comptime variant: []const u8) Expr {
+            return struct {
+                fn res(operation: Operation, stack: []Block, values: []f32, sp: *usize) void {
+                    const freq = &stack[sp.* - 2];
+                    const mod = &stack[sp.* - 1];
+                    const previous = &values[@field(operation, variant)];
+
+                    var result: Block = undefined;
+
+                    for (freq.channels, mod.channels, 0..) |freq_channel, mod_channel, i| {
+                        for (freq_channel, mod_channel, 0..) |freq_vec, mod_vec, j| {
+                            for (0..simd_length) |k| {
+                                const increment = 2.0 * std.math.pi * freq_vec[k] / 48000; // TODO: remove hardcoded sr
+                                previous.* = @mod(previous.* + increment, 2 * std.math.pi);
+                                result.channels[i][j][k] = op(previous, mod_vec[k]);
+                            }
+                        }
+                    }
+
+                    stack[sp.* - 2] = result;
+                    sp.* -= 1;
+                }
+            }.res;
+        }
+
         pub fn run(self: *@This(), instr_set: []const Operation) void {
             for (instr_set) |op| {
                 switch (op) {
@@ -103,75 +130,62 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
                         fn func(a: Vec, b: Vec) Vec {
                             return a + b;
                         }
-                    }.func)(&self.stack, &self.sp),
+                    }.func)(op, &self.stack, &self.values, &self.sp),
                     .Mul => generateBinaryExpr(struct {
                         fn func(a: Vec, b: Vec) Vec {
                             return a * b;
                         }
-                    }.func)(&self.stack, &self.sp),
+                    }.func)(op, &self.stack, &self.values, &self.sp),
                     .Min => generateBinaryExpr(struct {
                         fn func(a: Vec, b: Vec) Vec {
                             return @min(a, b);
                         }
-                    }.func)(&self.stack, &self.sp),
+                    }.func)(op, &self.stack, &self.values, &self.sp),
                     .Max => generateBinaryExpr(struct {
                         fn func(a: Vec, b: Vec) Vec {
                             return @max(a, b);
                         }
-                    }.func)(&self.stack, &self.sp),
+                    }.func)(op, &self.stack, &self.values, &self.sp),
                     .Quantize => generateBinaryExpr(struct {
                         fn func(a: Vec, b: Vec) Vec {
                             return @round(a * b) / b;
                         }
-                    }.func)(&self.stack, &self.sp),
+                    }.func)(op, &self.stack, &self.values, &self.sp),
                     .Logn => generateUnaryExpr(struct {
                         fn func(v: Vec) Vec {
                             return @log(v);
                         }
-                    }.func)(&self.stack, &self.sp),
+                    }.func)(op, &self.stack, &self.values, &self.sp),
                     .Log2 => generateUnaryExpr(struct {
                         fn func(v: Vec) Vec {
                             return @log2(v);
                         }
-                    }.func)(&self.stack, &self.sp),
+                    }.func)(op, &self.stack, &self.values, &self.sp),
                     .Exp => generateUnaryExpr(struct {
                         fn func(v: Vec) Vec {
                             return @exp(v);
                         }
-                    }.func)(&self.stack, &self.sp),
+                    }.func)(op, &self.stack, &self.values, &self.sp),
                     .FreqToMidi => generateUnaryExpr(struct {
                         fn func(v: Vec) Vec {
                             return @as(Vec, @splat(69)) + @as(Vec, @splat(12)) * @log2(v / @as(Vec, @splat(440)));
                         }
-                    }.func)(&self.stack, &self.sp),
+                    }.func)(op, &self.stack, &self.values, &self.sp),
                     .MidiToFreq => generateUnaryExpr(struct {
                         fn func(v: Vec) Vec {
                             return @as(Vec, @splat(440)) * @exp2((v - @as(Vec, @splat(69))) / @as(Vec, @splat(12)));
                         }
-                    }.func)(&self.stack, &self.sp),
-                    .SineOsc => {
-                        const freq = &self.stack[self.sp - 2];
-                        const mod = &self.stack[self.sp - 1];
-
-                        const previous = &self.values[op.SineOsc];
-
-                        var result: Block = undefined;
-
-                        for (freq.channels, mod.channels, 0..) |freq_channel, mod_channel, i| {
-                            for (freq_channel, mod_channel, 0..) |freq_vec, mod_vec, j| {
-                                for (0..simd_length) |k| {
-                                    const freq_sample = freq_vec[k];
-                                    const mod_sample = mod_vec[k];
-                                    const increment = 2.0 * std.math.pi * freq_sample / 48000; // TODO: remove hardcoded sr
-                                    previous.* = @mod(previous.* + increment, 2 * std.math.pi);
-                                    result.channels[i][j][k] = std.math.sin(previous.* + mod_sample);
-                                }
-                            }
+                    }.func)(op, &self.stack, &self.values, &self.sp),
+                    .SineOsc => generateOscExpr(struct {
+                        fn func(previous: *f32, mod: f32) f32 {
+                            return std.math.sin(previous.* + mod);
                         }
-
-                        freq.* = result;
-                        self.sp -= 1;
-                    },
+                    }.func, "SineOsc")(op, &self.stack, &self.values, &self.sp),
+                    .SquareOsc => generateOscExpr(struct {
+                        fn func(previous: *f32, mod: f32) f32 {
+                            return if (previous.* + mod < std.math.pi) -1.0 else 1.0;
+                        }
+                    }.func, "SquareOsc")(op, &self.stack, &self.values, &self.sp),
                 }
             }
         }
