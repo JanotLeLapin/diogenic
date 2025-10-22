@@ -21,7 +21,7 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
             return res;
         }
 
-        pub fn get(self: *const @This(), channel: u8, idx: u32) f32 {
+        pub fn get(self: *const @This(), channel: u8, idx: usize) f32 {
             return self.channels[channel][idx / simd_length][idx % simd_length];
         }
 
