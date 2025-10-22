@@ -150,24 +150,27 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
                         }
                     }.func)(&self.stack, &self.sp),
                     .SineOsc => {
-                        const freq = &self.stack[self.sp - 1];
+                        const freq = &self.stack[self.sp - 2];
+                        const mod = &self.stack[self.sp - 1];
+
                         const previous = &self.values[op.SineOsc];
 
                         var result: Block = undefined;
 
-                        for (freq.channels, 0..) |freq_channel, i| {
-                            for (freq_channel, 0..) |freq_vec, j| {
+                        for (freq.channels, mod.channels, 0..) |freq_channel, mod_channel, i| {
+                            for (freq_channel, mod_channel, 0..) |freq_vec, mod_vec, j| {
                                 for (0..simd_length) |k| {
                                     const freq_sample = freq_vec[k];
+                                    const mod_sample = mod_vec[k];
                                     const increment = 2.0 * std.math.pi * freq_sample / 48000; // TODO: remove hardcoded sr
                                     previous.* = @mod(previous.* + increment, 2 * std.math.pi);
-                                    result.channels[i][j][k] = std.math.sin(previous.*);
+                                    result.channels[i][j][k] = std.math.sin(previous.* + mod_sample);
                                 }
                             }
                         }
 
                         freq.* = result;
-                        self.stack[self.sp - 1] = result;
+                        self.sp -= 1;
                     },
                 }
             }
