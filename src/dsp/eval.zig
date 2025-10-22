@@ -42,6 +42,7 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
         Exp,
         FreqToMidi,
         MidiToFreq,
+        SineOsc: usize,
     };
 
     const BinaryOp = fn (Vec, Vec) Vec;
@@ -51,6 +52,7 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
     return struct {
         sp: usize,
         stack: [stack_size]Block,
+        values: [stack_size]f32,
 
         fn generateBinaryExpr(op: BinaryOp) Expr {
             return struct {
@@ -147,6 +149,26 @@ pub fn Engine(comptime channel_count: u8, comptime block_length: u32, comptime s
                             return @as(Vec, @splat(440)) * @exp2((v - @as(Vec, @splat(69))) / @as(Vec, @splat(12)));
                         }
                     }.func)(&self.stack, &self.sp),
+                    .SineOsc => {
+                        const freq = &self.stack[self.sp - 1];
+                        const previous = &self.values[op.SineOsc];
+
+                        var result: Block = undefined;
+
+                        for (freq.channels, 0..) |freq_channel, i| {
+                            for (freq_channel, 0..) |freq_vec, j| {
+                                for (0..simd_length) |k| {
+                                    const freq_sample = freq_vec[k];
+                                    const increment = 2.0 * std.math.pi * freq_sample / 48000; // TODO: remove hardcoded sr
+                                    previous.* = @mod(previous.* + increment, 2 * std.math.pi);
+                                    result.channels[i][j][k] = std.math.sin(previous.*);
+                                }
+                            }
+                        }
+
+                        freq.* = result;
+                        self.stack[self.sp - 1] = result;
+                    },
                 }
             }
         }
