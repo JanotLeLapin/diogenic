@@ -39,6 +39,6 @@ pub fn render_wav32(
             buf[i * 2 + 1] = res.get(1, i);
         }
 
-        _ = sndfile.sf_write_float(f, &buf, block.BLOCK_LENGTH);
+        _ = sndfile.sf_write_float(f, &buf, block.BLOCK_LENGTH * 2);
     }
 }
