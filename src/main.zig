@@ -38,9 +38,5 @@ pub fn main() !void {
     }
 
     var e = engine.Engine.init();
-    const block = try e.eval(res, gpa);
-
-    std.debug.print("evaluated: {d}\n", .{block.get(0, 0)});
-
     try root.render_wav32("out.wav", res, &e, 22500, gpa, gpa);
 }
