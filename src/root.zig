@@ -1,5 +1,6 @@
 const std = @import("std");
 
+const ast = @import("ast.zig");
 const instruction = @import("instruction.zig");
 
 const block = @import("dsp/block.zig");
@@ -40,5 +41,40 @@ pub fn render_wav32(
         }
 
         _ = sndfile.sf_write_float(f, &buf, block.BLOCK_LENGTH * 2);
+    }
+}
+
+pub fn walk_ast(node: *ast.Node, depth: usize) !void {
+    switch (node.data) {
+        .Expr => {
+            for (0..depth) |_| {
+                std.debug.print(" ", .{});
+            }
+            std.debug.print("expr: {s}\n", .{node.data.Expr.op});
+            for (node.data.Expr.children.items) |child| {
+                try walk_ast(child, depth + 1);
+            }
+        },
+        .Ident => {
+            for (0..depth) |_| {
+                std.debug.print(" ", .{});
+            }
+            std.debug.print("id: {s}\n", .{node.data.Ident});
+            return;
+        },
+        .Atom => {
+            for (0..depth) |_| {
+                std.debug.print(" ", .{});
+            }
+            std.debug.print("at: {s}\n", .{node.data.Atom});
+            return;
+        },
+        .Value => {
+            for (0..depth) |_| {
+                std.debug.print(" ", .{});
+            }
+            std.debug.print("vl: {d}\n", .{node.data.Value});
+            return;
+        },
     }
 }
