@@ -23,14 +23,14 @@ fn generateEval(comptime op: Op) Eval {
                 acc = phase.*;
                 for (freq_channel, pm_channel, 0..) |freq_vec, pm_vec, j| {
                     const inc = s_two * s_pi * freq_vec / s_sr;
-                    for (0..8) |k| { // FIXME: hardcoded simd len
-                        acc += inc[k];
-
+                    for (0..block.SIMD_LENGTH) |k| {
                         if (acc >= 2.0 * std.math.pi) {
                             acc -= 2.0 * std.math.pi;
                         }
 
                         res.channels[i][j][k] = op(acc + pm_vec[k]);
+
+                        acc += inc[k];
                     }
                 }
             }
