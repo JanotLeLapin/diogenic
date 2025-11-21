@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const SIMD_LENGTH = 8;
-const BLOCK_LENGTH = 128;
+pub const SIMD_LENGTH = 8;
+pub const BLOCK_LENGTH = 128;
 
 const VECS_PER_BLOCK = BLOCK_LENGTH / SIMD_LENGTH;
 
