@@ -1,27 +1,37 @@
 const std = @import("std");
 
-pub const Operation = enum {
+pub const ArithmeticOperation = enum {
     Add,
     Sub,
     Mul,
     Div,
+};
 
-    pub fn fromIdent(id: []const u8) ?Operation {
-        return operationMap.get(id);
-    }
+pub const MathOperation = enum {
+    Log2,
+    Log10,
+    Logn,
 };
 
 pub const Instruction = union(enum) {
-    Operation: Operation,
+    Arith: ArithmeticOperation,
+    Math: MathOperation,
     Value: f32,
+
+    pub fn fromIdent(id: []const u8) ?Instruction {
+        return InstructionMap.get(id);
+    }
 
     pub fn format(
         self: Instruction,
         writer: anytype,
     ) !void {
         switch (self) {
-            .Operation => {
-                try writer.print("op: {s}", .{@tagName(self.Operation)});
+            .Arith => {
+                try writer.print("arith: {s}", .{@tagName(self.Arith)});
+            },
+            .Math => {
+                try writer.print("math: {s}", .{@tagName(self.Math)});
             },
             .Value => {
                 try writer.print("val: {d}", .{self.Value});
@@ -30,9 +40,13 @@ pub const Instruction = union(enum) {
     }
 };
 
-const operationMap = std.StaticStringMap(Operation).initComptime(.{
-    .{ "+", Operation.Add },
-    .{ "-", Operation.Sub },
-    .{ "*", Operation.Mul },
-    .{ "/", Operation.Div },
+const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
+    .{ "+", Instruction{ .Arith = ArithmeticOperation.Add } },
+    .{ "-", Instruction{ .Arith = ArithmeticOperation.Sub } },
+    .{ "*", Instruction{ .Arith = ArithmeticOperation.Mul } },
+    .{ "/", Instruction{ .Arith = ArithmeticOperation.Div } },
+
+    .{ "log2", Instruction{ .Math = MathOperation.Log2 } },
+    .{ "log10", Instruction{ .Math = MathOperation.Log10 } },
+    .{ "logn", Instruction{ .Math = MathOperation.Logn } },
 });

@@ -33,8 +33,7 @@ pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_all
 
         switch (tmp.data) {
             .Expr => {
-                const op = instruction.Operation.fromIdent(tmp.data.Expr.op).?;
-                const instr = instruction.Instruction{ .Operation = op };
+                const instr = instruction.Instruction.fromIdent(tmp.data.Expr.op).?;
                 try res.append(res_allocator, instr);
             },
             .Value => {
