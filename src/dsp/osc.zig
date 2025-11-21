@@ -7,10 +7,6 @@ const block = @import("block.zig");
 const Block = block.Block;
 const Vec = block.Vec;
 
-const s_two: Vec = @splat(2);
-const s_pi: Vec = @splat(std.math.pi);
-const s_sr: Vec = @splat(48000); // FIXME: hardcoded sample rate
-
 const Op = fn (f32) f32;
 const Eval = fn (Block, Block, *f32) Block;
 
@@ -22,15 +18,15 @@ fn generateEval(comptime op: Op) Eval {
             for (freq.channels, pm.channels, 0..) |freq_channel, pm_channel, i| {
                 acc = phase.*;
                 for (freq_channel, pm_channel, 0..) |freq_vec, pm_vec, j| {
-                    const inc = s_two * s_pi * freq_vec / s_sr;
+                    const inc_vec = freq_vec / @as(Vec, @splat(48000));
                     for (0..block.SIMD_LENGTH) |k| {
-                        if (acc >= 2.0 * std.math.pi) {
-                            acc -= 2.0 * std.math.pi;
-                        }
+                        const inc = inc_vec[k];
 
-                        res.channels[i][j][k] = op(acc + pm_vec[k]);
+                        const radians = std.math.pi * 2 * acc;
+                        res.channels[i][j][k] = op(radians + pm_vec[k]);
 
-                        acc += inc[k];
+                        acc += inc;
+                        acc -= @floor(acc);
                     }
                 }
             }
