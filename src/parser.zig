@@ -50,9 +50,10 @@ pub fn parse(ast_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocato
     const root = try ast_allocator.create(ast.Node);
     root.* = .{
         .visited = false,
-        .data = .{
-            .Expr = try std.ArrayList(*ast.Node).initCapacity(ast_allocator, 4),
-        },
+        .data = .{ .Expr = ast.NodeDataExpression{
+            .op = "ROOT",
+            .children = try std.ArrayList(*ast.Node).initCapacity(ast_allocator, 4),
+        } },
     };
     try stack.append(stack_allocator, root);
 
@@ -61,11 +62,12 @@ pub fn parse(ast_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocato
             const new = try ast_allocator.create(ast.Node);
             new.* = .{
                 .visited = false,
-                .data = .{
-                    .Expr = try std.ArrayList(*ast.Node).initCapacity(ast_allocator, 8),
-                },
+                .data = .{ .Expr = ast.NodeDataExpression{
+                    .op = tokenizer.next().?,
+                    .children = try std.ArrayList(*ast.Node).initCapacity(ast_allocator, 8),
+                } },
             };
-            try stack.getLast().data.Expr.append(ast_allocator, new);
+            try stack.getLast().data.Expr.children.append(ast_allocator, new);
             try stack.append(stack_allocator, new);
         } else if (std.mem.eql(u8, ")", token)) {
             _ = stack.pop();
@@ -89,7 +91,7 @@ pub fn parse(ast_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocato
                     };
                 }
             }
-            try stack.getLast().data.Expr.append(ast_allocator, new);
+            try stack.getLast().data.Expr.children.append(ast_allocator, new);
         }
     }
 
