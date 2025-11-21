@@ -23,10 +23,15 @@ pub const OscOperation = struct {
     phase_slot: usize,
 };
 
+pub const ShaperOperation = enum {
+    Quantize,
+};
+
 pub const Instruction = union(enum) {
     Arith: ArithmeticOperation,
     Math: MathOperation,
     Osc: OscOperation,
+    Shaper: ShaperOperation,
     Value: f32,
 
     pub fn fromIdent(id: []const u8) ?Instruction {
@@ -47,6 +52,9 @@ pub const Instruction = union(enum) {
             .Osc => {
                 try writer.print("osc: {s}", .{@tagName(self.Osc.t)});
             },
+            .Shaper => {
+                try writer.print("shaper: {s}", .{@tagName(self.Shaper)});
+            },
             .Value => {
                 try writer.print("val: {d}", .{self.Value});
             },
@@ -66,4 +74,6 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
 
     .{ "sine", Instruction{ .Osc = OscOperation{ .t = OscOperationType.Sine, .phase_slot = 0 } } },
     .{ "square", Instruction{ .Osc = OscOperation{ .t = OscOperationType.Square, .phase_slot = 0 } } },
+
+    .{ "quantize", Instruction{ .Shaper = ShaperOperation.Quantize } },
 });

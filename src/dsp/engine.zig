@@ -6,6 +6,7 @@ const block = @import("block.zig");
 const arith = @import("arith.zig");
 const math = @import("math.zig");
 const osc = @import("osc.zig");
+const shaper = @import("shaper.zig");
 
 const STATE_LENGTH = 2048;
 
@@ -44,6 +45,13 @@ pub const Engine = struct {
                     const acc = &self.state[op.phase_slot];
 
                     const res = osc.eval(op.t, freq, pm, acc);
+                    try stack.append(stack_allocator, res);
+                },
+                .Shaper => |op| {
+                    const input = stack.pop().?;
+                    const mix = stack.pop().?;
+
+                    const res = shaper.eval(op, mix, input);
                     try stack.append(stack_allocator, res);
                 },
             }
