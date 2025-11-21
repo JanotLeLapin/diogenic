@@ -13,9 +13,20 @@ pub const MathOperation = enum {
     Logn,
 };
 
+pub const OscOperationType = enum {
+    Sine,
+    Square,
+};
+
+pub const OscOperation = struct {
+    t: OscOperationType,
+    phase_slot: usize,
+};
+
 pub const Instruction = union(enum) {
     Arith: ArithmeticOperation,
     Math: MathOperation,
+    Osc: OscOperation,
     Value: f32,
 
     pub fn fromIdent(id: []const u8) ?Instruction {
@@ -33,6 +44,9 @@ pub const Instruction = union(enum) {
             .Math => {
                 try writer.print("math: {s}", .{@tagName(self.Math)});
             },
+            .Osc => {
+                try writer.print("osc: {s}", .{@tagName(self.Osc.t)});
+            },
             .Value => {
                 try writer.print("val: {d}", .{self.Value});
             },
@@ -49,4 +63,7 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "log2", Instruction{ .Math = MathOperation.Log2 } },
     .{ "log10", Instruction{ .Math = MathOperation.Log10 } },
     .{ "logn", Instruction{ .Math = MathOperation.Logn } },
+
+    .{ "sine", Instruction{ .Osc = OscOperation{ .t = OscOperationType.Sine, .phase_slot = 0 } } },
+    .{ "square", Instruction{ .Osc = OscOperation{ .t = OscOperationType.Square, .phase_slot = 0 } } },
 });

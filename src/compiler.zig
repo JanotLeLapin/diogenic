@@ -28,12 +28,20 @@ pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_all
         }
     }
 
+    var current_slot: usize = 0;
     while (post_stack.items.len > 0) {
         const tmp = post_stack.pop().?;
 
         switch (tmp.data) {
             .Expr => {
-                const instr = instruction.Instruction.fromIdent(tmp.data.Expr.op).?;
+                var instr = instruction.Instruction.fromIdent(tmp.data.Expr.op).?;
+                switch (instr) {
+                    .Osc => {
+                        instr.Osc.phase_slot = current_slot;
+                        current_slot += 1;
+                    },
+                    else => {},
+                }
                 try res.append(res_allocator, instr);
             },
             .Value => {

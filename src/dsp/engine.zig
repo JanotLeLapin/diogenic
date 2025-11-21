@@ -5,18 +5,18 @@ const instruction = @import("../instruction.zig");
 const block = @import("block.zig");
 const arith = @import("arith.zig");
 const math = @import("math.zig");
+const osc = @import("osc.zig");
 
 const STATE_LENGTH = 2048;
 
 pub const Engine = struct {
-    state: [STATE_LENGTH]block.Block,
+    state: [STATE_LENGTH]f32,
 
     pub fn init() Engine {
-        return Engine{ .state = std.mem.zeroes([STATE_LENGTH]block.Block) };
+        return Engine{ .state = std.mem.zeroes([STATE_LENGTH]f32) };
     }
 
     pub fn eval(self: *Engine, seq: std.ArrayList(instruction.Instruction), stack_allocator: std.mem.Allocator) !block.Block {
-        _ = self;
         var stack = try std.ArrayList(block.Block).initCapacity(stack_allocator, 32);
         defer stack.deinit(stack_allocator);
 
@@ -36,6 +36,14 @@ pub const Engine = struct {
                     const b = stack.pop().?;
 
                     const res = math.eval(op, b);
+                    try stack.append(stack_allocator, res);
+                },
+                .Osc => |op| {
+                    const pm = stack.pop().?;
+                    const freq = stack.pop().?;
+                    const acc = &self.state[op.phase_slot];
+
+                    const res = osc.eval(op.t, freq, pm, acc);
                     try stack.append(stack_allocator, res);
                 },
             }
