@@ -1,9 +1,10 @@
 const std = @import("std");
 
 const ast = @import("ast.zig");
+const instruction = @import("instruction.zig");
 
-pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocator) !std.ArrayList(ast.Instruction) {
-    var res = try std.ArrayList(ast.Instruction).initCapacity(res_allocator, 64);
+pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocator) !std.ArrayList(instruction.Instruction) {
+    var res = try std.ArrayList(instruction.Instruction).initCapacity(res_allocator, 64);
 
     var pre_stack = try std.ArrayList(*ast.Node).initCapacity(stack_allocator, 32);
     defer pre_stack.deinit(stack_allocator);
@@ -32,12 +33,12 @@ pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_all
 
         switch (tmp.data) {
             .Expr => {
-                const op = ast.Operation.fromIdent(tmp.data.Expr.op).?;
-                const instr = ast.Instruction{ .Operation = op };
+                const op = instruction.Operation.fromIdent(tmp.data.Expr.op).?;
+                const instr = instruction.Instruction{ .Operation = op };
                 try res.append(res_allocator, instr);
             },
             .Value => {
-                const instr = ast.Instruction{ .Value = tmp.data.Value };
+                const instr = instruction.Instruction{ .Value = tmp.data.Value };
                 try res.append(res_allocator, instr);
             },
             else => {},
