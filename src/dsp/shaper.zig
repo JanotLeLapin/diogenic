@@ -22,6 +22,13 @@ fn generateEval(comptime op: Op) Eval {
     }.eval;
 }
 
+fn clip(threshold: Vec, input: Vec) Vec {
+    const abs = @abs(threshold);
+    const min = @min(input, abs);
+    const max = @max(min, (@as(Vec, @splat(-1.0)) * abs));
+    return max;
+}
+
 fn quantize(bits: Vec, input: Vec) Vec {
     const levels = @exp2(bits);
     const normalized = (input + @as(Vec, @splat(1.0))) * @as(Vec, @splat(0.5));
@@ -35,6 +42,7 @@ pub fn eval(
     input: Block,
 ) Block {
     return switch (op) {
+        .Clip => generateEval(clip)(mix, input),
         .Quantize => generateEval(quantize)(mix, input),
     };
 }

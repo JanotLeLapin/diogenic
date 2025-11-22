@@ -24,6 +24,7 @@ pub const OscOperation = struct {
 };
 
 pub const ShaperOperation = enum {
+    Clip,
     Quantize,
 };
 
@@ -75,5 +76,6 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "sine", Instruction{ .Osc = OscOperation{ .t = OscOperationType.Sine, .phase_slot = 0 } } },
     .{ "square", Instruction{ .Osc = OscOperation{ .t = OscOperationType.Square, .phase_slot = 0 } } },
 
+    .{ "clip", Instruction{ .Shaper = ShaperOperation.Clip } },
     .{ "quantize", Instruction{ .Shaper = ShaperOperation.Quantize } },
 });
