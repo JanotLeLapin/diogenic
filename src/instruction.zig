@@ -11,6 +11,10 @@ pub const MathOperation = enum {
     Log2,
     Log10,
     Logn,
+
+    Atan,
+    Exp,
+    Exp2,
 };
 
 pub const OscOperationType = enum {
@@ -73,6 +77,9 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "log2", Instruction{ .Math = MathOperation.Log2 } },
     .{ "log10", Instruction{ .Math = MathOperation.Log10 } },
     .{ "logn", Instruction{ .Math = MathOperation.Logn } },
+    .{ "atan", Instruction{ .Math = MathOperation.Atan } },
+    .{ "exp", Instruction{ .Math = MathOperation.Exp } },
+    .{ "exp2", Instruction{ .Math = MathOperation.Exp2 } },
 
     .{ "sawtooth", Instruction{ .Osc = OscOperation{ .t = OscOperationType.Sawtooth, .phase_slot = 0 } } },
     .{ "sine", Instruction{ .Osc = OscOperation{ .t = OscOperationType.Sine, .phase_slot = 0 } } },

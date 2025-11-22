@@ -1,3 +1,5 @@
+const std = @import("std");
+
 const instruction = @import("../instruction.zig");
 
 const block = @import("block.zig");
@@ -22,6 +24,18 @@ fn generateEval(comptime op: Op) Eval {
     }.eval;
 }
 
+fn generatePrimEval(comptime op: anytype) Eval {
+    return generateEval(struct {
+        fn eval(v: Vec) Vec {
+            var res: Vec = undefined;
+            for (0..block.SIMD_LENGTH) |i| {
+                res[i] = op(v[i]);
+            }
+            return res;
+        }
+    }.eval);
+}
+
 fn log2(vec: Vec) Vec {
     return @log2(vec);
 }
@@ -42,5 +56,8 @@ pub fn eval(
         .Log2 => generateEval(log2)(b),
         .Log10 => generateEval(log10)(b),
         .Logn => generateEval(logn)(b),
+        .Atan => generatePrimEval(std.math.atan)(b),
+        .Exp => generatePrimEval(std.math.exp)(b),
+        .Exp2 => generatePrimEval(std.math.exp2)(b),
     };
 }
