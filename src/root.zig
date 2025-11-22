@@ -16,7 +16,6 @@ pub fn render_wav32(
     e: *engine.Engine,
     block_count: usize,
     buf_allocator: std.mem.Allocator,
-    stack_allocator: std.mem.Allocator,
 ) !void {
     var buf: [block.BLOCK_LENGTH * 2]f32 = undefined;
 
@@ -34,7 +33,7 @@ pub fn render_wav32(
     defer _ = sndfile.sf_close(f);
 
     for (0..block_count) |_| {
-        const res = try e.eval(instructions, stack_allocator);
+        const res = try e.eval(instructions);
         for (0..block.BLOCK_LENGTH) |i| {
             buf[i * 2] = res.get(0, i);
             buf[i * 2 + 1] = res.get(1, i);

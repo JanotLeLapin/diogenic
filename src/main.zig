@@ -37,6 +37,6 @@ pub fn main() !void {
         std.debug.print("{f}\n", .{instr});
     }
 
-    var e = engine.Engine.init();
-    try root.render_wav32("out.wav", res, &e, 22500, gpa, gpa);
+    var e = try engine.Engine.init(gpa);
+    try root.render_wav32("out.wav", res, &e, 22500, gpa);
 }
