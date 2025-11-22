@@ -6,18 +6,16 @@ const Block = block.Block;
 const Vec = block.Vec;
 
 const Op = fn (Vec, Vec) Vec;
-const Eval = fn (Block, Block) Block;
+const Eval = fn (*const Block, *const Block, *Block) void;
 
 fn generateEval(comptime op: Op) Eval {
     return struct {
-        fn eval(left: Block, right: Block) Block {
-            var res: Block = undefined;
+        fn eval(left: *const Block, right: *const Block, out: *Block) void {
             for (left.channels, right.channels, 0..) |l_channel, r_channel, i| {
                 for (l_channel, r_channel, 0..) |l_vec, r_vec, j| {
-                    res.channels[i][j] = op(l_vec, r_vec);
+                    out.channels[i][j] = op(l_vec, r_vec);
                 }
             }
-            return res;
         }
     }.eval;
 }
@@ -40,13 +38,14 @@ fn div(left: Vec, right: Vec) Vec {
 
 pub fn eval(
     op: instruction.ArithmeticOperation,
-    left: Block,
-    right: Block,
-) Block {
-    return switch (op) {
-        .Add => generateEval(add)(left, right),
-        .Sub => generateEval(sub)(left, right),
-        .Mul => generateEval(mul)(left, right),
-        .Div => generateEval(div)(left, right),
-    };
+    left: *const Block,
+    right: *const Block,
+    out: *Block,
+) void {
+    switch (op) {
+        .Add => generateEval(add)(left, right, out),
+        .Sub => generateEval(sub)(left, right, out),
+        .Mul => generateEval(mul)(left, right, out),
+        .Div => generateEval(div)(left, right, out),
+    }
 }

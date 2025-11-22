@@ -33,29 +33,29 @@ pub const Engine = struct {
                     const left = self.stack.pop().?;
                     const right = self.stack.pop().?;
 
-                    const res = arith.eval(op, left, right);
-                    try self.stack.append(self.stack_allocator, res);
+                    const new_block = try self.stack.addOne(self.stack_allocator);
+                    arith.eval(op, &left, &right, new_block);
                 },
                 .Math => |op| {
                     const b = self.stack.pop().?;
 
-                    const res = math.eval(op, b);
-                    try self.stack.append(self.stack_allocator, res);
+                    const new_block = try self.stack.addOne(self.stack_allocator);
+                    math.eval(op, &b, new_block);
                 },
                 .Osc => |op| {
                     const pm = self.stack.pop().?;
                     const freq = self.stack.pop().?;
                     const acc = &self.state[op.phase_slot];
 
-                    const res = osc.eval(op.t, freq, pm, acc);
-                    try self.stack.append(self.stack_allocator, res);
+                    const new_block = try self.stack.addOne(self.stack_allocator);
+                    osc.eval(op.t, &freq, &pm, acc, new_block);
                 },
                 .Shaper => |op| {
                     const input = self.stack.pop().?;
                     const mix = self.stack.pop().?;
 
-                    const res = shaper.eval(op, mix, input);
-                    try self.stack.append(self.stack_allocator, res);
+                    const new_block = try self.stack.addOne(self.stack_allocator);
+                    shaper.eval(op, &mix, &input, new_block);
                 },
             }
         }

@@ -6,18 +6,16 @@ const Block = block.Block;
 const Vec = block.Vec;
 
 const Op = fn (Vec, Vec) Vec;
-const Eval = fn (Block, Block) Block;
+const Eval = fn (*const Block, *const Block, *Block) void;
 
 fn generateEval(comptime op: Op) Eval {
     return struct {
-        fn eval(left: Block, right: Block) Block {
-            var res: Block = undefined;
+        fn eval(left: *const Block, right: *const Block, out: *Block) void {
             for (left.channels, right.channels, 0..) |l_channel, r_channel, i| {
                 for (l_channel, r_channel, 0..) |l_vec, r_vec, j| {
-                    res.channels[i][j] = op(l_vec, r_vec);
+                    out.channels[i][j] = op(l_vec, r_vec);
                 }
             }
-            return res;
         }
     }.eval;
 }
@@ -25,8 +23,7 @@ fn generateEval(comptime op: Op) Eval {
 fn clip(threshold: Vec, input: Vec) Vec {
     const abs = @abs(threshold);
     const min = @min(input, abs);
-    const max = @max(min, (@as(Vec, @splat(-1.0)) * abs));
-    return max;
+    return @max(min, (@as(Vec, @splat(-1.0)) * abs));
 }
 
 fn quantize(bits: Vec, input: Vec) Vec {
@@ -38,11 +35,12 @@ fn quantize(bits: Vec, input: Vec) Vec {
 
 pub fn eval(
     op: instruction.ShaperOperation,
-    mix: Block,
-    input: Block,
-) Block {
-    return switch (op) {
-        .Clip => generateEval(clip)(mix, input),
-        .Quantize => generateEval(quantize)(mix, input),
-    };
+    mix: *const Block,
+    input: *const Block,
+    out: *Block,
+) void {
+    switch (op) {
+        .Clip => generateEval(clip)(mix, input, out),
+        .Quantize => generateEval(quantize)(mix, input, out),
+    }
 }

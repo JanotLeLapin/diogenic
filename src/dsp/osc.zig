@@ -8,12 +8,11 @@ const Block = block.Block;
 const Vec = block.Vec;
 
 const Op = fn (f32) f32;
-const Eval = fn (Block, Block, *f32) Block;
+const Eval = fn (*const Block, *const Block, *f32, *Block) void;
 
 fn generateEval(comptime op: Op) Eval {
     return struct {
-        fn eval(freq: Block, pm: Block, phase: *f32) Block {
-            var res: Block = undefined;
+        fn eval(freq: *const Block, pm: *const Block, phase: *f32, out: *Block) void {
             var acc: f32 = 0.0;
             for (freq.channels, pm.channels, 0..) |freq_channel, pm_channel, i| {
                 acc = phase.*;
@@ -23,7 +22,7 @@ fn generateEval(comptime op: Op) Eval {
                         const inc = inc_vec[k];
 
                         const radians = std.math.pi * 2 * acc;
-                        res.channels[i][j][k] = op(radians + pm_vec[k]);
+                        out.channels[i][j][k] = op(radians + pm_vec[k]);
 
                         acc += inc;
                         acc -= @floor(acc);
@@ -32,8 +31,6 @@ fn generateEval(comptime op: Op) Eval {
             }
 
             phase.* = acc;
-
-            return res;
         }
     }.eval;
 }
@@ -58,13 +55,14 @@ fn square(p: f32) f32 {
 
 pub fn eval(
     op: instruction.OscOperationType,
-    freq: Block,
-    pm: Block,
+    freq: *const Block,
+    pm: *const Block,
     phase: *f32,
-) Block {
-    return switch (op) {
-        .Sawtooth => generateEval(sawtooth)(freq, pm, phase),
-        .Sine => generateEval(sine)(freq, pm, phase),
-        .Square => generateEval(square)(freq, pm, phase),
-    };
+    out: *Block,
+) void {
+    switch (op) {
+        .Sawtooth => generateEval(sawtooth)(freq, pm, phase, out),
+        .Sine => generateEval(sine)(freq, pm, phase, out),
+        .Square => generateEval(square)(freq, pm, phase, out),
+    }
 }
