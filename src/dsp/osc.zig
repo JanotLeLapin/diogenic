@@ -38,6 +38,12 @@ fn generateEval(comptime op: Op) Eval {
     }.eval;
 }
 
+const inv_2_pi = (1.0 / (2.0 * std.math.pi));
+
+fn sawtooth(p: f32) f32 {
+    return p * inv_2_pi - 1.0;
+}
+
 fn sine(p: f32) f32 {
     return std.math.sin(p);
 }
@@ -57,6 +63,7 @@ pub fn eval(
     phase: *f32,
 ) Block {
     return switch (op) {
+        .Sawtooth => generateEval(sawtooth)(freq, pm, phase),
         .Sine => generateEval(sine)(freq, pm, phase),
         .Square => generateEval(square)(freq, pm, phase),
     };
