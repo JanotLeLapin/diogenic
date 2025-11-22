@@ -17,6 +17,10 @@ pub const MathOperation = enum {
     Exp2,
 };
 
+pub const NoiseOperation = enum {
+    White,
+};
+
 pub const OscOperationType = enum {
     Sawtooth,
     Sine,
@@ -36,6 +40,7 @@ pub const ShaperOperation = enum {
 pub const Instruction = union(enum) {
     Arith: ArithmeticOperation,
     Math: MathOperation,
+    Noise: NoiseOperation,
     Osc: OscOperation,
     Shaper: ShaperOperation,
     Value: f32,
@@ -54,6 +59,9 @@ pub const Instruction = union(enum) {
             },
             .Math => {
                 try writer.print("math: {s}", .{@tagName(self.Math)});
+            },
+            .Noise => {
+                try writer.print("noise: {s}", .{@tagName(self.Noise)});
             },
             .Osc => {
                 try writer.print("osc: {s}", .{@tagName(self.Osc.t)});
@@ -80,6 +88,8 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "atan", Instruction{ .Math = MathOperation.Atan } },
     .{ "exp", Instruction{ .Math = MathOperation.Exp } },
     .{ "exp2", Instruction{ .Math = MathOperation.Exp2 } },
+
+    .{ "white-noise", Instruction{ .Noise = NoiseOperation.White } },
 
     .{ "sawtooth", Instruction{ .Osc = OscOperation{ .t = OscOperationType.Sawtooth, .phase_slot = 0 } } },
     .{ "sine", Instruction{ .Osc = OscOperation{ .t = OscOperationType.Sine, .phase_slot = 0 } } },
