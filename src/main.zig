@@ -45,8 +45,18 @@ pub fn renderWav32(
 pub fn main() !void {
     const gpa = std.heap.page_allocator;
 
-    const file = try std.fs.cwd().openFile("patch.scm", .{});
-    const src = try file.readToEndAlloc(gpa, 10 * 1024 * 1024);
+    const src = src: {
+        const args = try std.process.argsAlloc(gpa);
+        defer std.process.argsFree(gpa, args);
+
+        if (args.len < 2) {
+            std.log.err("missing input file\n", .{});
+            return;
+        }
+
+        const file = try std.fs.cwd().openFile(args[1], .{});
+        break :src try file.readToEndAlloc(gpa, 10 * 1024 * 1024);
+    };
 
     var ast_arena = std.heap.ArenaAllocator.init(gpa);
     defer ast_arena.deinit();
