@@ -54,40 +54,48 @@ pub fn parse(ast_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocato
             .op = "ROOT",
             .children = try std.ArrayList(*ast.Node).initCapacity(ast_allocator, 4),
         } },
+        .src = tokenizer.src,
     };
     try stack.append(stack_allocator, root);
 
     while (tokenizer.next()) |token| {
         if (std.mem.eql(u8, "(", token)) {
             const new = try ast_allocator.create(ast.Node);
+            const start = tokenizer.idx - 1;
             new.* = .{
                 .visited = false,
                 .data = .{ .Expr = ast.NodeDataExpression{
                     .op = tokenizer.next().?,
                     .children = try std.ArrayList(*ast.Node).initCapacity(ast_allocator, 8),
                 } },
+                .src = tokenizer.src[start..],
             };
             try stack.getLast().data.Expr.children.append(ast_allocator, new);
             try stack.append(stack_allocator, new);
         } else if (std.mem.eql(u8, ")", token)) {
-            _ = stack.pop();
+            var node = stack.pop().?;
+            const start = node.src.ptr - tokenizer.src.ptr;
+            node.src = tokenizer.src[start..tokenizer.idx];
         } else {
             const new = try ast_allocator.create(ast.Node);
             if (std.fmt.parseFloat(f32, token)) |value| {
                 new.* = .{
                     .visited = false,
                     .data = .{ .Value = value },
+                    .src = token,
                 };
             } else |_| {
                 if (token[0] == ':') {
                     new.* = .{
                         .visited = false,
                         .data = .{ .Atom = token },
+                        .src = token,
                     };
                 } else {
                     new.* = .{
                         .visited = false,
                         .data = .{ .Ident = token },
+                        .src = token,
                     };
                 }
             }

@@ -22,7 +22,7 @@ pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_all
         switch (tmp.data) {
             .Expr => {
                 const instr = instruction.Instruction.fromExpr(tmp.data.Expr, &current_slot) orelse {
-                    std.log.err("could not compile expr: {s}", .{tmp.data.Expr.op});
+                    std.log.err("could not compile expr: '{s}'", .{tmp.src});
                     has_error = true;
                     continue;
                 };

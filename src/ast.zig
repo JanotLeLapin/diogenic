@@ -15,4 +15,5 @@ pub const NodeData = union(enum) {
 pub const Node = struct {
     visited: bool,
     data: NodeData,
+    src: []const u8,
 };
