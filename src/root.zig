@@ -10,9 +10,22 @@ const sndfile = @cImport({
     @cInclude("sndfile.h");
 });
 
+pub fn renderBlock(
+    instructions: []instruction.Instruction,
+    e: *engine.Engine,
+    out: []f32,
+    out_offset: usize,
+) !void {
+    const res = try e.eval(instructions);
+    for (0..block.BLOCK_LENGTH) |i| {
+        out[out_offset + i * 2] = res.get(0, i);
+        out[out_offset + i * 2 + 1] = res.get(1, i);
+    }
+}
+
 pub fn renderWav32(
     filename: []const u8,
-    instructions: std.ArrayList(instruction.Instruction),
+    instructions: []instruction.Instruction,
     e: *engine.Engine,
     block_count: usize,
     buf_allocator: std.mem.Allocator,
@@ -33,12 +46,7 @@ pub fn renderWav32(
     defer _ = sndfile.sf_close(f);
 
     for (0..block_count) |_| {
-        const res = try e.eval(instructions);
-        for (0..block.BLOCK_LENGTH) |i| {
-            buf[i * 2] = res.get(0, i);
-            buf[i * 2 + 1] = res.get(1, i);
-        }
-
+        try renderBlock(instructions, e, &buf, 0);
         _ = sndfile.sf_write_float(f, &buf, block.BLOCK_LENGTH * 2);
     }
 }

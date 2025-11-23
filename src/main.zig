@@ -43,7 +43,7 @@ pub fn main() !void {
     const block_count = 22500;
     var e = try engine.Engine.init(gpa);
     var timer = try std.time.Timer.start();
-    try root.renderWav32("out.wav", instr, &e, block_count, gpa);
+    try root.renderWav32("out.wav", instr.items, &e, block_count, gpa);
     const time = timer.read();
     std.log.info("Rendered {d} blocks ({d} samples), took {d}ms\n", .{ block_count, block_count * block.BLOCK_LENGTH, time / 1_000_000 });
 }

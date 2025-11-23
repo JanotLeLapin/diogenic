@@ -26,8 +26,8 @@ pub const Engine = struct {
         };
     }
 
-    pub fn eval(self: *Engine, seq: std.ArrayList(instruction.Instruction)) !block.Block {
-        for (seq.items) |item| {
+    pub fn eval(self: *Engine, seq: []instruction.Instruction) !block.Block {
+        for (seq) |item| {
             switch (item) {
                 .Value => {
                     try self.stack.append(self.stack_allocator, block.Block.initValue(item.Value));
