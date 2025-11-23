@@ -20,18 +20,7 @@ pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_all
 
         switch (tmp.data) {
             .Expr => {
-                var instr = instruction.Instruction.fromIdent(tmp.data.Expr.op).?;
-                switch (instr) {
-                    .Osc => {
-                        instr.Osc.phase_slot = current_slot;
-                        current_slot += 1;
-                    },
-                    .Filter => {
-                        instr.Filter.tmp_slot = current_slot;
-                        current_slot += 4;
-                    },
-                    else => {},
-                }
+                const instr = instruction.Instruction.fromExpr(tmp.data.Expr, &current_slot).?;
                 try post_stack.append(stack_allocator, instr);
 
                 for (tmp.data.Expr.children.items) |child| {

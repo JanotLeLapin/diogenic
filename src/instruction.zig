@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const ast = @import("ast.zig");
+
 pub const ArithmeticOperation = enum {
     Add,
     Sub,
@@ -58,8 +60,21 @@ pub const Instruction = union(enum) {
     Shaper: ShaperOperation,
     Value: f32,
 
-    pub fn fromIdent(id: []const u8) ?Instruction {
-        return InstructionMap.get(id);
+    pub fn fromExpr(expr: ast.NodeDataExpression, current_slot: *usize) ?Instruction {
+        var instr = InstructionMap.get(expr.op) orelse return null;
+
+        switch (instr) {
+            .Osc => {
+                instr.Osc.phase_slot = current_slot.*;
+                current_slot.* += 1;
+            },
+            .Filter => {
+                instr.Filter.tmp_slot = current_slot.*;
+                current_slot.* += 4;
+            },
+            else => {},
+        }
+        return instr;
     }
 
     pub fn format(
