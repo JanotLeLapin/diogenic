@@ -10,7 +10,7 @@ const sndfile = @cImport({
     @cInclude("sndfile.h");
 });
 
-pub fn render_wav32(
+pub fn renderWav32(
     filename: []const u8,
     instructions: std.ArrayList(instruction.Instruction),
     e: *engine.Engine,
