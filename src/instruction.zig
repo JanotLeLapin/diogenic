@@ -84,43 +84,37 @@ pub const Instruction = union(enum) {
     Shaper: ShaperOperation,
     Value: f32,
 
+    fn validate(instr: Instruction, expr: ast.NodeDataExpression) bool {
+        const active_tag = std.meta.activeTag(instr);
+
+        inline for (std.meta.fields(Instruction)) |field| {
+            if (comptime std.mem.eql(u8, field.name, "Value")) {
+                if (active_tag == .Value) {
+                    return true;
+                }
+            } else if (@field(std.meta.Tag(Instruction), field.name) == active_tag) {
+                return field.type.validate(expr);
+            }
+        }
+
+        unreachable;
+    }
+
     pub fn fromExpr(expr: ast.NodeDataExpression, current_slot: *usize) ?Instruction {
         var instr = InstructionMap.get(expr.op) orelse return null;
 
+        if (!instr.validate(expr)) {
+            return null;
+        }
+
         switch (instr) {
-            .Arith => {
-                if (!ArithmeticOperation.validate(expr)) {
-                    return null;
-                }
-            },
             .Filter => {
-                if (!FilterOperation.validate(expr)) {
-                    return null;
-                }
                 instr.Filter.tmp_slot = current_slot.*;
                 current_slot.* += 4;
             },
-            .Math => {
-                if (!MathOperation.validate(expr)) {
-                    return null;
-                }
-            },
-            .Noise => {
-                if (!NoiseOperation.validate(expr)) {
-                    return null;
-                }
-            },
             .Osc => {
-                if (!OscOperation.validate(expr)) {
-                    return null;
-                }
                 instr.Osc.phase_slot = current_slot.*;
                 current_slot.* += 1;
-            },
-            .Shaper => {
-                if (!ShaperOperation.validate(expr)) {
-                    return null;
-                }
             },
             else => {},
         }
