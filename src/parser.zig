@@ -14,16 +14,16 @@ pub const Tokenizer = struct {
     idx: usize = 0,
 
     pub fn next(self: *Tokenizer) ?[]const u8 {
-        if (self.idx >= self.src.len) {
-            return null;
-        }
-
         if (isWhitespace(self.src[self.idx])) {
             self.idx += 1;
             while (isWhitespace(self.src[self.idx])) {
                 self.idx += 1;
                 continue;
             }
+        }
+
+        if (self.idx >= self.src.len) {
+            return null;
         }
 
         switch (self.src[self.idx]) {
