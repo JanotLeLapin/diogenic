@@ -7,6 +7,10 @@ pub const ArithmeticOperation = enum {
     Sub,
     Mul,
     Div,
+
+    fn validate(expr: ast.NodeDataExpression) bool {
+        return expr.children.items.len == 2;
+    }
 };
 
 pub const FilterOperationType = enum {
@@ -17,6 +21,10 @@ pub const FilterOperationType = enum {
 pub const FilterOperation = struct {
     t: FilterOperationType,
     tmp_slot: usize,
+
+    fn validate(expr: ast.NodeDataExpression) bool {
+        return expr.children.items.len == 4;
+    }
 };
 
 pub const MathOperation = enum {
@@ -27,10 +35,18 @@ pub const MathOperation = enum {
     Atan,
     Exp,
     Exp2,
+
+    fn validate(expr: ast.NodeDataExpression) bool {
+        return expr.children.items.len == 1;
+    }
 };
 
 pub const NoiseOperation = enum {
     White,
+
+    fn validate(expr: ast.NodeDataExpression) bool {
+        return expr.children.items.len == 0;
+    }
 };
 
 pub const OscOperationType = enum {
@@ -42,6 +58,10 @@ pub const OscOperationType = enum {
 pub const OscOperation = struct {
     t: OscOperationType,
     phase_slot: usize,
+
+    fn validate(expr: ast.NodeDataExpression) bool {
+        return expr.children.items.len == 2;
+    }
 };
 
 pub const ShaperOperation = enum {
@@ -49,6 +69,10 @@ pub const ShaperOperation = enum {
     Clip,
     Diode,
     Quantize,
+
+    fn validate(expr: ast.NodeDataExpression) bool {
+        return expr.children.items.len == 2;
+    }
 };
 
 pub const Instruction = union(enum) {
@@ -64,13 +88,39 @@ pub const Instruction = union(enum) {
         var instr = InstructionMap.get(expr.op) orelse return null;
 
         switch (instr) {
+            .Arith => {
+                if (!ArithmeticOperation.validate(expr)) {
+                    return null;
+                }
+            },
+            .Filter => {
+                if (!FilterOperation.validate(expr)) {
+                    return null;
+                }
+                instr.Filter.tmp_slot = current_slot.*;
+                current_slot.* += 4;
+            },
+            .Math => {
+                if (!MathOperation.validate(expr)) {
+                    return null;
+                }
+            },
+            .Noise => {
+                if (!NoiseOperation.validate(expr)) {
+                    return null;
+                }
+            },
             .Osc => {
+                if (!OscOperation.validate(expr)) {
+                    return null;
+                }
                 instr.Osc.phase_slot = current_slot.*;
                 current_slot.* += 1;
             },
-            .Filter => {
-                instr.Filter.tmp_slot = current_slot.*;
-                current_slot.* += 4;
+            .Shaper => {
+                if (!ShaperOperation.validate(expr)) {
+                    return null;
+                }
             },
             else => {},
         }

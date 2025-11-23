@@ -15,12 +15,17 @@ pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_all
     try pre_stack.append(stack_allocator, root);
 
     var current_slot: usize = 0;
+    var has_error = false;
     while (pre_stack.items.len > 0) {
         const tmp = pre_stack.pop().?;
 
         switch (tmp.data) {
             .Expr => {
-                const instr = instruction.Instruction.fromExpr(tmp.data.Expr, &current_slot).?;
+                const instr = instruction.Instruction.fromExpr(tmp.data.Expr, &current_slot) orelse {
+                    std.log.err("could not compile expr: {s}", .{tmp.data.Expr.op});
+                    has_error = true;
+                    continue;
+                };
                 try post_stack.append(stack_allocator, instr);
 
                 for (tmp.data.Expr.children.items) |child| {
@@ -35,9 +40,14 @@ pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_all
         }
     }
 
-    while (post_stack.items.len > 0) {
-        const tmp = post_stack.pop().?;
-        try res.append(res_allocator, tmp);
+    if (has_error) {
+        try res.append(res_allocator, instruction.Instruction{ .Value = 0.0 });
+        std.log.err("some errors occured during compilation", .{});
+    } else {
+        while (post_stack.items.len > 0) {
+            const tmp = post_stack.pop().?;
+            try res.append(res_allocator, tmp);
+        }
     }
 
     return res;
