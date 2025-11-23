@@ -21,12 +21,14 @@ pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_all
 
         switch (tmp.data) {
             .Expr => {
-                const instr = instruction.Instruction.fromExpr(tmp.data.Expr, &current_slot) orelse {
-                    std.log.err("could not compile expr: '{s}'", .{tmp.src});
-                    has_error = true;
-                    continue;
-                };
-                try post_stack.append(stack_allocator, instr);
+                compile: {
+                    const instr = instruction.Instruction.fromExpr(tmp.data.Expr, &current_slot) catch |err| {
+                        std.log.err("{s}: could not compile expr: '{s}'", .{ @errorName(err), tmp.src });
+                        has_error = true;
+                        break :compile;
+                    };
+                    try post_stack.append(stack_allocator, instr);
+                }
 
                 for (tmp.data.Expr.children.items) |child| {
                     try pre_stack.append(stack_allocator, child);

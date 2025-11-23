@@ -2,14 +2,21 @@ const std = @import("std");
 
 const ast = @import("ast.zig");
 
+pub const InstructionError = error{
+    NotFound,
+    BadArity,
+};
+
 pub const ArithmeticOperation = enum {
     Add,
     Sub,
     Mul,
     Div,
 
-    fn validate(expr: ast.NodeDataExpression) bool {
-        return expr.children.items.len == 2;
+    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
+        if (expr.children.items.len != 2) {
+            return InstructionError.BadArity;
+        }
     }
 };
 
@@ -22,8 +29,10 @@ pub const FilterOperation = struct {
     t: FilterOperationType,
     tmp_slot: usize,
 
-    fn validate(expr: ast.NodeDataExpression) bool {
-        return expr.children.items.len == 4;
+    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
+        if (expr.children.items.len != 4) {
+            return InstructionError.BadArity;
+        }
     }
 };
 
@@ -36,16 +45,20 @@ pub const MathOperation = enum {
     Exp,
     Exp2,
 
-    fn validate(expr: ast.NodeDataExpression) bool {
-        return expr.children.items.len == 1;
+    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
+        if (expr.children.items.len != 1) {
+            return InstructionError.BadArity;
+        }
     }
 };
 
 pub const NoiseOperation = enum {
     White,
 
-    fn validate(expr: ast.NodeDataExpression) bool {
-        return expr.children.items.len == 0;
+    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
+        if (expr.children.items.len != 0) {
+            return InstructionError.BadArity;
+        }
     }
 };
 
@@ -59,8 +72,10 @@ pub const OscOperation = struct {
     t: OscOperationType,
     phase_slot: usize,
 
-    fn validate(expr: ast.NodeDataExpression) bool {
-        return expr.children.items.len == 2;
+    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
+        if (expr.children.items.len != 2) {
+            return InstructionError.BadArity;
+        }
     }
 };
 
@@ -70,8 +85,10 @@ pub const ShaperOperation = enum {
     Diode,
     Quantize,
 
-    fn validate(expr: ast.NodeDataExpression) bool {
-        return expr.children.items.len == 2;
+    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
+        if (expr.children.items.len != 2) {
+            return InstructionError.BadArity;
+        }
     }
 };
 
@@ -84,13 +101,13 @@ pub const Instruction = union(enum) {
     Shaper: ShaperOperation,
     Value: f32,
 
-    fn validate(instr: Instruction, expr: ast.NodeDataExpression) bool {
+    fn validate(instr: Instruction, expr: ast.NodeDataExpression) InstructionError!void {
         const active_tag = std.meta.activeTag(instr);
 
         inline for (std.meta.fields(Instruction)) |field| {
             if (comptime std.mem.eql(u8, field.name, "Value")) {
                 if (active_tag == .Value) {
-                    return true;
+                    return;
                 }
             } else if (@field(std.meta.Tag(Instruction), field.name) == active_tag) {
                 return field.type.validate(expr);
@@ -100,12 +117,9 @@ pub const Instruction = union(enum) {
         unreachable;
     }
 
-    pub fn fromExpr(expr: ast.NodeDataExpression, current_slot: *usize) ?Instruction {
-        var instr = InstructionMap.get(expr.op) orelse return null;
-
-        if (!instr.validate(expr)) {
-            return null;
-        }
+    pub fn fromExpr(expr: ast.NodeDataExpression, current_slot: *usize) InstructionError!Instruction {
+        var instr = InstructionMap.get(expr.op) orelse return InstructionError.NotFound;
+        try instr.validate(expr);
 
         switch (instr) {
             .Filter => {
