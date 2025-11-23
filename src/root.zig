@@ -20,7 +20,7 @@ pub fn compileSource(
     const node = try parser.parse(parser_ast_alloc, parser_stack_alloc, &t);
     defer parser_ast_alloc.destroy(node);
 
-    return compiler.compile_expr(node.data.Expr.children.getLast(), instr_res_alloc, instr_stack_alloc);
+    return compiler.compileExpr(node.data.Expr.children.getLast(), instr_res_alloc, instr_stack_alloc);
 }
 
 pub fn renderBlock(
@@ -36,7 +36,7 @@ pub fn renderBlock(
     }
 }
 
-pub fn walk_ast(node: *ast.Node, depth: usize) !void {
+pub fn walkAst(node: *ast.Node, depth: usize) !void {
     switch (node.data) {
         .Expr => {
             for (0..depth) |_| {
@@ -44,7 +44,7 @@ pub fn walk_ast(node: *ast.Node, depth: usize) !void {
             }
             std.debug.print("expr: {s}\n", .{node.data.Expr.op});
             for (node.data.Expr.children.items) |child| {
-                try walk_ast(child, depth + 1);
+                try walkAst(child, depth + 1);
             }
         },
         .Ident => {

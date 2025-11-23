@@ -3,7 +3,7 @@ const std = @import("std");
 const ast = @import("ast.zig");
 const instruction = @import("instruction.zig");
 
-pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocator) !std.ArrayList(instruction.Instruction) {
+pub fn compileExpr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocator) !std.ArrayList(instruction.Instruction) {
     var res = try std.ArrayList(instruction.Instruction).initCapacity(res_allocator, 64);
 
     var pre_stack = try std.ArrayList(*ast.Node).initCapacity(stack_allocator, 32);
