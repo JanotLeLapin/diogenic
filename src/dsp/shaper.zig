@@ -26,6 +26,12 @@ fn clip(threshold: Vec, input: Vec) Vec {
     return @max(min, (@as(Vec, @splat(-1.0)) * abs));
 }
 
+fn diode(threshold: Vec, input: Vec) Vec {
+    const floor = threshold - @as(Vec, @splat(1));
+    const ceil = threshold + @as(Vec, @splat(1));
+    return @min(@max(input, floor), ceil);
+}
+
 fn quantize(bits: Vec, input: Vec) Vec {
     const levels = @exp2(bits);
     const normalized = (input + @as(Vec, @splat(1.0))) * @as(Vec, @splat(0.5));
@@ -41,6 +47,7 @@ pub fn eval(
 ) void {
     switch (op) {
         .Clip => generateEval(clip)(mix, input, out),
+        .Diode => generateEval(diode)(mix, input, out),
         .Quantize => generateEval(quantize)(mix, input, out),
     }
 }
