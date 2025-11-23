@@ -46,6 +46,22 @@ fn logn(in: Vec) Vec {
     return @log(in);
 }
 
+fn midiToFreq(in: Vec) Vec {
+    return @as(Vec, @splat(440.0)) * @exp2((in - @as(Vec, @splat(69.0))) / @as(Vec, @splat(12.0)));
+}
+
+fn freqToMidi(in: Vec) Vec {
+    return @as(Vec, @splat(69.0)) + @as(Vec, @splat(12.0)) * @log2(in / @as(Vec, @splat(440.0)));
+}
+
+fn dbToAmp(in: f32) f32 {
+    return std.math.pow(f32, 10.0, in / 20.0);
+}
+
+fn ampToDb(in: f32) f32 {
+    return 20.0 * std.math.log(f32, 10.0, in);
+}
+
 pub fn eval(
     op: instruction.MathOperation,
     in: *const Block,
@@ -58,5 +74,9 @@ pub fn eval(
         .Atan => generatePrimEval(std.math.atan)(in, out),
         .Exp => generatePrimEval(std.math.exp)(in, out),
         .Exp2 => generatePrimEval(std.math.exp2)(in, out),
+        .MidiToFreq => generateEval(midiToFreq)(in, out),
+        .FreqToMidi => generateEval(freqToMidi)(in, out),
+        .DbToAmp => generatePrimEval(dbToAmp)(in, out),
+        .AmpToDb => generatePrimEval(ampToDb)(in, out),
     }
 }

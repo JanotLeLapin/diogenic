@@ -45,6 +45,11 @@ pub const MathOperation = enum {
     Exp,
     Exp2,
 
+    MidiToFreq,
+    FreqToMidi,
+    DbToAmp,
+    AmpToDb,
+
     fn validate(expr: ast.NodeDataExpression) InstructionError!void {
         if (expr.children.items.len != 1) {
             return InstructionError.BadArity;
@@ -180,6 +185,10 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "atan", Instruction{ .Math = MathOperation.Atan } },
     .{ "exp", Instruction{ .Math = MathOperation.Exp } },
     .{ "exp2", Instruction{ .Math = MathOperation.Exp2 } },
+    .{ "midi->freq", Instruction{ .Math = MathOperation.MidiToFreq } },
+    .{ "freq->midi", Instruction{ .Math = MathOperation.FreqToMidi } },
+    .{ "db->amp", Instruction{ .Math = MathOperation.DbToAmp } },
+    .{ "amp->db", Instruction{ .Math = MathOperation.AmpToDb } },
 
     .{ "white-noise", Instruction{ .Noise = NoiseOperation.White } },
 
