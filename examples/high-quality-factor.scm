@@ -1,5 +1,8 @@
 (clip 1.0
-      (atan (lowpass (+ 250.0 (* 75.0 (sine (* 0.1 (+ 0.3 (sine 0.1 0.0))) (* 0.4 (white-noise)))))
+      (atan (lowpass (+ 250.0
+                        (* 75.0
+                           (sine (* 0.1 (+ 0.3 (sine 0.1 0.0)))
+                                 (* (+ 0.5 (* 0.5 (sine 0.35 0.0))) (white-noise)))))
                      (exp2 (* 4.0
                               (+ 1.25 (sine 0.3 0.0))))
                      1.0
