@@ -26,6 +26,10 @@ pub fn compile_expr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_all
                         instr.Osc.phase_slot = current_slot;
                         current_slot += 1;
                     },
+                    .Filter => {
+                        instr.Filter.tmp_slot = current_slot;
+                        current_slot += 4;
+                    },
                     else => {},
                 }
                 try post_stack.append(stack_allocator, instr);

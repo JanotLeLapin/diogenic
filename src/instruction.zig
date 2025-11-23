@@ -7,6 +7,16 @@ pub const ArithmeticOperation = enum {
     Div,
 };
 
+pub const FilterOperationType = enum {
+    High,
+    Low,
+};
+
+pub const FilterOperation = struct {
+    t: FilterOperationType,
+    tmp_slot: usize,
+};
+
 pub const MathOperation = enum {
     Log2,
     Log10,
@@ -39,6 +49,7 @@ pub const ShaperOperation = enum {
 
 pub const Instruction = union(enum) {
     Arith: ArithmeticOperation,
+    Filter: FilterOperation,
     Math: MathOperation,
     Noise: NoiseOperation,
     Osc: OscOperation,
@@ -56,6 +67,9 @@ pub const Instruction = union(enum) {
         switch (self) {
             .Arith => {
                 try writer.print("arith: {s}", .{@tagName(self.Arith)});
+            },
+            .Filter => {
+                try writer.print("filter: {s}", .{@tagName(self.Filter.t)});
             },
             .Math => {
                 try writer.print("math: {s}", .{@tagName(self.Math)});
@@ -81,6 +95,9 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "-", Instruction{ .Arith = ArithmeticOperation.Sub } },
     .{ "*", Instruction{ .Arith = ArithmeticOperation.Mul } },
     .{ "/", Instruction{ .Arith = ArithmeticOperation.Div } },
+
+    .{ "highpass", Instruction{ .Filter = FilterOperation{ .t = FilterOperationType.High, .tmp_slot = 0 } } },
+    .{ "lowpass", Instruction{ .Filter = FilterOperation{ .t = FilterOperationType.Low, .tmp_slot = 0 } } },
 
     .{ "log2", Instruction{ .Math = MathOperation.Log2 } },
     .{ "log10", Instruction{ .Math = MathOperation.Log10 } },

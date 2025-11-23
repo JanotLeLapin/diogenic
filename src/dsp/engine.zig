@@ -3,7 +3,9 @@ const std = @import("std");
 const instruction = @import("../instruction.zig");
 
 const block = @import("block.zig");
+
 const arith = @import("arith.zig");
+const iir = @import("iir.zig");
 const math = @import("math.zig");
 const noise = @import("noise.zig");
 const osc = @import("osc.zig");
@@ -36,6 +38,21 @@ pub const Engine = struct {
 
                     const new_block = try self.stack.addOne(self.stack_allocator);
                     arith.eval(op, &left, &right, new_block);
+                },
+                .Filter => |op| {
+                    const in = self.stack.pop().?;
+                    const g = self.stack.pop().?;
+                    const q = self.stack.pop().?;
+                    const fc = self.stack.pop().?;
+
+                    var tmp: [2][2]*f32 = undefined;
+                    tmp[0][0] = &self.state[op.tmp_slot];
+                    tmp[0][1] = &self.state[op.tmp_slot + 1];
+                    tmp[1][0] = &self.state[op.tmp_slot + 2];
+                    tmp[1][1] = &self.state[op.tmp_slot + 3];
+
+                    const new_block = try self.stack.addOne(self.stack_allocator);
+                    iir.eval(op, tmp, &fc, &q, &g, &in, new_block);
                 },
                 .Math => |op| {
                     const b = self.stack.pop().?;
