@@ -43,9 +43,10 @@ pub fn renderWav32(
 }
 
 pub fn main() !void {
-    const src = "(sine (+ 220.0 (* 16.0 (sine 0.6 0.0))) 0.0)";
-
     const gpa = std.heap.page_allocator;
+
+    const file = try std.fs.cwd().openFile("patch.scm", .{});
+    const src = try file.readToEndAlloc(gpa, 10 * 1024 * 1024);
 
     var ast_arena = std.heap.ArenaAllocator.init(gpa);
     defer ast_arena.deinit();
