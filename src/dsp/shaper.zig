@@ -20,6 +20,12 @@ fn generateEval(comptime op: Op) Eval {
     }.eval;
 }
 
+fn clamp(threshold: Vec, input: Vec) Vec {
+    const floor = threshold - @as(Vec, @splat(1));
+    const ceil = threshold + @as(Vec, @splat(1));
+    return @min(@max(input, floor), ceil);
+}
+
 fn clip(threshold: Vec, input: Vec) Vec {
     const abs = @abs(threshold);
     const min = @min(input, abs);
@@ -27,9 +33,7 @@ fn clip(threshold: Vec, input: Vec) Vec {
 }
 
 fn diode(threshold: Vec, input: Vec) Vec {
-    const floor = threshold - @as(Vec, @splat(1));
-    const ceil = threshold + @as(Vec, @splat(1));
-    return @min(@max(input, floor), ceil);
+    return @max(input - threshold, @as(Vec, @splat(0)));
 }
 
 fn quantize(bits: Vec, input: Vec) Vec {
@@ -46,6 +50,7 @@ pub fn eval(
     out: *Block,
 ) void {
     switch (op) {
+        .Clamp => generateEval(clamp)(mix, input, out),
         .Clip => generateEval(clip)(mix, input, out),
         .Diode => generateEval(diode)(mix, input, out),
         .Quantize => generateEval(quantize)(mix, input, out),
