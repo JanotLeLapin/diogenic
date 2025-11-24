@@ -68,10 +68,10 @@ pub fn main() !void {
 
     const instr = try root.compileSource(src, ast_arena_alloc, gpa, instr_arena_alloc, gpa);
 
-    std.debug.print("rpn:\n", .{});
-    for (instr.items) |item| {
-        std.debug.print("{f}\n", .{item});
-    }
+    // std.debug.print("rpn:\n", .{});
+    // for (instr.items) |item| {
+    //     std.debug.print("{f}\n", .{item});
+    // }
 
     const block_count = 22500;
     var e = try engine.Engine.init(gpa);
