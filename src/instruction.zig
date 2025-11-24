@@ -114,6 +114,9 @@ pub const MathOperation = enum {
     Exp,
     Exp2,
 
+    Floor,
+    Ceil,
+
     MidiToFreq,
     FreqToMidi,
     DbToAmp,
@@ -255,6 +258,8 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "atan", Instruction{ .Math = MathOperation.Atan } },
     .{ "exp", Instruction{ .Math = MathOperation.Exp } },
     .{ "exp2", Instruction{ .Math = MathOperation.Exp2 } },
+    .{ "floor", Instruction{ .Math = MathOperation.Floor } },
+    .{ "ceil", Instruction{ .Math = MathOperation.Ceil } },
     .{ "midi->freq", Instruction{ .Math = MathOperation.MidiToFreq } },
     .{ "freq->midi", Instruction{ .Math = MathOperation.FreqToMidi } },
     .{ "db->amp", Instruction{ .Math = MathOperation.DbToAmp } },

@@ -46,6 +46,14 @@ fn logn(in: Vec) Vec {
     return @log(in);
 }
 
+fn floor(in: Vec) Vec {
+    return @floor(in);
+}
+
+fn ceil(in: Vec) Vec {
+    return @ceil(in);
+}
+
 fn midiToFreq(in: Vec) Vec {
     return @as(Vec, @splat(440.0)) * @exp2((in - @as(Vec, @splat(69.0))) / @as(Vec, @splat(12.0)));
 }
@@ -74,6 +82,8 @@ pub fn eval(
         .Atan => generatePrimEval(std.math.atan)(in, out),
         .Exp => generatePrimEval(std.math.exp)(in, out),
         .Exp2 => generatePrimEval(std.math.exp2)(in, out),
+        .Floor => generateEval(floor)(in, out),
+        .Ceil => generateEval(ceil)(in, out),
         .MidiToFreq => generateEval(midiToFreq)(in, out),
         .FreqToMidi => generateEval(freqToMidi)(in, out),
         .DbToAmp => generatePrimEval(dbToAmp)(in, out),
