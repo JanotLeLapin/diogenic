@@ -7,6 +7,18 @@ pub const InstructionError = error{
     BadArity,
 };
 
+const Validate = fn (ast.NodeDataExpression) InstructionError!void;
+
+fn genValidate(comptime arity: comptime_int) Validate {
+    return struct {
+        fn validate(expr: ast.NodeDataExpression) InstructionError!void {
+            if (expr.children.items.len != arity) {
+                return InstructionError.BadArity;
+            }
+        }
+    }.validate;
+}
+
 pub const ArithmeticOperation = enum {
     Add,
     Sub,
@@ -14,9 +26,7 @@ pub const ArithmeticOperation = enum {
     Div,
 
     fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        if (expr.children.items.len != 2) {
-            return InstructionError.BadArity;
-        }
+        return genValidate(2)(expr);
     }
 };
 
@@ -30,9 +40,7 @@ pub const FilterOperation = struct {
     tmp_slot: usize,
 
     fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        if (expr.children.items.len != 4) {
-            return InstructionError.BadArity;
-        }
+        return genValidate(4)(expr);
     }
 };
 
@@ -51,9 +59,7 @@ pub const MathOperation = enum {
     AmpToDb,
 
     fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        if (expr.children.items.len != 1) {
-            return InstructionError.BadArity;
-        }
+        return genValidate(1)(expr);
     }
 };
 
@@ -61,9 +67,7 @@ pub const NoiseOperation = enum {
     White,
 
     fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        if (expr.children.items.len != 0) {
-            return InstructionError.BadArity;
-        }
+        return genValidate(0)(expr);
     }
 };
 
@@ -78,9 +82,7 @@ pub const OscOperation = struct {
     phase_slot: usize,
 
     fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        if (expr.children.items.len != 2) {
-            return InstructionError.BadArity;
-        }
+        return genValidate(2)(expr);
     }
 };
 
@@ -91,9 +93,7 @@ pub const ShaperOperation = enum {
     Quantize,
 
     fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        if (expr.children.items.len != 2) {
-            return InstructionError.BadArity;
-        }
+        return genValidate(2)(expr);
     }
 };
 
