@@ -5,18 +5,67 @@ const ast = @import("ast.zig");
 pub const InstructionError = error{
     NotFound,
     BadArity,
+    BadArgument,
+    MissingArgument,
+
+    MemoryError,
 };
 
-const Validate = fn (ast.NodeDataExpression) InstructionError!void;
+const Arg = struct {
+    pos: usize,
+    default: ?f32,
+};
+
+const Validate = fn (*ast.NodeDataExpression) InstructionError!void;
+const Linearize = fn (*ast.NodeDataExpression, std.mem.Allocator) InstructionError!void;
 
 fn genValidate(comptime arity: comptime_int) Validate {
     return struct {
-        fn validate(expr: ast.NodeDataExpression) InstructionError!void {
+        fn validate(expr: *ast.NodeDataExpression) InstructionError!void {
             if (expr.children.items.len != arity) {
                 return InstructionError.BadArity;
             }
         }
     }.validate;
+}
+
+fn genLinearize(comptime argmap: anytype) Linearize {
+    const arg_count = argmap.keys().len;
+    return struct {
+        fn linearize(expr: *ast.NodeDataExpression, alloc: std.mem.Allocator) InstructionError!void {
+            var args: [arg_count]?*ast.Node = .{null} ** arg_count;
+
+            var i: usize = 0;
+            while (i < expr.children.items.len) {
+                const key_node = expr.children.items[i];
+                switch (key_node.data) {
+                    .Atom => {},
+                    else => return InstructionError.BadArgument,
+                }
+
+                const arg = argmap.get(key_node.data.Atom) orelse return InstructionError.NotFound;
+                args[arg.pos] = expr.children.items[i + 1];
+
+                i += 2;
+            }
+
+            for (argmap.values()) |arg| {
+                if (null == args[arg.pos]) {
+                    const default = arg.default orelse return InstructionError.MissingArgument;
+                    var node = alloc.create(ast.Node) catch return InstructionError.MemoryError;
+                    node.src = "<DEFAULT>";
+                    node.visited = false;
+                    node.data = ast.NodeData{ .Value = default };
+                    args[arg.pos] = node;
+                }
+            }
+
+            expr.children.clearRetainingCapacity();
+            for (args) |arg| {
+                expr.children.append(alloc, arg.?) catch return InstructionError.MemoryError;
+            }
+        }
+    }.linearize;
 }
 
 pub const ArithmeticOperation = enum {
@@ -25,8 +74,8 @@ pub const ArithmeticOperation = enum {
     Mul,
     Div,
 
-    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        return genValidate(2)(expr);
+    fn linearize(expr: *ast.NodeDataExpression, _: std.mem.Allocator) InstructionError!void {
+        try genValidate(2)(expr);
     }
 };
 
@@ -39,8 +88,15 @@ pub const FilterOperation = struct {
     t: FilterOperationType,
     tmp_slot: usize,
 
-    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        return genValidate(4)(expr);
+    const argmap = std.StaticStringMap(Arg).initComptime(.{
+        .{ ":freq", Arg{ .default = null, .pos = 0 } },
+        .{ ":quality", Arg{ .default = 0.707, .pos = 1 } },
+        .{ ":gain", Arg{ .default = 1.0, .pos = 2 } },
+        .{ ":input", Arg{ .default = null, .pos = 3 } },
+    });
+
+    fn linearize(expr: *ast.NodeDataExpression, alloc: std.mem.Allocator) InstructionError!void {
+        try genLinearize(argmap)(expr, alloc);
     }
 };
 
@@ -58,16 +114,16 @@ pub const MathOperation = enum {
     DbToAmp,
     AmpToDb,
 
-    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        return genValidate(1)(expr);
+    fn linearize(expr: *ast.NodeDataExpression, _: std.mem.Allocator) InstructionError!void {
+        try genValidate(1)(expr);
     }
 };
 
 pub const NoiseOperation = enum {
     White,
 
-    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        return genValidate(0)(expr);
+    fn linearize(expr: *ast.NodeDataExpression, _: std.mem.Allocator) InstructionError!void {
+        try genValidate(0)(expr);
     }
 };
 
@@ -81,8 +137,13 @@ pub const OscOperation = struct {
     t: OscOperationType,
     phase_slot: usize,
 
-    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        return genValidate(2)(expr);
+    const argmap = std.StaticStringMap(Arg).initComptime(.{
+        .{ ":freq", Arg{ .default = null, .pos = 0 } },
+        .{ ":phase", Arg{ .default = 0.0, .pos = 1 } },
+    });
+
+    fn linearize(expr: *ast.NodeDataExpression, alloc: std.mem.Allocator) InstructionError!void {
+        try genLinearize(argmap)(expr, alloc);
     }
 };
 
@@ -92,8 +153,8 @@ pub const ShaperOperation = enum {
     Diode,
     Quantize,
 
-    fn validate(expr: ast.NodeDataExpression) InstructionError!void {
-        return genValidate(2)(expr);
+    fn linearize(expr: *ast.NodeDataExpression, _: std.mem.Allocator) InstructionError!void {
+        try genValidate(2)(expr);
     }
 };
 
@@ -106,7 +167,7 @@ pub const Instruction = union(enum) {
     Shaper: ShaperOperation,
     Value: f32,
 
-    fn validate(instr: Instruction, expr: ast.NodeDataExpression) InstructionError!void {
+    fn linearize(instr: Instruction, expr: *ast.NodeDataExpression, alloc: std.mem.Allocator) InstructionError!void {
         const active_tag = std.meta.activeTag(instr);
 
         inline for (std.meta.fields(Instruction)) |field| {
@@ -115,16 +176,16 @@ pub const Instruction = union(enum) {
                     return;
                 }
             } else if (@field(std.meta.Tag(Instruction), field.name) == active_tag) {
-                return field.type.validate(expr);
+                return field.type.linearize(expr, alloc);
             }
         }
 
         unreachable;
     }
 
-    pub fn fromExpr(expr: ast.NodeDataExpression, current_slot: *usize) InstructionError!Instruction {
+    pub fn fromExpr(expr: *ast.NodeDataExpression, current_slot: *usize, alloc: std.mem.Allocator) InstructionError!Instruction {
         var instr = InstructionMap.get(expr.op) orelse return InstructionError.NotFound;
-        try instr.validate(expr);
+        try instr.linearize(expr, alloc);
 
         switch (instr) {
             .Filter => {

@@ -1,9 +1,8 @@
 (clip 1.0
-      (atan (lowpass (+ 250.0
-                        (* 75.0
-                           (sine (* 0.1 (+ 0.3 (sine 0.1 0.0)))
-                                 (* (+ 0.5 (* 0.5 (sine 0.35 0.0))) (white-noise)))))
-                     (exp2 (* 4.0
-                              (+ 1.25 (sine 0.3 0.0))))
-                     1.0
-                     (sawtooth 44.0 0.0))))
+      (atan (lowpass :freq (+ 250.0
+                              (* 75.0
+                                 (sine :freq (* 0.1 (+ 0.3 (sine :freq 0.1)))
+                                       :phase (* (+ 0.5 (* 0.5 (sine :freq 0.35))) (white-noise)))))
+                     :quality (exp2 (* 4.0
+                                       (+ 1.25 (sine :freq 0.3))))
+                     :input (sawtooth :freq 44.0))))
