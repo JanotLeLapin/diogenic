@@ -78,5 +78,5 @@ pub fn main() !void {
     var timer = try std.time.Timer.start();
     try renderWav32("out.wav", instr.items, &e, block_count, gpa);
     const time = timer.read();
-    std.log.info("Rendered {d} blocks ({d} samples), took {d}ms\n", .{ block_count, block_count * block.BLOCK_LENGTH, time / 1_000_000 });
+    std.log.info("Rendered {d} blocks ({d} samples), took {d}ms", .{ block_count, block_count * block.BLOCK_LENGTH, time / 1_000_000 });
 }
