@@ -66,7 +66,13 @@ pub fn main() !void {
     defer instr_arena.deinit();
     const instr_arena_alloc = instr_arena.allocator();
 
-    const instr = try root.compileSource(src, ast_arena_alloc, gpa, instr_arena_alloc, gpa);
+    const instr = instr: {
+        var timer = try std.time.Timer.start();
+        const instr = try root.compileSource(src, ast_arena_alloc, gpa, instr_arena_alloc, gpa);
+        const time: f32 = @floatFromInt(timer.read() / 1_000); // microseconds
+        std.log.info("Compiled source, took {d:.3}ms", .{time / 1_000});
+        break :instr instr;
+    };
 
     // std.debug.print("rpn:\n", .{});
     // for (instr.items) |item| {
@@ -75,8 +81,15 @@ pub fn main() !void {
 
     const block_count = 22500;
     var e = try engine.Engine.init(gpa);
-    var timer = try std.time.Timer.start();
-    try renderWav32("out.wav", instr.items, &e, block_count, gpa);
-    const time = timer.read();
-    std.log.info("Rendered {d} blocks ({d} samples), took {d}ms", .{ block_count, block_count * block.BLOCK_LENGTH, time / 1_000_000 });
+    {
+        var timer = try std.time.Timer.start();
+        try renderWav32("out.wav", instr.items, &e, block_count, gpa);
+        const time: f32 = @floatFromInt(timer.read() / 1_000); // microseconds
+        std.log.info("Rendered {d} blocks, took {d:.3}ms ({d:.3}ms per block, {d:.5}ms per sample)", .{
+            block_count,
+            time / 1_000,
+            (time / 1_000) / block_count,
+            (time / 1_000) / (block_count * block.BLOCK_LENGTH),
+        });
+    }
 }
