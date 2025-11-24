@@ -74,6 +74,11 @@ pub const ArithmeticOperation = enum {
     Mul,
     Div,
 
+    Lt,
+    Leq,
+    Gt,
+    Geq,
+
     fn linearize(expr: *ast.NodeDataExpression, _: std.mem.Allocator) InstructionError!void {
         try genValidate(2)(expr);
     }
@@ -236,6 +241,10 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "-", Instruction{ .Arith = ArithmeticOperation.Sub } },
     .{ "*", Instruction{ .Arith = ArithmeticOperation.Mul } },
     .{ "/", Instruction{ .Arith = ArithmeticOperation.Div } },
+    .{ "<", Instruction{ .Arith = ArithmeticOperation.Lt } },
+    .{ "<=", Instruction{ .Arith = ArithmeticOperation.Leq } },
+    .{ ">", Instruction{ .Arith = ArithmeticOperation.Gt } },
+    .{ ">=", Instruction{ .Arith = ArithmeticOperation.Geq } },
 
     .{ "highpass", Instruction{ .Filter = FilterOperation{ .t = FilterOperationType.High, .tmp_slot = 0 } } },
     .{ "lowpass", Instruction{ .Filter = FilterOperation{ .t = FilterOperationType.Low, .tmp_slot = 0 } } },

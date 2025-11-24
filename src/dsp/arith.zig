@@ -36,6 +36,26 @@ fn div(left: Vec, right: Vec) Vec {
     return left / right;
 }
 
+inline fn cmp(mask: @Vector(block.SIMD_LENGTH, bool)) Vec {
+    return @select(f32, mask, @as(Vec, @splat(0.0)), @as(Vec, @splat(1.0)));
+}
+
+fn lt(left: Vec, right: Vec) Vec {
+    return cmp(left < right);
+}
+
+fn leq(left: Vec, right: Vec) Vec {
+    return cmp(left <= right);
+}
+
+fn gt(left: Vec, right: Vec) Vec {
+    return cmp(left > right);
+}
+
+fn geq(left: Vec, right: Vec) Vec {
+    return cmp(left >= right);
+}
+
 pub fn eval(
     op: instruction.ArithmeticOperation,
     left: *const Block,
@@ -47,5 +67,9 @@ pub fn eval(
         .Sub => generateEval(sub)(left, right, out),
         .Mul => generateEval(mul)(left, right, out),
         .Div => generateEval(div)(left, right, out),
+        .Lt => generateEval(lt)(left, right, out),
+        .Leq => generateEval(leq)(left, right, out),
+        .Gt => generateEval(gt)(left, right, out),
+        .Geq => generateEval(geq)(left, right, out),
     }
 }
