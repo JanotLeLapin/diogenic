@@ -79,7 +79,9 @@ pub fn main() !void {
     //     std.debug.print("{f}\n", .{item});
     // }
 
-    const block_count = 22500;
+    const sec_count = 60;
+    const sample_count = sec_count * 48000;
+    const block_count = sample_count / block.BLOCK_LENGTH;
     var e = try engine.Engine.init(gpa);
     {
         var timer = try std.time.Timer.start();
