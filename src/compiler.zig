@@ -17,12 +17,12 @@ pub fn compileExpr(root: *ast.Node, res_allocator: std.mem.Allocator, stack_allo
     var current_slot: usize = 0;
     var has_error = false;
     while (pre_stack.items.len > 0) {
-        var tmp = pre_stack.pop().?;
+        const tmp = pre_stack.pop().?;
 
         switch (tmp.data) {
             .Expr => {
                 compile: {
-                    const instr = instruction.Instruction.fromExpr(&tmp.data.Expr, &current_slot, res_allocator) catch |err| {
+                    const instr = instruction.Instruction.fromExpr(tmp, &current_slot, res_allocator) catch |err| {
                         std.log.err("{s}: could not compile expr: '{s}'", .{ @errorName(err), tmp.src });
                         has_error = true;
                         break :compile;
