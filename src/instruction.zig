@@ -111,6 +111,8 @@ pub const MathOperation = enum {
     Logn,
 
     Atan,
+    Sigmoid,
+
     Exp,
     Exp2,
 
@@ -256,6 +258,7 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "log10", Instruction{ .Math = MathOperation.Log10 } },
     .{ "logn", Instruction{ .Math = MathOperation.Logn } },
     .{ "atan", Instruction{ .Math = MathOperation.Atan } },
+    .{ "sigmoid", Instruction{ .Math = MathOperation.Sigmoid } },
     .{ "exp", Instruction{ .Math = MathOperation.Exp } },
     .{ "exp2", Instruction{ .Math = MathOperation.Exp2 } },
     .{ "floor", Instruction{ .Math = MathOperation.Floor } },

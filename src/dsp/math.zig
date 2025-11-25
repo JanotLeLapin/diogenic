@@ -46,6 +46,10 @@ fn logn(in: Vec) Vec {
     return @log(in);
 }
 
+fn sigmoid(in: f32) f32 {
+    return 1 / (1 + std.math.exp(-in));
+}
+
 fn floor(in: Vec) Vec {
     return @floor(in);
 }
@@ -80,6 +84,7 @@ pub fn eval(
         .Log10 => generateEval(log10)(in, out),
         .Logn => generateEval(logn)(in, out),
         .Atan => generatePrimEval(std.math.atan)(in, out),
+        .Sigmoid => generatePrimEval(sigmoid)(in, out),
         .Exp => generatePrimEval(std.math.exp)(in, out),
         .Exp2 => generatePrimEval(std.math.exp2)(in, out),
         .Floor => generateEval(floor)(in, out),
