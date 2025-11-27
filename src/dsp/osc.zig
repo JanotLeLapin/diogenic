@@ -44,11 +44,7 @@ fn sine(p: f32) f32 {
 }
 
 fn square(p: f32) f32 {
-    if (p < std.math.pi) {
-        return -1.0;
-    } else {
-        return 1.0;
-    }
+    return @floor(p / std.math.pi) * 2.0 - 1.0;
 }
 
 pub fn eval(
