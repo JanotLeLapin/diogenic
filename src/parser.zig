@@ -48,41 +48,46 @@ pub const Tokenizer = struct {
     }
 };
 
-pub fn parse(ast_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocator, tokenizer: *Tokenizer) !*ast.Node {
-    var stack = try std.ArrayList(*ast.Node).initCapacity(stack_allocator, 8);
-    defer stack.deinit(stack_allocator);
+pub const ParserAlloc = struct {
+    ast_alloc: std.mem.Allocator,
+    temp_stack_allocator: std.mem.Allocator,
+};
 
-    const root = try ast_allocator.create(ast.Node);
+pub fn parse(tokenizer: *Tokenizer, alloc: ParserAlloc) !*ast.Node {
+    var stack = try std.ArrayList(*ast.Node).initCapacity(alloc.temp_stack_allocator, 8);
+    defer stack.deinit(alloc.temp_stack_allocator);
+
+    const root = try alloc.ast_alloc.create(ast.Node);
     root.* = .{
         .visited = false,
         .data = .{ .Expr = ast.NodeDataExpression{
             .op = "ROOT",
-            .children = try std.ArrayList(*ast.Node).initCapacity(ast_allocator, 4),
+            .children = try std.ArrayList(*ast.Node).initCapacity(alloc.ast_alloc, 4),
         } },
         .src = tokenizer.src,
     };
-    try stack.append(stack_allocator, root);
+    try stack.append(alloc.temp_stack_allocator, root);
 
     while (tokenizer.next()) |token| {
         if (std.mem.eql(u8, "(", token)) {
-            const new = try ast_allocator.create(ast.Node);
+            const new = try alloc.ast_alloc.create(ast.Node);
             const start = tokenizer.idx - 1;
             new.* = .{
                 .visited = false,
                 .data = .{ .Expr = ast.NodeDataExpression{
                     .op = tokenizer.next().?,
-                    .children = try std.ArrayList(*ast.Node).initCapacity(ast_allocator, 8),
+                    .children = try std.ArrayList(*ast.Node).initCapacity(alloc.ast_alloc, 8),
                 } },
                 .src = tokenizer.src[start..],
             };
-            try stack.getLast().data.Expr.children.append(ast_allocator, new);
-            try stack.append(stack_allocator, new);
+            try stack.getLast().data.Expr.children.append(alloc.ast_alloc, new);
+            try stack.append(alloc.temp_stack_allocator, new);
         } else if (std.mem.eql(u8, ")", token)) {
             var node = stack.pop().?;
             const start = node.src.ptr - tokenizer.src.ptr;
             node.src = tokenizer.src[start..tokenizer.idx];
         } else {
-            const new = try ast_allocator.create(ast.Node);
+            const new = try alloc.ast_alloc.create(ast.Node);
             if (std.fmt.parseFloat(f32, token)) |value| {
                 new.* = .{
                     .visited = false,
@@ -104,7 +109,7 @@ pub fn parse(ast_allocator: std.mem.Allocator, stack_allocator: std.mem.Allocato
                     };
                 }
             }
-            try stack.getLast().data.Expr.children.append(ast_allocator, new);
+            try stack.getLast().data.Expr.children.append(alloc.ast_alloc, new);
         }
     }
 

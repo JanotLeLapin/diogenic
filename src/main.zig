@@ -58,17 +58,25 @@ pub fn main() !void {
         break :src try file.readToEndAlloc(gpa, 10 * 1024 * 1024);
     };
 
-    var ast_arena = std.heap.ArenaAllocator.init(gpa);
-    defer ast_arena.deinit();
-    const ast_arena_alloc = ast_arena.allocator();
+    var parser_arena = std.heap.ArenaAllocator.init(gpa);
+    defer parser_arena.deinit();
 
-    var instr_arena = std.heap.ArenaAllocator.init(gpa);
-    defer instr_arena.deinit();
-    const instr_arena_alloc = instr_arena.allocator();
+    var compiler_arena = std.heap.ArenaAllocator.init(gpa);
+    defer compiler_arena.deinit();
+
+    const parser_alloc = parser.ParserAlloc{
+        .ast_alloc = parser_arena.allocator(),
+        .temp_stack_allocator = gpa,
+    };
+
+    const compiler_alloc = compiler.CompilerAlloc{
+        .instr_alloc = compiler_arena.allocator(),
+        .temp_stack_alloc = gpa,
+    };
 
     const instr = instr: {
         var timer = try std.time.Timer.start();
-        const instr = try root.compileSource(src, ast_arena_alloc, gpa, instr_arena_alloc, gpa);
+        const instr = try root.compileSource(src, parser_alloc, compiler_alloc);
         const time: f32 = @floatFromInt(timer.read() / 1_000); // microseconds
         std.log.info("Compiled source, took {d:.3}ms", .{time / 1_000});
         break :instr instr;

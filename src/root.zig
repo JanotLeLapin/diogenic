@@ -10,17 +10,15 @@ const engine = @import("dsp/engine.zig");
 
 pub fn compileSource(
     src: []const u8,
-    parser_ast_alloc: std.mem.Allocator,
-    parser_stack_alloc: std.mem.Allocator,
-    instr_res_alloc: std.mem.Allocator,
-    instr_stack_alloc: std.mem.Allocator,
+    parser_alloc: parser.ParserAlloc,
+    compiler_alloc: compiler.CompilerAlloc,
 ) !std.ArrayList(instruction.Instruction) {
     var t = parser.Tokenizer{ .src = src };
 
-    const node = try parser.parse(parser_ast_alloc, parser_stack_alloc, &t);
-    defer parser_ast_alloc.destroy(node);
+    const node = try parser.parse(&t, parser_alloc);
+    defer parser_alloc.ast_alloc.destroy(node);
 
-    return compiler.compileExpr(node.data.Expr.children.getLast(), instr_res_alloc, instr_stack_alloc);
+    return compiler.compileExpr(node.data.Expr.children.getLast(), compiler_alloc);
 }
 
 pub fn renderBlock(
