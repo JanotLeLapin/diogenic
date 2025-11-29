@@ -42,6 +42,15 @@ Math function on a signal
 | `midi->freq`, `freq->midi` | Pitch conversion     |
 | `db->amp`, `amp->midi`     | Amplitude conversion |
 
+## Mix
+
+Mix functions on two signals with a coefficient
+
+| Name    | Description                            |
+|---------|----------------------------------------|
+| `blend` | `(1 - coef) * left + coef * right`     |
+| `mix`   | `cos(coef) * left + sin(coef) * right` |
+
 ## Oscillators
 
 Periodic signal

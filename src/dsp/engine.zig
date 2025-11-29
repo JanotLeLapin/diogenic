@@ -8,6 +8,7 @@ const block = @import("block.zig");
 const arith = @import("arith.zig");
 const iir = @import("iir.zig");
 const math = @import("math.zig");
+const mix = @import("mix.zig");
 const noise = @import("noise.zig");
 const osc = @import("osc.zig");
 const shaper = @import("shaper.zig");
@@ -60,6 +61,14 @@ pub const Engine = struct {
 
                     const new_block = try self.stack.addOne(self.stack_allocator);
                     math.eval(op, b, new_block);
+                },
+                .Mix => |op| {
+                    const r = &self.stack.pop().?;
+                    const l = &self.stack.pop().?;
+                    const a = &self.stack.pop().?;
+
+                    const new_block = try self.stack.addOne(self.stack_allocator);
+                    mix.eval(op, a, l, r, new_block);
                 },
                 .Noise => |op| {
                     const new_block = try self.stack.addOne(self.stack_allocator);

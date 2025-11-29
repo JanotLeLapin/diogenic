@@ -129,6 +129,15 @@ pub const MathOperation = enum {
     }
 };
 
+pub const MixOperation = enum {
+    Blend,
+    Mixer,
+
+    fn linearize(node: *ast.Node, _: std.mem.Allocator) InstructionError!void {
+        try genValidate(3)(node);
+    }
+};
+
 pub const NoiseOperation = enum {
     White,
 
@@ -172,6 +181,7 @@ pub const Instruction = union(enum) {
     Arith: ArithmeticOperation,
     Filter: FilterOperation,
     Math: MathOperation,
+    Mix: MixOperation,
     Noise: NoiseOperation,
     Osc: OscOperation,
     Shaper: ShaperOperation,
@@ -267,6 +277,9 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "freq->midi", Instruction{ .Math = MathOperation.FreqToMidi } },
     .{ "db->amp", Instruction{ .Math = MathOperation.DbToAmp } },
     .{ "amp->db", Instruction{ .Math = MathOperation.AmpToDb } },
+
+    .{ "blend", Instruction{ .Mix = MixOperation.Blend } },
+    .{ "mixer", Instruction{ .Mix = MixOperation.Mixer } },
 
     .{ "white-noise", Instruction{ .Noise = NoiseOperation.White } },
 
