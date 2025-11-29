@@ -12,6 +12,7 @@ const mix = @import("mix.zig");
 const noise = @import("noise.zig");
 const osc = @import("osc.zig");
 const shaper = @import("shaper.zig");
+const misc = @import("misc.zig");
 
 const STATE_LENGTH = 2048;
 
@@ -88,6 +89,17 @@ pub const Engine = struct {
 
                     const new_block = try self.stack.addOne(self.stack_allocator);
                     shaper.eval(op, m, input, new_block);
+                },
+                .Misc => |op| {
+                    switch (op) {
+                        .Pan => {
+                            const input = &self.stack.pop().?;
+                            const m = &self.stack.pop().?;
+
+                            const new_block = try self.stack.addOne(self.stack_allocator);
+                            misc.evalPan(m, input, new_block);
+                        },
+                    }
                 },
             }
         }

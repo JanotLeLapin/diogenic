@@ -1,3 +1,5 @@
+const std = @import("std");
+
 const instruction = @import("../instruction.zig");
 
 const block = @import("block.zig");

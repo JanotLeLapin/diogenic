@@ -177,6 +177,14 @@ pub const ShaperOperation = enum {
     }
 };
 
+pub const MiscOperation = union(enum) {
+    Pan,
+
+    fn linearize(_: *ast.Node, _: std.mem.Allocator) InstructionError!void {
+        // TODO: validate
+    }
+};
+
 pub const Instruction = union(enum) {
     Arith: ArithmeticOperation,
     Filter: FilterOperation,
@@ -185,6 +193,8 @@ pub const Instruction = union(enum) {
     Noise: NoiseOperation,
     Osc: OscOperation,
     Shaper: ShaperOperation,
+    Misc: MiscOperation,
+
     Value: f32,
 
     fn linearize(instr: Instruction, node: *ast.Node, alloc: std.mem.Allocator) InstructionError!void {
@@ -291,4 +301,6 @@ const InstructionMap = std.StaticStringMap(Instruction).initComptime(.{
     .{ "clip", Instruction{ .Shaper = ShaperOperation.Clip } },
     .{ "diode", Instruction{ .Shaper = ShaperOperation.Diode } },
     .{ "quantize", Instruction{ .Shaper = ShaperOperation.Quantize } },
+
+    .{ "pan", Instruction{ .Misc = MiscOperation.Pan } },
 });

@@ -98,8 +98,7 @@ Takes a threshold and a signal.
 | `diode`    | [See implementation](./src/dsp/shaper.zig)    |
 | `quantize` | Quantizes the signal to bit depth = `t`       |
 
-## Other
+## Misc
 
-| Name          | Description        |
-|---------------|--------------------|
-| `white-noise` | Normal white noise |
+- `(white-noise)`: normally distributed white noise
+- `(pan alpha signal)`: pan input signal. `alpha = 0` -> left channel, `alpha = 1` -> right channel.
