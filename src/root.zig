@@ -2,6 +2,7 @@ const std = @import("std");
 
 const ast = @import("ast.zig");
 const compiler = @import("compiler.zig");
+const ir = @import("ir.zig");
 const instruction = @import("instruction.zig");
 const parser = @import("parser.zig");
 
@@ -12,7 +13,7 @@ pub fn compileSource(
     src: []const u8,
     parser_alloc: parser.ParserAlloc,
     compiler_alloc: compiler.CompilerAlloc,
-) !std.ArrayList(instruction.Instruction) {
+) !ir.InterRepr {
     var t = parser.Tokenizer{ .src = src };
 
     const node = try parser.parse(&t, parser_alloc);
@@ -22,12 +23,12 @@ pub fn compileSource(
 }
 
 pub fn renderBlock(
-    instructions: []instruction.Instruction,
+    inter_repr: ir.InterRepr,
     e: *engine.Engine,
     out: []f32,
     out_offset: usize,
 ) !void {
-    const res = try e.eval(instructions);
+    const res = try e.eval(inter_repr);
     for (0..block.BLOCK_LENGTH) |i| {
         out[out_offset + i * 2] = res.get(0, i);
         out[out_offset + i * 2 + 1] = res.get(1, i);

@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const instruction = @import("../instruction.zig");
+const ir = @import("../ir.zig");
 
 const block = @import("block.zig");
 
@@ -26,8 +27,8 @@ pub const Engine = struct {
         };
     }
 
-    pub fn eval(self: *Engine, seq: []instruction.Instruction) !block.Block {
-        for (seq) |item| {
+    pub fn eval(self: *Engine, inter_repr: ir.InterRepr) !block.Block {
+        for (inter_repr.instr_seq) |item| {
             switch (item) {
                 .Value => {
                     try self.stack.append(self.stack_allocator, block.Block.initValue(item.Value));

@@ -2,13 +2,14 @@ const std = @import("std");
 
 const ast = @import("ast.zig");
 const instruction = @import("instruction.zig");
+const ir = @import("ir.zig");
 
 pub const CompilerAlloc = struct {
     instr_alloc: std.mem.Allocator,
     temp_stack_alloc: std.mem.Allocator,
 };
 
-pub fn compileExpr(root: *ast.Node, alloc: CompilerAlloc) !std.ArrayList(instruction.Instruction) {
+pub fn compileExpr(root: *ast.Node, alloc: CompilerAlloc) !ir.InterRepr {
     var res = try std.ArrayList(instruction.Instruction).initCapacity(alloc.instr_alloc, 64);
 
     var pre_stack = try std.ArrayList(*ast.Node).initCapacity(alloc.temp_stack_alloc, 32);
@@ -57,5 +58,7 @@ pub fn compileExpr(root: *ast.Node, alloc: CompilerAlloc) !std.ArrayList(instruc
         }
     }
 
-    return res;
+    return ir.InterRepr{
+        .instr_seq = res.items,
+    };
 }

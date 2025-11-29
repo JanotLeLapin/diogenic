@@ -3,6 +3,7 @@ const std = @import("std");
 const root = @import("root.zig");
 
 const ast = @import("ast.zig");
+const ir = @import("ir.zig");
 const instruction = @import("instruction.zig");
 const parser = @import("parser.zig");
 const compiler = @import("compiler.zig");
@@ -16,7 +17,7 @@ const sndfile = @cImport({
 
 pub fn renderWav32(
     filename: []const u8,
-    instructions: []instruction.Instruction,
+    inter_repr: ir.InterRepr,
     e: *engine.Engine,
     block_count: usize,
     buf_allocator: std.mem.Allocator,
@@ -37,7 +38,7 @@ pub fn renderWav32(
     defer _ = sndfile.sf_close(f);
 
     for (0..block_count) |_| {
-        try root.renderBlock(instructions, e, &buf, 0);
+        try root.renderBlock(inter_repr, e, &buf, 0);
         _ = sndfile.sf_write_float(f, &buf, block.BLOCK_LENGTH * 2);
     }
 }
@@ -93,7 +94,7 @@ pub fn main() !void {
     var e = try engine.Engine.init(gpa);
     {
         var timer = try std.time.Timer.start();
-        try renderWav32("out.wav", instr.items, &e, block_count, gpa);
+        try renderWav32("out.wav", instr, &e, block_count, gpa);
         const time: f32 = @floatFromInt(timer.read() / 1_000); // microseconds
         std.log.info("Rendered {d} blocks, took {d:.3}ms ({d:.3}ms per block, {d:.5}ms per sample)", .{
             block_count,
