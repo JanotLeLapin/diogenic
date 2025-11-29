@@ -34,17 +34,17 @@ pub const Engine = struct {
                     try self.stack.append(self.stack_allocator, block.Block.initValue(item.Value));
                 },
                 .Arith => |op| {
-                    const left = self.stack.pop().?;
-                    const right = self.stack.pop().?;
+                    const left = &self.stack.pop().?;
+                    const right = &self.stack.pop().?;
 
                     const new_block = try self.stack.addOne(self.stack_allocator);
-                    arith.eval(op, &left, &right, new_block);
+                    arith.eval(op, left, right, new_block);
                 },
                 .Filter => |op| {
-                    const in = self.stack.pop().?;
-                    const g = self.stack.pop().?;
-                    const q = self.stack.pop().?;
-                    const fc = self.stack.pop().?;
+                    const in = &self.stack.pop().?;
+                    const g = &self.stack.pop().?;
+                    const q = &self.stack.pop().?;
+                    const fc = &self.stack.pop().?;
 
                     var tmp: [2][2]*f32 = undefined;
                     tmp[0][0] = &self.state[op.tmp_slot];
@@ -53,32 +53,32 @@ pub const Engine = struct {
                     tmp[1][1] = &self.state[op.tmp_slot + 3];
 
                     const new_block = try self.stack.addOne(self.stack_allocator);
-                    iir.eval(op, tmp, &fc, &q, &g, &in, new_block);
+                    iir.eval(op, tmp, fc, q, g, in, new_block);
                 },
                 .Math => |op| {
-                    const b = self.stack.pop().?;
+                    const b = &self.stack.pop().?;
 
                     const new_block = try self.stack.addOne(self.stack_allocator);
-                    math.eval(op, &b, new_block);
+                    math.eval(op, b, new_block);
                 },
                 .Noise => |op| {
                     const new_block = try self.stack.addOne(self.stack_allocator);
                     noise.eval(op, new_block);
                 },
                 .Osc => |op| {
-                    const pm = self.stack.pop().?;
-                    const freq = self.stack.pop().?;
+                    const pm = &self.stack.pop().?;
+                    const freq = &self.stack.pop().?;
                     const acc = &self.state[op.phase_slot];
 
                     const new_block = try self.stack.addOne(self.stack_allocator);
-                    osc.eval(op.t, &freq, &pm, acc, new_block);
+                    osc.eval(op.t, freq, pm, acc, new_block);
                 },
                 .Shaper => |op| {
-                    const input = self.stack.pop().?;
-                    const mix = self.stack.pop().?;
+                    const input = &self.stack.pop().?;
+                    const m = &self.stack.pop().?;
 
                     const new_block = try self.stack.addOne(self.stack_allocator);
-                    shaper.eval(op, &mix, &input, new_block);
+                    shaper.eval(op, m, input, new_block);
                 },
             }
         }
