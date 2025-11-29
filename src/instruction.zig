@@ -79,7 +79,11 @@ pub const ArithmeticOperation = enum {
     Gt,
     Geq,
 
-    fn linearize(node: *ast.Node, _: std.mem.Allocator) InstructionError!void {
+    fn linearize(
+        _: *const ArithmeticOperation,
+        node: *ast.Node,
+        _: std.mem.Allocator,
+    ) InstructionError!void {
         try genValidate(2)(node);
     }
 };
@@ -100,7 +104,11 @@ pub const FilterOperation = struct {
         .{ ":input", Arg{ .default = null, .pos = 3 } },
     });
 
-    fn linearize(node: *ast.Node, alloc: std.mem.Allocator) InstructionError!void {
+    fn linearize(
+        _: *const FilterOperation,
+        node: *ast.Node,
+        alloc: std.mem.Allocator,
+    ) InstructionError!void {
         try genLinearize(argmap)(node, alloc);
     }
 };
@@ -124,7 +132,11 @@ pub const MathOperation = enum {
     DbToAmp,
     AmpToDb,
 
-    fn linearize(node: *ast.Node, _: std.mem.Allocator) InstructionError!void {
+    fn linearize(
+        _: *const MathOperation,
+        node: *ast.Node,
+        _: std.mem.Allocator,
+    ) InstructionError!void {
         try genValidate(1)(node);
     }
 };
@@ -133,7 +145,11 @@ pub const MixOperation = enum {
     Blend,
     Mixer,
 
-    fn linearize(node: *ast.Node, _: std.mem.Allocator) InstructionError!void {
+    fn linearize(
+        _: *const MixOperation,
+        node: *ast.Node,
+        _: std.mem.Allocator,
+    ) InstructionError!void {
         try genValidate(3)(node);
     }
 };
@@ -141,7 +157,11 @@ pub const MixOperation = enum {
 pub const NoiseOperation = enum {
     White,
 
-    fn linearize(node: *ast.Node, _: std.mem.Allocator) InstructionError!void {
+    fn linearize(
+        _: *const NoiseOperation,
+        node: *ast.Node,
+        _: std.mem.Allocator,
+    ) InstructionError!void {
         try genValidate(0)(node);
     }
 };
@@ -161,7 +181,11 @@ pub const OscOperation = struct {
         .{ ":phase", Arg{ .default = 0.0, .pos = 1 } },
     });
 
-    fn linearize(node: *ast.Node, alloc: std.mem.Allocator) InstructionError!void {
+    fn linearize(
+        _: *const OscOperation,
+        node: *ast.Node,
+        alloc: std.mem.Allocator,
+    ) InstructionError!void {
         try genLinearize(argmap)(node, alloc);
     }
 };
@@ -172,7 +196,11 @@ pub const ShaperOperation = enum {
     Diode,
     Quantize,
 
-    fn linearize(node: *ast.Node, _: std.mem.Allocator) InstructionError!void {
+    fn linearize(
+        _: *const ShaperOperation,
+        node: *ast.Node,
+        _: std.mem.Allocator,
+    ) InstructionError!void {
         try genValidate(2)(node);
     }
 };
@@ -180,8 +208,14 @@ pub const ShaperOperation = enum {
 pub const MiscOperation = union(enum) {
     Pan,
 
-    fn linearize(_: *ast.Node, _: std.mem.Allocator) InstructionError!void {
-        // TODO: validate
+    fn linearize(
+        self: *const MiscOperation,
+        node: *ast.Node,
+        _: std.mem.Allocator,
+    ) InstructionError!void {
+        switch (self.*) {
+            .Pan => try genValidate(2)(node),
+        }
     }
 };
 
@@ -206,7 +240,7 @@ pub const Instruction = union(enum) {
                     return;
                 }
             } else if (@field(std.meta.Tag(Instruction), field.name) == active_tag) {
-                return field.type.linearize(node, alloc);
+                return @field(instr, field.name).linearize(node, alloc);
             }
         }
 
