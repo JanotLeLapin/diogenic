@@ -22,13 +22,17 @@ fn generateEval(comptime op: Op) Eval {
     }.eval;
 }
 
+inline fn clamp(a: Vec) Vec {
+    return @min(@as(Vec, @splat(1.0)), @max(@as(Vec, @splat(0.0)), a));
+}
+
 fn blend(a: Vec, l: Vec, r: Vec) Vec {
-    const clamped = @min(@as(Vec, @splat(1.0)), @max(@as(Vec, @splat(0.0)), a));
+    const clamped = clamp(a);
     return (@as(Vec, @splat(1.0)) - clamped) * l + clamped * r;
 }
 
 fn mixer(a: Vec, l: Vec, r: Vec) Vec {
-    const norm = a * @as(Vec, @splat(std.math.pi / 2.0));
+    const norm = clamp(a) * @as(Vec, @splat(std.math.pi / 2.0));
     return @cos(norm) * l + @sin(norm) * r;
 }
 
