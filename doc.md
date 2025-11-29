@@ -46,10 +46,10 @@ Math function on a signal
 
 Mix functions on two signals with a coefficient
 
-| Name    | Description                            |
-|---------|----------------------------------------|
-| `blend` | `(1 - coef) * left + coef * right`     |
-| `mix`   | `cos(coef) * left + sin(coef) * right` |
+| Name    | Description                |
+|---------|----------------------------|
+| `blend` | Amplitude interpolation    |
+| `mix`   | Weighted amplitude average |
 
 ## Oscillators
 
