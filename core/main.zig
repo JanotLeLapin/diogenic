@@ -1,6 +1,8 @@
 const std = @import("std");
 const log = std.log.scoped(.core);
 
+const compiler = @import("compiler.zig");
+
 const engine = @import("engine.zig");
 const EngineState = engine.EngineState;
 
