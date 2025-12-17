@@ -79,8 +79,23 @@ pub fn main() !void {
     defer ast_alloc.deinit();
 
     const root = try parser.parse(&tokenizer, ast_alloc.allocator(), gpa.allocator());
-    _ = root;
 
     var e = try EngineState.init(gpa.allocator());
     defer e.deinit();
+
+    var instructions = compile(root.data.list.items[0], gpa.allocator()) catch {
+        log.err("compilation failed", .{});
+        return;
+    };
+    defer instructions.deinit(gpa.allocator());
+
+    for (instructions.items) |instr| {
+        switch (instr) {
+            .value => |v| log.debug("instr: value: {d}", .{v.value}),
+            else => {
+                const tag = std.meta.activeTag(instr);
+                log.debug("instr: {s}", .{@tagName(tag)});
+            },
+        }
+    }
 }
