@@ -12,7 +12,6 @@ const parser = @import("../parser.zig");
 const Node = parser.Node;
 
 pub const Op = fn (Vec) Vec;
-pub const OpScalar = fn (f32) f32;
 
 pub fn Math(comptime label: [:0]const u8, comptime op: Op) type {
     return struct {
@@ -35,7 +34,7 @@ pub fn Math(comptime label: [:0]const u8, comptime op: Op) type {
     };
 }
 
-pub fn fromScalar(fin: OpScalar) Op {
+pub fn fromScalar(fin: anytype) Op {
     return struct {
         fn fout(in: Vec) Vec {
             var out: Vec = undefined;
@@ -84,7 +83,7 @@ fn dbToAmp(in: f32) f32 {
 }
 
 fn ampToDb(in: f32) f32 {
-    return 20.0 * std.math.log(f32, 10.0, in);
+    return 20.0 * @log10(in);
 }
 
 pub const Log2 = Math("log2", log2);
@@ -96,5 +95,5 @@ pub const Floor = Math("floor", floor);
 pub const Ceil = Math("ceil", ceil);
 pub const MidiToFreq = Math("midi->freq", midiToFreq);
 pub const FreqToMidi = Math("freq->midi", freqToMidi);
-pub const DbToAmp = Math("db->amp", dbToAmp);
-pub const AmpToDb = Math("amp->db", ampToDb);
+pub const DbToAmp = Math("db->amp", fromScalar(dbToAmp));
+pub const AmpToDb = Math("amp->db", fromScalar(ampToDb));
