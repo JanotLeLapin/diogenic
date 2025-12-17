@@ -35,21 +35,21 @@ pub const Block = struct {
 pub const EngineState = struct {
     stack_head: usize = 0,
     stack: []Block,
-    state: std.ArrayList(f32),
+    state: []f32,
 
     alloc: std.mem.Allocator,
 
     pub fn init(alloc: std.mem.Allocator) !EngineState {
         return .{
             .stack = try alloc.alloc(Block, 65536),
-            .state = try std.ArrayList(f32).initCapacity(alloc, 16),
+            .state = try alloc.alloc(f32, 4096),
             .alloc = alloc,
         };
     }
 
     pub fn deinit(self: *EngineState) void {
         self.alloc.free(self.stack);
-        self.state.deinit(self.alloc);
+        self.alloc.free(self.state);
     }
 
     pub fn popStack(self: *EngineState) *Block {
