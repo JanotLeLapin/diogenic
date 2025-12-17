@@ -12,6 +12,8 @@ const math = @import("instruction/math.zig");
 const osc = @import("instruction/osc.zig");
 const shaper = @import("instruction/shaper.zig");
 
+const biquad = @import("instruction/filter/biquad.zig");
+
 pub const Instructions = .{
     value.Value,
 
@@ -44,6 +46,9 @@ pub const Instructions = .{
     shaper.Clip,
     shaper.Diode,
     shaper.Quantize,
+
+    biquad.High,
+    biquad.Low,
 };
 
 pub const Instruction = blk: {
