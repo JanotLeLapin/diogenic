@@ -19,4 +19,12 @@ pub const Value = struct {
 
         return Value{ .value = num };
     }
+
+    pub fn eval(self: *const Value, _: *EngineState, out: *Block) void {
+        for (&out.channels) |*chan| {
+            for (chan) |*vec| {
+                vec.* = @splat(self.value);
+            }
+        }
+    }
 };
