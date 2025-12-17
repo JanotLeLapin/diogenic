@@ -95,6 +95,7 @@ pub fn compile(state: *CompilerState, root: *Node, alloc: std.mem.Allocator) !st
 }
 
 pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
+    state.stack_head = 0;
     for (instructions) |instr| {
         switch (instr) {
             inline else => |device| device.eval(state),
