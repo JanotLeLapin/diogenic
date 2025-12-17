@@ -37,7 +37,7 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op) type {
             for (freq.channels, pm.channels, 0..) |freq_channel, pm_channel, i| {
                 acc = phase.*;
                 for (freq_channel, pm_channel, 0..) |freq_vec, pm_vec, j| {
-                    const inc_vec = freq_vec / @as(Vec, @splat(48000));
+                    const inc_vec = freq_vec / @as(Vec, @splat(state.sr));
                     for (0..engine.SIMD_LENGTH) |k| {
                         const inc = inc_vec[k];
 

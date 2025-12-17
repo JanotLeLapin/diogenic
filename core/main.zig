@@ -114,7 +114,7 @@ pub fn main() !void {
 
     const root = try parser.parse(&tokenizer, ast_alloc.allocator(), gpa.allocator());
 
-    var e = try EngineState.init(gpa.allocator());
+    var e = try EngineState.init(gpa.allocator(), 48000);
     defer e.deinit();
 
     var cs = CompilerState{};

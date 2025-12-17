@@ -33,14 +33,16 @@ pub const Block = struct {
 };
 
 pub const EngineState = struct {
+    sr: f32,
     stack_head: usize = 0,
     stack: []Block,
     state: []f32,
 
     alloc: std.mem.Allocator,
 
-    pub fn init(alloc: std.mem.Allocator) !EngineState {
+    pub fn init(alloc: std.mem.Allocator, sr: f32) !EngineState {
         return .{
+            .sr = sr,
             .stack = try alloc.alloc(Block, 65536),
             .state = try alloc.alloc(f32, 4096),
             .alloc = alloc,
