@@ -11,8 +11,7 @@ pub const Tokenizer = struct {
 
 pub const Token = union(enum) {
     sep: u8,
-    id: []const u8,
-    num: f32,
+    lit: []const u8,
     whitespace,
 };
 
@@ -75,6 +74,5 @@ pub fn tokenizerNext(t: *Tokenizer) ?Token {
     }
 
     const lit = t.src[start..t.cursor];
-    const num = std.fmt.parseFloat(f32, lit) catch return Token{ .id = lit };
-    return Token{ .num = num };
+    return Token{ .lit = lit };
 }
