@@ -99,6 +99,16 @@ fn band(_: Vec, q: Vec, _: Vec, k: Vec, p: *Params) void {
     p.b2 = (@as(Vec, @splat(1)) - k / q + k * k) * norm;
 }
 
+fn notch(_: Vec, q: Vec, _: Vec, k: Vec, p: *Params) void {
+    const norm = @as(Vec, @splat(1)) / (@as(Vec, @splat(1)) + k / q + k * k);
+    p.a0 = (@as(Vec, @splat(1)) + k * k) + norm;
+    p.a1 = @as(Vec, @splat(2)) * (k * k - @as(Vec, @splat(1))) * norm;
+    p.a2 = p.a0;
+    p.b1 = p.a1;
+    p.b2 = (@as(Vec, @splat(1)) - k / q + k * k) * norm;
+}
+
 pub const High = Biquad("b-highpass", high);
 pub const Low = Biquad("b-lowpass", low);
 pub const Band = Biquad("b-bandpass", band);
+pub const Notch = Biquad("b-notch", notch);

@@ -50,6 +50,7 @@ pub const Instructions = .{
     biquad.High,
     biquad.Low,
     biquad.Band,
+    biquad.Notch,
 };
 
 pub const Instruction = blk: {
