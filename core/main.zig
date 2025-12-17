@@ -98,4 +98,7 @@ pub fn main() !void {
             },
         }
     }
+
+    try eval(&e, instructions.items);
+    log.debug("= {d}", .{e.stack[0].get(0, 0)});
 }
