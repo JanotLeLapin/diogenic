@@ -98,7 +98,7 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
 }
 
 fn sine(p: f32) f32 {
-    return std.math.sin(p);
+    return @sin(p);
 }
 
 fn sineVec(p: Vec) Vec {
