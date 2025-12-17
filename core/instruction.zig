@@ -1,5 +1,8 @@
 const std = @import("std");
 
+const compiler = @import("compiler.zig");
+const CompilerState = compiler.CompilerState;
+
 const parser = @import("parser.zig");
 const Node = parser.Node;
 
@@ -48,12 +51,12 @@ pub const Instruction = blk: {
     } });
 };
 
-pub fn compile(node: *Node) !Instruction {
+pub fn compile(state: *CompilerState, node: *Node) !Instruction {
     const expr = switch (node.data) {
         .list => |lst| lst,
         .num => {
             return Instruction{
-                .value = try value.Value.compile(node),
+                .value = try value.Value.compile(state, node),
             };
         },
         else => return error.BadExpr,
@@ -78,7 +81,7 @@ pub fn compile(node: *Node) !Instruction {
             return @unionInit(
                 Instruction,
                 Instructions[ci].name,
-                try Instructions[ci].compile(node),
+                try Instructions[ci].compile(state, node),
             );
         },
         else => unreachable,

@@ -1,3 +1,6 @@
+const compiler = @import("../compiler.zig");
+const CompilerState = compiler.CompilerState;
+
 const engine = @import("../engine.zig");
 const Block = engine.Block;
 const EngineState = engine.EngineState;
@@ -11,7 +14,7 @@ pub const Value = struct {
 
     value: f32,
 
-    pub fn compile(node: *Node) !Value {
+    pub fn compile(_: *CompilerState, node: *Node) !Value {
         const num = switch (node.data) {
             .num => |num| num,
             else => return error.UnexpectedNode,

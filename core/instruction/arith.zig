@@ -1,3 +1,6 @@
+const compiler = @import("../compiler.zig");
+const CompilerState = compiler.CompilerState;
+
 const engine = @import("../engine.zig");
 const Block = engine.Block;
 const EngineState = engine.EngineState;
@@ -12,7 +15,7 @@ pub fn Arith(comptime label: [:0]const u8, comptime op: Op) type {
     return struct {
         pub const name = label;
 
-        pub fn compile(_: *Node) !@This() {
+        pub fn compile(_: *CompilerState, _: *Node) !@This() {
             return @This(){};
         }
 

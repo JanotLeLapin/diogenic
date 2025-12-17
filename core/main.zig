@@ -2,6 +2,7 @@ const std = @import("std");
 const log = std.log.scoped(.core);
 
 const compiler = @import("compiler.zig");
+const CompilerState = compiler.CompilerState;
 
 const engine = @import("engine.zig");
 const EngineState = engine.EngineState;
@@ -46,7 +47,7 @@ pub const std_options = std.Options{
     .logFn = logFn,
 };
 
-pub fn compile(root: *Node, alloc: std.mem.Allocator) !std.ArrayList(Instruction) {
+pub fn compile(state: *CompilerState, root: *Node, alloc: std.mem.Allocator) !std.ArrayList(Instruction) {
     var pre_stack = try std.ArrayList(*Node).initCapacity(alloc, 32);
     defer pre_stack.deinit(alloc);
 
@@ -58,7 +59,7 @@ pub fn compile(root: *Node, alloc: std.mem.Allocator) !std.ArrayList(Instruction
     var has_error = false;
     while (pre_stack.items.len > 0) {
         const tmp = pre_stack.pop().?;
-        if (instruction.compile(tmp)) |instr| {
+        if (instruction.compile(state, tmp)) |instr| {
             try post_stack.append(alloc, instr);
         } else |err| {
             has_error = true;
@@ -116,7 +117,9 @@ pub fn main() !void {
     var e = try EngineState.init(gpa.allocator());
     defer e.deinit();
 
-    var instructions = compile(root.data.list.items[0], gpa.allocator()) catch {
+    var cs = CompilerState{};
+
+    var instructions = compile(&cs, root.data.list.items[0], gpa.allocator()) catch {
         log.err("compilation failed", .{});
         return;
     };
