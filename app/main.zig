@@ -5,18 +5,11 @@ const portaudio = @cImport({
     @cInclude("portaudio.h");
 });
 
-const compiler = @import("compiler.zig");
-const CompilerState = compiler.CompilerState;
-
-const engine = @import("engine.zig");
-const EngineState = engine.EngineState;
-
-const instruction = @import("instruction.zig");
-const Instruction = instruction.Instruction;
-
-const parser = @import("parser.zig");
-const Node = parser.Node;
-const Tokenizer = parser.Tokenizer;
+const core = @import("diogenic-core");
+const CompilerState = core.compiler.CompilerState;
+const EngineState = core.engine.EngineState;
+const Instruction = core.instruction.Instruction;
+const Tokenizer = core.parser.Tokenizer;
 
 pub fn logFn(
     comptime message_level: std.log.Level,
@@ -51,62 +44,6 @@ pub const std_options = std.Options{
     .logFn = logFn,
 };
 
-pub fn compile(state: *CompilerState, root: *Node, alloc: std.mem.Allocator) !std.ArrayList(Instruction) {
-    var pre_stack = try std.ArrayList(*Node).initCapacity(alloc, 32);
-    defer pre_stack.deinit(alloc);
-
-    var post_stack = try std.ArrayList(Instruction).initCapacity(alloc, 32);
-    defer post_stack.deinit(alloc);
-
-    try pre_stack.append(alloc, root);
-
-    var has_error = false;
-    while (pre_stack.items.len > 0) {
-        const tmp = pre_stack.pop().?;
-        if (instruction.compile(state, tmp)) |instr| {
-            try post_stack.append(alloc, instr);
-        } else |err| {
-            has_error = true;
-            log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
-            continue;
-        }
-
-        const children = switch (tmp.data) {
-            .list => |lst| lst,
-            else => continue,
-        };
-
-        for (children.items) |child| {
-            switch (child.data) {
-                .id => continue,
-                else => {},
-            }
-
-            try pre_stack.append(alloc, child);
-        }
-    }
-
-    if (has_error) {
-        return error.CompilationError;
-    }
-
-    var res = try std.ArrayList(Instruction).initCapacity(alloc, 64);
-    while (post_stack.pop()) |tmp| {
-        try res.append(alloc, tmp);
-    }
-
-    return res;
-}
-
-pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
-    state.stack_head = 0;
-    for (instructions) |instr| {
-        switch (instr) {
-            inline else => |device| device.eval(state),
-        }
-    }
-}
-
 const CallbackData = struct {
     engine_state: *EngineState,
     instructions: []const Instruction,
@@ -126,7 +63,7 @@ pub fn callback(
     _ = time_info;
     _ = status_flags;
 
-    eval(data.engine_state, data.instructions) catch return 1;
+    core.eval(data.engine_state, data.instructions) catch return 1;
     for (0..frames_per_buffer) |i| {
         out[i * 2] = data.engine_state.stack[0].get(0, i);
         out[i * 2 + 1] = data.engine_state.stack[0].get(1, i);
@@ -136,7 +73,7 @@ pub fn callback(
 }
 
 pub fn main() !void {
-    const input = "(* 1.5 (+ 2 3))";
+    const input = "(* 0.5 (sine 220.0 0.0))";
     var tokenizer = Tokenizer{ .src = input };
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -145,14 +82,14 @@ pub fn main() !void {
     var ast_alloc = std.heap.ArenaAllocator.init(gpa.allocator());
     defer ast_alloc.deinit();
 
-    const root = try parser.parse(&tokenizer, ast_alloc.allocator(), gpa.allocator());
+    const root = try core.parser.parse(&tokenizer, ast_alloc.allocator(), gpa.allocator());
 
     var e = try EngineState.init(gpa.allocator(), 48000);
     defer e.deinit();
 
     var cs = CompilerState{};
 
-    var instructions = compile(&cs, root.data.list.items[0], gpa.allocator()) catch {
+    var instructions = core.compile(&cs, root.data.list.items[0], gpa.allocator()) catch {
         log.err("compilation failed", .{});
         return;
     };
@@ -188,7 +125,7 @@ pub fn main() !void {
         2,
         portaudio.paFloat32,
         @floatCast(e.sr),
-        engine.BLOCK_LENGTH,
+        core.engine.BLOCK_LENGTH,
         &callback,
         @ptrCast(&userdata),
     )) {
