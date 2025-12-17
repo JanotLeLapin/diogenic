@@ -23,7 +23,7 @@ const Params = struct {
     b2: Vec,
 };
 
-pub const OpInit = fn (fc: Vec, q: Vec, g: Vec, nfc: Vec, k: Vec, *Params) void;
+pub const OpInit = fn (fc: Vec, q: Vec, g: Vec, k: Vec, *Params) void;
 
 inline fn process(p: *Params, in: Vec, z: []f32) Vec {
     var out: Vec = undefined;
@@ -62,7 +62,7 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
                     var p: Params = undefined;
                     const nfc = fc_vec / @as(Vec, @splat(state.sr));
                     const k = @tan(@as(Vec, @splat(std.math.pi)) * nfc);
-                    init(fc_vec, q_vec, g_vec, nfc, k, &p);
+                    init(fc_vec, q_vec, g_vec, k, &p);
 
                     const o = i * 2;
                     out_chan[j] = process(&p, in_vec, tmp[o .. o + 2]);
@@ -72,7 +72,7 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
     };
 }
 
-fn high(_: Vec, q: Vec, _: Vec, _: Vec, k: Vec, p: *Params) void {
+fn high(_: Vec, q: Vec, _: Vec, k: Vec, p: *Params) void {
     const norm = @as(Vec, @splat(1)) / (@as(Vec, @splat(1)) + k / q + k * k);
     p.a0 = @as(Vec, @splat(-2)) * norm;
     p.a1 = @as(Vec, @splat(-2)) * p.a0;
@@ -81,7 +81,7 @@ fn high(_: Vec, q: Vec, _: Vec, _: Vec, k: Vec, p: *Params) void {
     p.b2 = (@as(Vec, @splat(1)) - k / q + k * k) * norm;
 }
 
-fn low(_: Vec, q: Vec, _: Vec, _: Vec, k: Vec, p: *Params) void {
+fn low(_: Vec, q: Vec, _: Vec, k: Vec, p: *Params) void {
     const norm = @as(Vec, @splat(1)) / (@as(Vec, @splat(1)) + k / q + k * k);
     p.a0 = k * k * norm;
     p.a1 = @as(Vec, @splat(2)) * p.a0;
