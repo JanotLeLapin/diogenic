@@ -41,10 +41,13 @@ pub const EngineState = struct {
     alloc: std.mem.Allocator,
 
     pub fn init(alloc: std.mem.Allocator, sr: f32) !EngineState {
+        const state = try alloc.alloc(f32, 4096);
+        @memset(state, 0.0);
+
         return .{
             .sr = sr,
             .stack = try alloc.alloc(Block, 65536),
-            .state = try alloc.alloc(f32, 4096),
+            .state = state,
             .alloc = alloc,
         };
     }
