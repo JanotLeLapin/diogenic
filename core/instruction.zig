@@ -8,6 +8,7 @@ const Node = parser.Node;
 
 const value = @import("instruction/value.zig");
 const arith = @import("instruction/arith.zig");
+const math = @import("instruction/math.zig");
 const osc = @import("instruction/osc.zig");
 
 pub const Instructions = .{
@@ -25,6 +26,18 @@ pub const Instructions = .{
     osc.Sine,
     osc.Sawtooth,
     osc.Square,
+
+    math.Log2,
+    math.Log10,
+    math.Logn,
+    math.Atan,
+    math.Sigmoid,
+    math.Floor,
+    math.Ceil,
+    math.MidiToFreq,
+    math.FreqToMidi,
+    math.DbToAmp,
+    math.AmpToDb,
 };
 
 pub const Instruction = blk: {
