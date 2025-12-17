@@ -1,3 +1,7 @@
+// all the parameters I've found from this repo:
+// https://github.com/MajenkoLibraries/Biquad
+// thanks majenko <3
+
 const std = @import("std");
 
 const compiler = @import("../../compiler.zig");
