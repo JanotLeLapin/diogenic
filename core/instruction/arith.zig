@@ -71,8 +71,8 @@ fn geq(left: Vec, right: Vec) Vec {
 
 pub const Add = Arith("+", add);
 pub const Sub = Arith("-", sub);
-pub const Mul = Arith("*", add);
-pub const Div = Arith("/", sub);
+pub const Mul = Arith("*", mul);
+pub const Div = Arith("/", div);
 pub const Lt = Arith("<", lt);
 pub const Leq = Arith("<=", leq);
 pub const Gt = Arith(">", gt);
