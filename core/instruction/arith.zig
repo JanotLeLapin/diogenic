@@ -12,7 +12,7 @@ pub fn ArithInstruction(comptime label: [:0]const u8, comptime op: Op) type {
     return struct {
         pub const name = label;
 
-        pub fn compile(_: *Node) @This() {
+        pub fn compile(_: *Node) !@This() {
             return @This(){};
         }
 

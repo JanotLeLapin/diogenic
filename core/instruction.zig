@@ -63,7 +63,11 @@ pub fn compile(node: *Node) !Instruction {
 
     switch (i) {
         inline 0...Instructions.len - 1 => |ci| {
-            return @unionInit(Instruction, Instructions[ci].name, Instructions[ci].compile(node));
+            return @unionInit(
+                Instruction,
+                Instructions[ci].name,
+                try Instructions[ci].compile(node),
+            );
         },
         else => unreachable,
     }
