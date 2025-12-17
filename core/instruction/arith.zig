@@ -8,7 +8,7 @@ const Node = parser.Node;
 
 pub const Op = fn (Vec, Vec) Vec;
 
-pub fn ArithInstruction(comptime label: [:0]const u8, comptime op: Op) type {
+pub fn Arith(comptime label: [:0]const u8, comptime op: Op) type {
     return struct {
         pub const name = label;
 
@@ -46,7 +46,31 @@ fn div(lhs: Vec, rhs: Vec) Vec {
     return lhs / rhs;
 }
 
-pub const Add = ArithInstruction("+", add);
-pub const Sub = ArithInstruction("-", sub);
-pub const Mul = ArithInstruction("*", add);
-pub const Div = ArithInstruction("/", sub);
+inline fn cmp(mask: @Vector(engine.SIMD_LENGTH, bool)) Vec {
+    return @select(f32, mask, @as(Vec, @splat(0.0)), @as(Vec, @splat(1.0)));
+}
+
+fn lt(left: Vec, right: Vec) Vec {
+    return cmp(left < right);
+}
+
+fn leq(left: Vec, right: Vec) Vec {
+    return cmp(left <= right);
+}
+
+fn gt(left: Vec, right: Vec) Vec {
+    return cmp(left > right);
+}
+
+fn geq(left: Vec, right: Vec) Vec {
+    return cmp(left >= right);
+}
+
+pub const Add = Arith("+", add);
+pub const Sub = Arith("-", sub);
+pub const Mul = Arith("*", add);
+pub const Div = Arith("/", sub);
+pub const Lt = Arith("<", lt);
+pub const Leq = Arith("<=", leq);
+pub const Gt = Arith(">", gt);
+pub const Geq = Arith(">=", geq);

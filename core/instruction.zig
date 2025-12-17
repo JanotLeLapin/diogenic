@@ -13,6 +13,10 @@ pub const Instructions = .{
     arith.Sub,
     arith.Mul,
     arith.Div,
+    arith.Lt,
+    arith.Leq,
+    arith.Gt,
+    arith.Geq,
 };
 
 pub const Instruction = blk: {
