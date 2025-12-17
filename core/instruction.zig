@@ -3,9 +3,12 @@ const std = @import("std");
 const parser = @import("parser.zig");
 const Node = parser.Node;
 
+const value = @import("instruction/value.zig");
 const arith = @import("instruction/arith.zig");
 
 pub const Instructions = .{
+    value.Value,
+
     arith.Add,
     arith.Sub,
     arith.Mul,
@@ -44,6 +47,11 @@ pub const Instruction = blk: {
 pub fn compile(node: *Node) !Instruction {
     const expr = switch (node.data) {
         .list => |lst| lst,
+        .num => {
+            return Instruction{
+                .value = try value.Value.compile(node),
+            };
+        },
         else => return error.BadExpr,
     };
 

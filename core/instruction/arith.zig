@@ -16,7 +16,7 @@ pub fn ArithInstruction(comptime label: [:0]const u8, comptime op: Op) type {
             return @This(){};
         }
 
-        pub fn eval(state: *EngineState, out: *Block) void {
+        pub fn eval(_: *const @This(), state: *EngineState, out: *Block) void {
             const lhs = &state.stack.items[state.stack.items.len - 1];
             const rhs = &state.stack.items[state.stack.items.len - 2];
 
