@@ -90,5 +90,15 @@ fn low(_: Vec, q: Vec, _: Vec, k: Vec, p: *Params) void {
     p.b2 = (@as(Vec, @splat(1)) - k / q + k * k) * norm;
 }
 
+fn band(_: Vec, q: Vec, _: Vec, k: Vec, p: *Params) void {
+    const norm = @as(Vec, @splat(1)) / (@as(Vec, @splat(1)) + k / q + k * k);
+    p.a0 = k / q * norm;
+    p.a1 = @splat(0);
+    p.a2 = @as(Vec, @splat(-1)) * p.a0;
+    p.b1 = @as(Vec, @splat(2)) * (k / q - @as(Vec, @splat(1))) * norm;
+    p.b2 = (@as(Vec, @splat(1)) - k / q + k * k) * norm;
+}
+
 pub const High = Biquad("b-highpass", high);
 pub const Low = Biquad("b-lowpass", low);
+pub const Band = Biquad("b-bandpass", band);
