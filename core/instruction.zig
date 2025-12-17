@@ -10,6 +10,7 @@ const value = @import("instruction/value.zig");
 const arith = @import("instruction/arith.zig");
 const math = @import("instruction/math.zig");
 const osc = @import("instruction/osc.zig");
+const shaper = @import("instruction/shaper.zig");
 
 pub const Instructions = .{
     value.Value,
@@ -38,6 +39,11 @@ pub const Instructions = .{
     math.FreqToMidi,
     math.DbToAmp,
     math.AmpToDb,
+
+    shaper.Clamp,
+    shaper.Clip,
+    shaper.Diode,
+    shaper.Quantize,
 };
 
 pub const Instruction = blk: {
