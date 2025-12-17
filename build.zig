@@ -14,6 +14,9 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    exe.root_module.link_libc = true;
+    exe.root_module.linkSystemLibrary("portaudio", .{});
+
     b.installArtifact(exe);
 
     const run_step = b.step("run", "Run the app");

@@ -1,6 +1,7 @@
 { zig
+, portaudio
 , zls
 , mkShell
 }: mkShell {
-  buildInputs = [ zig zls ];
+  buildInputs = [ zig portaudio zls ];
 }
