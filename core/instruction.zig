@@ -1,0 +1,70 @@
+const std = @import("std");
+
+const parser = @import("parser.zig");
+const Node = parser.Node;
+
+const arith = @import("instruction/arith.zig");
+
+pub const Instructions = .{
+    arith.Add,
+    arith.Sub,
+    arith.Mul,
+    arith.Div,
+};
+
+pub const Instruction = blk: {
+    var union_fields: [Instructions.len]std.builtin.Type.UnionField = undefined;
+    var enum_fields: [Instructions.len]std.builtin.Type.EnumField = undefined;
+
+    for (Instructions, 0..) |T, i| {
+        union_fields[i] = .{
+            .name = T.name,
+            .type = T,
+            .alignment = @alignOf(T),
+        };
+        enum_fields[i] = .{
+            .name = T.name,
+            .value = i,
+        };
+    }
+
+    break :blk @Type(.{ .@"union" = .{
+        .fields = &union_fields,
+        .decls = &.{},
+        .layout = .auto,
+        .tag_type = @Type(.{ .@"enum" = .{
+            .tag_type = u32,
+            .decls = &.{},
+            .fields = &enum_fields,
+            .is_exhaustive = true,
+        } }),
+    } });
+};
+
+pub fn compile(node: *Node) !Instruction {
+    const expr = switch (node.data) {
+        .list => |lst| lst,
+        else => return error.BadExpr,
+    };
+
+    const id = switch (expr.items[0].data) {
+        .id => |id| id,
+        else => return error.BadExpr,
+    };
+
+    const i = blk: {
+        inline for (Instructions, 0..) |T, i| {
+            if (std.mem.eql(u8, id, T.name)) {
+                break :blk i;
+            }
+        }
+        return error.UnknownExpr;
+    };
+
+    switch (i) {
+        inline 0...Instructions.len - 1 => |ci| {
+            return @unionInit(Instruction, Instructions[ci].name, Instructions[ci].compile(node));
+        },
+        else => unreachable,
+    }
+}
