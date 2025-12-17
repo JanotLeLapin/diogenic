@@ -20,7 +20,8 @@ pub const Value = struct {
         return Value{ .value = num };
     }
 
-    pub fn eval(self: *const Value, _: *EngineState, out: *Block) void {
+    pub fn eval(self: *const Value, state: *EngineState) void {
+        const out = state.reserveStack();
         for (&out.channels) |*chan| {
             for (chan) |*vec| {
                 vec.* = @splat(self.value);

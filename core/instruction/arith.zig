@@ -16,9 +16,10 @@ pub fn ArithInstruction(comptime label: [:0]const u8, comptime op: Op) type {
             return @This(){};
         }
 
-        pub fn eval(_: *const @This(), state: *EngineState, out: *Block) void {
-            const lhs = &state.stack.items[state.stack.items.len - 1];
-            const rhs = &state.stack.items[state.stack.items.len - 2];
+        pub fn eval(_: *const @This(), state: *EngineState) void {
+            const lhs = state.popStack();
+            const rhs = state.popStack();
+            const out = state.reserveStack();
 
             for (lhs.channels, rhs.channels, 0..) |l_chan, r_chan, i| {
                 for (l_chan, r_chan, 0..) |l_vec, r_vec, j| {

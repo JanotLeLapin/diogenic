@@ -33,21 +33,33 @@ pub const Block = struct {
 };
 
 pub const EngineState = struct {
-    stack: std.ArrayList(Block),
+    stack_head: usize = 0,
+    stack: []Block,
     state: std.ArrayList(f32),
 
     alloc: std.mem.Allocator,
 
     pub fn init(alloc: std.mem.Allocator) !EngineState {
         return .{
-            .stack = try std.ArrayList(Block).initCapacity(alloc, 32),
+            .stack = try alloc.alloc(Block, 65536),
             .state = try std.ArrayList(f32).initCapacity(alloc, 16),
             .alloc = alloc,
         };
     }
 
     pub fn deinit(self: *EngineState) void {
-        self.stack.deinit(self.alloc);
+        self.alloc.free(self.stack);
         self.state.deinit(self.alloc);
+    }
+
+    pub fn popStack(self: *EngineState) *Block {
+        self.stack_head -= 1;
+        return &self.stack[self.stack_head];
+    }
+
+    pub fn reserveStack(self: *EngineState) *Block {
+        const ptr = &self.stack[self.stack_head];
+        self.stack_head += 1;
+        return ptr;
     }
 };
