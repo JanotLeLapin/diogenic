@@ -30,6 +30,8 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
                     alloc,
                     Instruction{ .load = instruction.value.Load{ .reg_index = idx } },
                 );
+            } else {
+                return error.VariableNotFound;
             }
             return;
         },
@@ -46,7 +48,44 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
             log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
             return error.CompilationError;
         }
-    } else if (std.mem.eql(u8, "let", op)) {}
+    } else if (std.mem.eql(u8, "let", op)) {
+        const bindings = tmp.data.list.items[1].data.list;
+        const expr = tmp.data.list.items[2];
+
+        var i: usize = 0;
+        while (i < bindings.items.len) {
+            const name = bindings.items[i].data.id;
+            const value = bindings.items[i + 1].data.num;
+            const reg_index = state.reg_index;
+            state.reg_index += 1;
+
+            try state.env.put(name, reg_index);
+            try instructions.append(alloc, Instruction{
+                .value = instruction.value.Push{ .value = value },
+            });
+            try instructions.append(alloc, Instruction{
+                .store = instruction.value.Store{ .reg_index = reg_index },
+            });
+
+            i += 2;
+        }
+
+        try compile(state, expr, instructions, alloc);
+
+        i = 0;
+        while (i < bindings.items.len) {
+            const name = bindings.items[i].data.id;
+            const reg_index = state.reg_index;
+            state.reg_index += 1;
+
+            _ = state.env.remove(name);
+            try instructions.append(alloc, Instruction{
+                .free = instruction.value.Free{ .reg_index = reg_index },
+            });
+
+            i += 2;
+        }
+    }
 }
 
 pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
