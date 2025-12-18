@@ -9,6 +9,7 @@ const Node = parser.Node;
 pub const value = @import("instruction/value.zig");
 pub const arith = @import("instruction/arith.zig");
 pub const math = @import("instruction/math.zig");
+pub const noise = @import("instruction/noise.zig");
 pub const osc = @import("instruction/osc.zig");
 pub const shaper = @import("instruction/shaper.zig");
 
@@ -45,6 +46,8 @@ pub const Instructions = .{
     math.FreqToMidi,
     math.DbToAmp,
     math.AmpToDb,
+
+    noise.Noise,
 
     shaper.Clamp,
     shaper.Clip,
