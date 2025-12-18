@@ -1,7 +1,7 @@
 const std = @import("std");
 
-const compiler = @import("compiler.zig");
-const CompilerState = compiler.CompilerState;
+const engine = @import("engine.zig");
+const CompilerState = engine.CompilerState;
 
 const parser = @import("parser.zig");
 const Node = parser.Node;

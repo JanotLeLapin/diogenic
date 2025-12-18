@@ -2,9 +2,9 @@ const std = @import("std");
 const log = std.log.scoped(.core);
 
 pub const compiler = @import("compiler.zig");
-const CompilerState = compiler.CompilerState;
 
 pub const engine = @import("engine.zig");
+const CompilerState = engine.CompilerState;
 const EngineState = engine.EngineState;
 
 pub const instruction = @import("instruction.zig");

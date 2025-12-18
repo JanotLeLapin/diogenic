@@ -6,7 +6,7 @@ const portaudio = @cImport({
 });
 
 const core = @import("diogenic-core");
-const CompilerState = core.compiler.CompilerState;
+const CompilerState = core.engine.CompilerState;
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
 const Tokenizer = core.parser.Tokenizer;
