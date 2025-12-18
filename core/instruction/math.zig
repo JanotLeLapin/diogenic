@@ -56,6 +56,14 @@ fn logn(in: Vec) Vec {
     return @log(in);
 }
 
+fn exp2(in: Vec) Vec {
+    return @exp2(in);
+}
+
+fn exp(in: Vec) Vec {
+    return @exp(in);
+}
+
 fn sigmoid(in: f32) f32 {
     return 1 / (1 + std.math.exp(-in));
 }
@@ -87,6 +95,8 @@ fn ampToDb(in: f32) f32 {
 pub const Log2 = Math("log2", log2);
 pub const Log10 = Math("log10", log10);
 pub const Logn = Math("logn", logn);
+pub const Exp2 = Math("exp2", exp2);
+pub const Exp = Math("exp", exp);
 pub const Atan = Math("atan", fromScalar(std.math.atan));
 pub const Sigmoid = Math("sigmoid", fromScalar(sigmoid));
 pub const Floor = Math("floor", floor);

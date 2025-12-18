@@ -38,6 +38,8 @@ pub const Instructions = .{
     math.Log2,
     math.Log10,
     math.Logn,
+    math.Exp,
+    math.Exp2,
     math.Atan,
     math.Sigmoid,
     math.Floor,
