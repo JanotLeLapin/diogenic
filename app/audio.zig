@@ -9,6 +9,8 @@ const portaudio = @cImport({
     @cInclude("portaudio.h");
 });
 
+pub const Stream = ?*portaudio.PaStream;
+
 inline fn wrapper(code: c_int) !void {
     switch (code) {
         portaudio.paNoError => {},
@@ -50,8 +52,8 @@ pub fn init() !void {
     try wrapper(portaudio.Pa_Initialize());
 }
 
-pub fn openStream(sr: f32, userdata: *CallbackData) !?*portaudio.PaStream {
-    var stream: ?*portaudio.PaStream = undefined;
+pub fn openStream(sr: f32, userdata: *CallbackData) !Stream {
+    var stream: Stream = undefined;
     try wrapper(portaudio.Pa_OpenDefaultStream(
         &stream,
         0,
@@ -65,11 +67,11 @@ pub fn openStream(sr: f32, userdata: *CallbackData) !?*portaudio.PaStream {
     return stream;
 }
 
-pub fn startStream(stream: ?*portaudio.PaStream) !void {
+pub fn startStream(stream: Stream) !void {
     try wrapper(portaudio.Pa_StartStream(stream));
 }
 
-pub fn stopStream(stream: ?*portaudio.PaStream) !void {
+pub fn stopStream(stream: Stream) !void {
     try wrapper(portaudio.Pa_StopStream(stream));
 }
 
