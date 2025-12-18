@@ -31,6 +31,7 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
                     Instruction{ .load = instruction.value.Load{ .reg_index = idx } },
                 );
             } else {
+                log.err("VariableNotFound: could not resolve '{s}'", .{tmp.src});
                 return error.VariableNotFound;
             }
             return;
