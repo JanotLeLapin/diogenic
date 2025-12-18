@@ -8,7 +8,7 @@ const parser = @import("../parser.zig");
 const Node = parser.Node;
 
 pub const Push = struct {
-    pub const name = "value";
+    pub const name = "push";
 
     value: f32,
 

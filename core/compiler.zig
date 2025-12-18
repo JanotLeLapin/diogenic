@@ -16,7 +16,7 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
         .num => |num| {
             try instructions.append(
                 alloc,
-                Instruction{ .value = instruction.value.Push{ .value = num } },
+                Instruction{ .push = instruction.value.Push{ .value = num } },
             );
             return;
         },
