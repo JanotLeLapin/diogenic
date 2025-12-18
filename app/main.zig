@@ -1,8 +1,11 @@
 const std = @import("std");
 const log = std.log.scoped(.core);
 
+const vaxis = @import("vaxis");
+const vxfw = vaxis.vxfw;
 
 const audio = @import("audio.zig");
+const tui = @import("tui.zig");
 
 const core = @import("diogenic-core");
 const CompilerState = core.engine.CompilerState;
@@ -94,7 +97,6 @@ pub fn main() !void {
         }
     }
 
-
     try audio.init();
     defer _ = audio.deinit() catch {};
     var userdata: audio.CallbackData = .{
@@ -106,5 +108,20 @@ pub fn main() !void {
     try audio.startStream(stream);
     defer _ = audio.stopStream(stream) catch {};
 
-    audio.sleep(5000);
+    var app = try vxfw.App.init(gpa.allocator());
+    defer app.deinit();
+
+    const model = try gpa.allocator().create(tui.Model);
+    defer gpa.allocator().destroy(model);
+
+    model.* = .{
+        .count = 0,
+        .button = .{
+            .label = "Click me!",
+            .onClick = tui.Model.onClick,
+            .userdata = model,
+        },
+    };
+
+    try app.run(model.widget(), .{});
 }
