@@ -14,68 +14,39 @@ pub const parser = @import("parser.zig");
 const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
-pub fn compile(state: *CompilerState, root: *Node, alloc: std.mem.Allocator) !std.ArrayList(Instruction) {
-    var pre_stack = try std.ArrayList(*Node).initCapacity(alloc, 32);
-    defer pre_stack.deinit(alloc);
-
-    var post_stack = try std.ArrayList(Instruction).initCapacity(alloc, 32);
-    defer post_stack.deinit(alloc);
-
-    try pre_stack.append(alloc, root);
-
-    var has_error = false;
-    while (pre_stack.items.len > 0) {
-        const tmp = pre_stack.pop().?;
-        const op = switch (tmp.data) {
-            .list => |lst| lst.items[0].data.id,
-            .num => |num| {
-                try post_stack.append(
+pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(Instruction), alloc: std.mem.Allocator) !void {
+    const op = switch (tmp.data) {
+        .list => |lst| lst.items[0].data.id,
+        .num => |num| {
+            try instructions.append(
+                alloc,
+                Instruction{ .value = instruction.value.Push{ .value = num } },
+            );
+            return;
+        },
+        .id => |id| {
+            if (state.env.get(id)) |idx| {
+                try instructions.append(
                     alloc,
-                    Instruction{ .value = instruction.value.Push{ .value = num } },
+                    Instruction{ .load = instruction.value.Load{ .reg_index = idx } },
                 );
-                continue;
-            },
-            .id => |id| {
-                if (state.env.get(id)) |idx| {
-                    try post_stack.append(
-                        alloc,
-                        Instruction{ .load = instruction.value.Load{ .reg_index = idx } },
-                    );
-                }
-                continue;
-            },
-        };
-
-        if (instruction.getExpressionIndex(op)) |_| {
-            if (instruction.compile(state, tmp)) |instr| {
-                try post_stack.append(alloc, instr);
-            } else |err| {
-                has_error = true;
-                log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
-                continue;
             }
+            return;
+        },
+    };
 
-            for (tmp.data.list.items) |child| {
-                switch (child.data) {
-                    .id => continue,
-                    else => {},
-                }
+    if (instruction.getExpressionIndex(op)) |_| {
+        for (tmp.data.list.items[1..]) |child| {
+            try compile(state, child, instructions, alloc);
+        }
 
-                try pre_stack.append(alloc, child);
-            }
-        } else if (std.mem.eql(u8, "let", op)) {}
-    }
-
-    if (has_error) {
-        return error.CompilationError;
-    }
-
-    var res = try std.ArrayList(Instruction).initCapacity(alloc, 64);
-    while (post_stack.pop()) |tmp| {
-        try res.append(alloc, tmp);
-    }
-
-    return res;
+        if (instruction.compile(state, tmp)) |instr| {
+            try instructions.append(alloc, instr);
+        } else |err| {
+            log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
+            return error.CompilationError;
+        }
+    } else if (std.mem.eql(u8, "let", op)) {}
 }
 
 pub fn eval(state: *EngineState, instructions: []const Instruction) !void {

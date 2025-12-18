@@ -90,11 +90,13 @@ pub fn main() !void {
     var cs = CompilerState{ .env = std.StringHashMap(usize).init(gpa.allocator()) };
     defer cs.env.deinit();
 
-    var instructions = core.compile(&cs, root.data.list.items[0], gpa.allocator()) catch {
+    var instructions = try std.ArrayList(Instruction).initCapacity(gpa.allocator(), 64);
+    defer instructions.deinit(gpa.allocator());
+
+    core.compile(&cs, root.data.list.items[0], &instructions, gpa.allocator()) catch {
         log.err("compilation failed", .{});
         return;
     };
-    defer instructions.deinit(gpa.allocator());
 
     for (instructions.items) |instr| {
         switch (instr) {
