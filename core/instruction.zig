@@ -15,7 +15,8 @@ const shaper = @import("instruction/shaper.zig");
 const biquad = @import("instruction/filter/biquad.zig");
 
 pub const Instructions = .{
-    value.Value,
+    value.Push,
+    value.Pop,
 
     arith.Add,
     arith.Sub,
@@ -96,7 +97,7 @@ pub fn compile(state: *CompilerState, node: *Node) !Instruction {
         .list => |lst| lst,
         .num => {
             return Instruction{
-                .value = try value.Value.compile(state, node),
+                .value = try value.Push.compile(state, node),
             };
         },
         else => return error.BadExpr,
