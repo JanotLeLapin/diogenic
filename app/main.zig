@@ -73,11 +73,26 @@ pub fn callback(
 }
 
 pub fn main() !void {
-    const input = "(* 0.5 (sine 220.0 0.0))";
-    var tokenizer = Tokenizer{ .src = input };
-
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer std.debug.assert(gpa.deinit() == .ok);
+
+    const src = src: {
+        const args = try std.process.argsAlloc(gpa.allocator());
+        defer std.process.argsFree(gpa.allocator(), args);
+
+        if (args.len < 2) {
+            log.err("missing input file\n", .{});
+            return;
+        }
+
+        const file = try std.fs.cwd().openFile(args[1], .{});
+        defer file.close();
+
+        break :src try file.readToEndAlloc(gpa.allocator(), 10 * 1024 * 1024);
+    };
+    defer gpa.allocator().free(src);
+
+    var tokenizer = Tokenizer{ .src = src };
 
     var ast_alloc = std.heap.ArenaAllocator.init(gpa.allocator());
     defer ast_alloc.deinit();
