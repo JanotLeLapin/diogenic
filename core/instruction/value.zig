@@ -40,7 +40,7 @@ pub const Pop = struct {
         return Pop{};
     }
 
-    pub fn eval(_: *const Push, state: *EngineState) void {
+    pub fn eval(_: *const Pop, state: *EngineState) void {
         _ = state.popStack();
     }
 };
@@ -73,7 +73,7 @@ pub const Free = struct {
         return self;
     }
 
-    pub fn eval(_: *const Store, _: *EngineState) void {
+    pub fn eval(_: *const Free, _: *EngineState) void {
         // TODO: free
     }
 };
