@@ -1,9 +1,8 @@
 const std = @import("std");
 const log = std.log.scoped(.core);
 
-const portaudio = @cImport({
-    @cInclude("portaudio.h");
-});
+
+const audio = @import("audio.zig");
 
 const core = @import("diogenic-core");
 const CompilerState = core.engine.CompilerState;
@@ -43,34 +42,6 @@ pub fn logFn(
 pub const std_options = std.Options{
     .logFn = logFn,
 };
-
-const CallbackData = struct {
-    engine_state: *EngineState,
-    instructions: []const Instruction,
-};
-
-pub fn callback(
-    input_buffer: ?*const anyopaque,
-    output_buffer: ?*anyopaque,
-    frames_per_buffer: c_ulong,
-    time_info: ?*const portaudio.PaStreamCallbackTimeInfo,
-    status_flags: portaudio.PaStreamCallbackFlags,
-    user_data: ?*anyopaque,
-) callconv(.c) i32 {
-    const data: *CallbackData = @ptrCast(@alignCast(user_data));
-    const out: [*]f32 = @ptrCast(@alignCast(output_buffer));
-    _ = input_buffer;
-    _ = time_info;
-    _ = status_flags;
-
-    core.eval(data.engine_state, data.instructions) catch return 1;
-    for (0..frames_per_buffer) |i| {
-        out[i * 2] = data.engine_state.stack[0].get(0, i);
-        out[i * 2 + 1] = data.engine_state.stack[0].get(1, i);
-    }
-
-    return 0;
-}
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -123,44 +94,17 @@ pub fn main() !void {
         }
     }
 
-    switch (portaudio.Pa_Initialize()) {
-        portaudio.paNoError => {},
-        else => |err| {
-            log.err("could not initialize portaudio: {s}", .{portaudio.Pa_GetErrorText(err)});
-            return;
-        },
-    }
-    defer _ = portaudio.Pa_Terminate();
 
-    var userdata: CallbackData = .{
+    try audio.init();
+    defer _ = audio.deinit() catch {};
+    var userdata: audio.CallbackData = .{
         .engine_state = &e,
         .instructions = instructions.items,
     };
-    var stream: ?*portaudio.PaStream = undefined;
-    switch (portaudio.Pa_OpenDefaultStream(
-        &stream,
-        0,
-        2,
-        portaudio.paFloat32,
-        @floatCast(e.sr),
-        core.engine.BLOCK_LENGTH,
-        &callback,
-        @ptrCast(&userdata),
-    )) {
-        portaudio.paNoError => {},
-        else => |err| {
-            log.err("could not open portaudio stream: {s}", .{portaudio.Pa_GetErrorText(err)});
-            return;
-        },
-    }
 
-    switch (portaudio.Pa_StartStream(stream)) {
-        portaudio.paNoError => {},
-        else => |err| {
-            log.err("could not start portaudio stream: {s}", .{portaudio.Pa_GetErrorText(err)});
-        },
-    }
-    defer _ = portaudio.Pa_StopStream(stream);
+    const stream = try audio.openStream(e.sr, &userdata);
+    try audio.startStream(stream);
+    defer _ = audio.stopStream(stream) catch {};
 
-    portaudio.Pa_Sleep(5000);
+    audio.sleep(5000);
 }
