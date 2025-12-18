@@ -6,13 +6,13 @@ const CompilerState = compiler.CompilerState;
 const parser = @import("parser.zig");
 const Node = parser.Node;
 
-const value = @import("instruction/value.zig");
-const arith = @import("instruction/arith.zig");
-const math = @import("instruction/math.zig");
-const osc = @import("instruction/osc.zig");
-const shaper = @import("instruction/shaper.zig");
+pub const value = @import("instruction/value.zig");
+pub const arith = @import("instruction/arith.zig");
+pub const math = @import("instruction/math.zig");
+pub const osc = @import("instruction/osc.zig");
+pub const shaper = @import("instruction/shaper.zig");
 
-const biquad = @import("instruction/filter/biquad.zig");
+pub const biquad = @import("instruction/filter/biquad.zig");
 
 pub const Instructions = .{
     value.Push,
@@ -98,11 +98,6 @@ pub fn getExpressionIndex(name: []const u8) ?usize {
 pub fn compile(state: *CompilerState, node: *Node) !Instruction {
     const expr = switch (node.data) {
         .list => |lst| lst,
-        .num => {
-            return Instruction{
-                .value = try value.Push.compile(state, node),
-            };
-        },
         else => return error.BadExpr,
     };
 

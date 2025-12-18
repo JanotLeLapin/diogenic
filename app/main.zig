@@ -87,7 +87,8 @@ pub fn main() !void {
     var e = try EngineState.init(gpa.allocator(), 48000);
     defer e.deinit();
 
-    var cs = CompilerState{};
+    var cs = CompilerState{ .env = std.StringHashMap(usize).init(gpa.allocator()) };
+    defer cs.env.deinit();
 
     var instructions = core.compile(&cs, root.data.list.items[0], gpa.allocator()) catch {
         log.err("compilation failed", .{});

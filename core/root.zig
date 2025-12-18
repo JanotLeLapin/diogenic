@@ -26,27 +26,44 @@ pub fn compile(state: *CompilerState, root: *Node, alloc: std.mem.Allocator) !st
     var has_error = false;
     while (pre_stack.items.len > 0) {
         const tmp = pre_stack.pop().?;
-        if (instruction.compile(state, tmp)) |instr| {
-            try post_stack.append(alloc, instr);
-        } else |err| {
-            has_error = true;
-            log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
-            continue;
-        }
-
-        const children = switch (tmp.data) {
-            .list => |lst| lst,
-            else => continue,
+        const op = switch (tmp.data) {
+            .list => |lst| lst.items[0].data.id,
+            .num => |num| {
+                try post_stack.append(
+                    alloc,
+                    Instruction{ .value = instruction.value.Push{ .value = num } },
+                );
+                continue;
+            },
+            .id => |id| {
+                if (state.env.get(id)) |idx| {
+                    try post_stack.append(
+                        alloc,
+                        Instruction{ .load = instruction.value.Load{ .reg_index = idx } },
+                    );
+                }
+                continue;
+            },
         };
 
-        for (children.items) |child| {
-            switch (child.data) {
-                .id => continue,
-                else => {},
+        if (instruction.getExpressionIndex(op)) |_| {
+            if (instruction.compile(state, tmp)) |instr| {
+                try post_stack.append(alloc, instr);
+            } else |err| {
+                has_error = true;
+                log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
+                continue;
             }
 
-            try pre_stack.append(alloc, child);
-        }
+            for (tmp.data.list.items) |child| {
+                switch (child.data) {
+                    .id => continue,
+                    else => {},
+                }
+
+                try pre_stack.append(alloc, child);
+            }
+        } else if (std.mem.eql(u8, "let", op)) {}
     }
 
     if (has_error) {
