@@ -79,5 +79,8 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
 
             i += 2;
         }
+    } else {
+        log.err("UnknownExpression: could not compile '{s}'", .{tmp.src});
+        return error.UnknownExpression;
     }
 }
