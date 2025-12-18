@@ -121,6 +121,7 @@ pub fn main() !void {
             .onClick = tui.Model.onClick,
             .userdata = model,
         },
+        .stream = stream,
     };
 
     try app.run(model.widget(), .{});
