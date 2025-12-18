@@ -82,6 +82,15 @@ pub const Instruction = blk: {
     } });
 };
 
+pub fn getExpressionIndex(name: []const u8) ?usize {
+    inline for (Instructions, 0..) |T, i| {
+        if (std.mem.eql(u8, name, T.name)) {
+            return i;
+        }
+    }
+    return null;
+}
+
 pub fn compile(state: *CompilerState, node: *Node) !Instruction {
     const expr = switch (node.data) {
         .list => |lst| lst,
@@ -98,14 +107,7 @@ pub fn compile(state: *CompilerState, node: *Node) !Instruction {
         else => return error.BadExpr,
     };
 
-    const i = blk: {
-        inline for (Instructions, 0..) |T, i| {
-            if (std.mem.eql(u8, id, T.name)) {
-                break :blk i;
-            }
-        }
-        return error.UnknownExpr;
-    };
+    const i = getExpressionIndex(id) orelse return error.UnknownExpr;
 
     switch (i) {
         inline 0...Instructions.len - 1 => |ci| {
