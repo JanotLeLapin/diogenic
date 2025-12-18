@@ -13,6 +13,7 @@ pub const Token = union(enum) {
     sep: u8,
     lit: []const u8,
     whitespace,
+    comment,
 };
 
 pub const Node = struct {
@@ -64,6 +65,15 @@ pub fn tokenizerNext(t: *Tokenizer) ?Token {
             t.cursor += 1;
             return token;
         },
+        ';' => {
+            while (true) {
+                if (t.cursor >= t.src.len or t.src[t.cursor] == '\n') {
+                    _ = tokenizerSkipWhitespace(t);
+                    return .comment;
+                }
+                t.cursor += 1;
+            }
+        },
         else => {},
     }
 
@@ -103,7 +113,7 @@ pub fn parse(
 
     while (tokenizerNext(t)) |token| {
         switch (token) {
-            .whitespace => continue,
+            .whitespace, .comment => continue,
             .sep => |sep| switch (sep) {
                 '(' => {
                     const new = try ast_alloc.create(Node);
