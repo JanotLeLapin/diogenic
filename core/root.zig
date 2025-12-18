@@ -55,14 +55,11 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
         var i: usize = 0;
         while (i < bindings.items.len) {
             const name = bindings.items[i].data.id;
-            const value = bindings.items[i + 1].data.num;
             const reg_index = state.reg_index;
             state.reg_index += 1;
 
             try state.env.put(name, reg_index);
-            try instructions.append(alloc, Instruction{
-                .value = instruction.value.Push{ .value = value },
-            });
+            try compile(state, bindings.items[i + 1], instructions, alloc);
             try instructions.append(alloc, Instruction{
                 .store = instruction.value.Store{ .reg_index = reg_index },
             });
