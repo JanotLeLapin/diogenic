@@ -10,6 +10,10 @@ const Instruction = instruction.Instruction;
 const parser = @import("parser.zig");
 const Node = parser.Node;
 
+pub const Constants = std.StaticStringMap(f32).initComptime(.{
+    .{ "PI", std.math.pi },
+});
+
 pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(Instruction), alloc: std.mem.Allocator) !void {
     const op = switch (tmp.data) {
         .list => |lst| lst.items[0].data.id,
@@ -25,6 +29,11 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
                 try instructions.append(
                     alloc,
                     Instruction{ .load = instruction.value.Load{ .reg_index = idx } },
+                );
+            } else if (Constants.get(id)) |v| {
+                try instructions.append(
+                    alloc,
+                    Instruction{ .push = instruction.value.Push{ .value = v } },
                 );
             } else {
                 log.err("VariableNotFound: could not resolve '{s}'", .{tmp.src});
