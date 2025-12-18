@@ -36,6 +36,7 @@ pub const EngineState = struct {
     sr: f32,
     stack_head: usize = 0,
     stack: []Block,
+    reg: []Block,
     state: []f32,
 
     alloc: std.mem.Allocator,
@@ -47,6 +48,7 @@ pub const EngineState = struct {
         return .{
             .sr = sr,
             .stack = try alloc.alloc(Block, 65536),
+            .reg = try alloc.alloc(Block, 256),
             .state = state,
             .alloc = alloc,
         };
@@ -54,6 +56,7 @@ pub const EngineState = struct {
 
     pub fn deinit(self: *EngineState) void {
         self.alloc.free(self.stack);
+        self.alloc.free(self.reg);
         self.alloc.free(self.state);
     }
 

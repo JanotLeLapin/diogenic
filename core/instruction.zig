@@ -17,6 +17,8 @@ const biquad = @import("instruction/filter/biquad.zig");
 pub const Instructions = .{
     value.Push,
     value.Pop,
+    value.Store,
+    value.Free,
 
     arith.Add,
     arith.Sub,

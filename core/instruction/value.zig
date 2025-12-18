@@ -44,3 +44,36 @@ pub const Pop = struct {
         _ = state.popStack();
     }
 };
+
+pub const Store = struct {
+    pub const name = "store";
+
+    reg_index: usize,
+
+    pub fn compile(state: *CompilerState, _: *Node) !Store {
+        const self = @This(){ .reg_index = state.reg_index };
+        state.reg_index += 1;
+        return self;
+    }
+
+    pub fn eval(self: *const Store, state: *EngineState) void {
+        const out = state.reserveStack();
+        out.* = state.reg[self.reg_index];
+    }
+};
+
+pub const Free = struct {
+    pub const name = "free";
+
+    reg_index: usize,
+
+    pub fn compile(state: *CompilerState, _: *Node) !Free {
+        const self = @This(){ .reg_index = state.reg_index };
+        state.reg_index += 1;
+        return self;
+    }
+
+    pub fn eval(_: *const Store, _: *EngineState) void {
+        // TODO: free
+    }
+};
