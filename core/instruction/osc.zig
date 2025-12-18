@@ -119,6 +119,6 @@ fn squareVec(p: Vec) Vec {
     return @floor(p / @as(Vec, @splat(std.math.pi))) * @as(Vec, @splat(2.0)) - @as(Vec, @splat(1.0));
 }
 
-pub const Sine = Osc("sine", sine, sineVec);
-pub const Sawtooth = Osc("sawtooth", sawtooth, sawtoothVec);
-pub const Square = Osc("square", square, squareVec);
+pub const Sine = Osc("sine!", sine, sineVec);
+pub const Sawtooth = Osc("sawtooth!", sawtooth, sawtoothVec);
+pub const Square = Osc("square!", square, squareVec);

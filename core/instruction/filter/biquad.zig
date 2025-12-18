@@ -106,7 +106,7 @@ fn notch(_: Vec, q: Vec, _: Vec, k: Vec, p: *Params) void {
     p.b2 = (@as(Vec, @splat(1)) - k / q + k * k) * norm;
 }
 
-pub const High = Biquad("b-highpass", high);
-pub const Low = Biquad("b-lowpass", low);
-pub const Band = Biquad("b-bandpass", band);
-pub const Notch = Biquad("b-notch", notch);
+pub const High = Biquad("b-highpass!", high);
+pub const Low = Biquad("b-lowpass!", low);
+pub const Band = Biquad("b-bandpass!", band);
+pub const Notch = Biquad("b-notch!", notch);

@@ -10,7 +10,7 @@ const parser = @import("../parser.zig");
 const Node = parser.Node;
 
 pub const Noise = struct {
-    pub const name = "noise";
+    pub const name = "noise!";
 
     pub fn compile(_: *CompilerState, _: *Node) !@This() {
         return @This(){};
