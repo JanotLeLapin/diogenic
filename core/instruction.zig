@@ -18,6 +18,7 @@ pub const Instructions = .{
     value.Push,
     value.Pop,
     value.Store,
+    value.Load,
     value.Free,
 
     arith.Add,

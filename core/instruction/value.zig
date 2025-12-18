@@ -57,8 +57,23 @@ pub const Store = struct {
     }
 
     pub fn eval(self: *const Store, state: *EngineState) void {
-        const out = state.reserveStack();
-        out.* = state.reg[self.reg_index];
+        const b = state.popStack();
+        state.reg[self.reg_index] = b.*;
+    }
+};
+
+pub const Load = struct {
+    pub const name = "load";
+
+    reg_index: usize,
+
+    pub fn compile(_: *CompilerState, _: *Node) !Load {
+        @panic("attempted to compile low level instruction");
+    }
+
+    pub fn eval(self: *const Load, state: *EngineState) void {
+        const b = state.reserveStack();
+        b.* = state.reg[self.reg_index];
     }
 };
 
