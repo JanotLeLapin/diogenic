@@ -2,30 +2,44 @@
   import svelteLogo from './assets/svelte.svg'
   import viteLogo from '/vite.svg'
   import Counter from './lib/Counter.svelte'
-  import { onMount } from 'svelte';
-  import { Diogenic } from './diogenic';
+  import { onMount } from 'svelte'
+  import { Diogenic } from './diogenic'
+  import { Audio } from './audio'
 
-  onMount(async () => {
-    const url = (import.meta.env.DEV ?
-      'http://localhost:5173'
-      : import.meta.env.BASE_URL)
-    + '/public/diogenic-wasm.wasm'
+  let DIOGENIC: Diogenic | null = null
+  let AUDIO: Audio | null = null
 
-    const diogenic = await Diogenic.instantiate(url)
+  const baseUrl = (import.meta.env.DEV ? 'http://localhost:5173' : import.meta.env.BASE_URL)
+
+  async function initDiogenic(): Promise<void> {
+    const wasmUrl = baseUrl + '/public/diogenic-wasm.wasm'
+
+    const diogenic = await Diogenic.instantiate(wasmUrl)
+    DIOGENIC = diogenic;
+
     const instr_count = diogenic.compile('(sine! 440.0 0.0)', 48000.0)
-    console.log('compiled: ' + instr_count + ' instructions')
-    if (diogenic.eval()) {
-      console.log('evaluation succeeded')
-    } else {
-      console.log('eval failed')
-      diogenic.deinit()
+    console.log('compiled ' + instr_count + ' instructions')
+  }
+
+  async function initAudio(): Promise<void> {
+    if (DIOGENIC == null) {
       return
     }
-    const buf = diogenic.getBuffer()
-    for (let i = 0; i < buf.length; i += 2) {
-      console.log('value: ' + buf[i])
+
+    const workletUrl = baseUrl + '/public/diogenic-processor.js'
+    const audio = await Audio.init(new window.AudioContext(), DIOGENIC, workletUrl)
+    AUDIO = audio
+  }
+
+  onMount(() => {
+    initDiogenic().then(() => console.log('initialized!'))
+    return () => {
+      if (DIOGENIC == null) {
+        return;
+      }
+
+      DIOGENIC.deinit()
     }
-    diogenic.deinit()
   })
 </script>
 
@@ -39,6 +53,8 @@
     </a>
   </div>
   <h1>Vite + Svelte</h1>
+
+  <button on:click={() => initAudio()}>Click me</button>
 
   <div class="card">
     <Counter />
