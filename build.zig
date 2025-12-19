@@ -4,6 +4,9 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const buildNative = b.option(bool, "native", "Build native app") orelse true;
+    const buildWasm = b.option(bool, "wasm", "Build wasm binary") orelse true;
+
     const vaxis = b.dependency("vaxis", .{
         .target = target,
         .optimize = optimize,
@@ -15,59 +18,65 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const exe = b.addExecutable(.{
-        .name = "diogenic",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("app/main.zig"),
-            .target = target,
-            .optimize = optimize,
-            .imports = &.{
-                .{ .name = "diogenic-core", .module = core_mod },
-                .{ .name = "vaxis", .module = vaxis.module("vaxis") },
-            },
-        }),
-    });
-
-    const wasm_exe = b.addExecutable(.{
-        .name = "diogenic-wasm",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("wasm/root.zig"),
-            .target = b.resolveTargetQuery(.{
-                .cpu_arch = .wasm32,
-                .os_tag = .freestanding,
-                .abi = .none,
-            }),
-            .optimize = optimize,
-            .imports = &.{
-                .{ .name = "diogenic-core", .module = core_mod },
-            },
-        }),
-    });
-
-    exe.root_module.link_libc = true;
-    exe.root_module.linkSystemLibrary("portaudio", .{});
-
-    wasm_exe.entry = .disabled;
-    wasm_exe.export_memory = true;
-    wasm_exe.rdynamic = true;
-
-    b.installArtifact(exe);
-    b.installArtifact(wasm_exe);
-
     const run_step = b.step("run", "Run the app");
-    const run_cmd = b.addRunArtifact(exe);
-    run_step.dependOn(&run_cmd.step);
-    run_cmd.step.dependOn(b.getInstallStep());
 
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
+    if (buildNative) {
+        const exe = b.addExecutable(.{
+            .name = "diogenic",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("app/main.zig"),
+                .target = target,
+                .optimize = optimize,
+                .imports = &.{
+                    .{ .name = "diogenic-core", .module = core_mod },
+                    .{ .name = "vaxis", .module = vaxis.module("vaxis") },
+                },
+            }),
+        });
+
+        exe.root_module.link_libc = true;
+        exe.root_module.linkSystemLibrary("portaudio", .{});
+
+        b.installArtifact(exe);
+
+        const run_cmd = b.addRunArtifact(exe);
+        run_step.dependOn(&run_cmd.step);
+        run_cmd.step.dependOn(b.getInstallStep());
+
+        if (b.args) |args| {
+            run_cmd.addArgs(args);
+        }
+
+        const exe_tests = b.addTest(.{
+            .root_module = exe.root_module,
+        });
+        const run_exe_tests = b.addRunArtifact(exe_tests);
+
+        const test_step = b.step("test", "Run tests");
+        test_step.dependOn(&run_exe_tests.step);
     }
 
-    const exe_tests = b.addTest(.{
-        .root_module = exe.root_module,
-    });
-    const run_exe_tests = b.addRunArtifact(exe_tests);
+    if (buildWasm) {
+        const wasm_exe = b.addExecutable(.{
+            .name = "diogenic-wasm",
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("wasm/root.zig"),
+                .target = b.resolveTargetQuery(.{
+                    .cpu_arch = .wasm32,
+                    .os_tag = .freestanding,
+                    .abi = .none,
+                }),
+                .optimize = optimize,
+                .imports = &.{
+                    .{ .name = "diogenic-core", .module = core_mod },
+                },
+            }),
+        });
 
-    const test_step = b.step("test", "Run tests");
-    test_step.dependOn(&run_exe_tests.step);
+        wasm_exe.entry = .disabled;
+        wasm_exe.export_memory = true;
+        wasm_exe.rdynamic = true;
+
+        b.installArtifact(wasm_exe);
+    }
 }

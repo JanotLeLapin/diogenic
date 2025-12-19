@@ -22,7 +22,7 @@ jobs:
         uses: mlugg/setup-zig@v2
       - name: Build audio engine
         run: |
-          zig build --release=small
+          zig build --release=small -Dnative=false
           cp zig-out/bin/diogenic-wasm.wasm ./web/public
       - name: Set up Node.js
         uses: actions/setup-node@v4
