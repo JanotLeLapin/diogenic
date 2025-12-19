@@ -10,10 +10,10 @@
   let AUDIO: Audio | null = null
 
   let src: string = ''
-  const baseUrl = (import.meta.env.DEV ? 'http://localhost:5173' : import.meta.env.BASE_URL)
+  const baseUrl = (import.meta.env.DEV ? 'http://localhost:5173/diogenic/' : import.meta.env.BASE_URL)
 
   async function initDiogenic(): Promise<void> {
-    const wasmUrl = baseUrl + '/public/diogenic-wasm.wasm'
+    const wasmUrl = baseUrl + 'diogenic-wasm.wasm'
 
     const diogenic = await Diogenic.instantiate(wasmUrl)
     DIOGENIC = diogenic;
@@ -35,7 +35,7 @@
     }
     console.log('compiled ' + instr_count + ' instructions')
 
-    const workletUrl = baseUrl + '/public/diogenic-processor.js'
+    const workletUrl = baseUrl + 'diogenic-processor.js'
     const audio = await Audio.init(new window.AudioContext(), DIOGENIC, workletUrl)
     AUDIO = audio
   }
