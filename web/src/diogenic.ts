@@ -3,7 +3,10 @@ type Wasm = WebAssembly.WebAssemblyInstantiatedSource
 type Exports = {
   memory: any,
   alloc: (len: number) => number,
-  compile: (src_ptr: number, src_len: number) => number,
+  compile: (src_ptr: number, src_len: number, sr: number) => number,
+  eval: () => boolean,
+  getBufPtr: () => number,
+  getBufLen: () => number,
   deinit: () => void,
 }
 
@@ -25,7 +28,7 @@ export class Diogenic {
       .then((wasm) => new Diogenic(wasm))
   }
 
-  compile(src: string): number {
+  compile(src: string, sr: number): number {
     const encoder = new TextEncoder()
     const bytes = encoder.encode(src)
     const len = bytes.length;
@@ -39,7 +42,22 @@ export class Diogenic {
     )
     mem.set(bytes)
 
-    return this.getExports().compile(ptr, len)
+    return this.getExports().compile(ptr, len, sr)
+  }
+
+  eval(): boolean {
+    return this.getExports().eval()
+  }
+
+  getBuffer(): Float32Array {
+    const ptr = this.getExports().getBufPtr()
+    const len = this.getExports().getBufLen()
+
+    return new Float32Array(
+      this.getExports().memory.buffer,
+      ptr,
+      len,
+    )
   }
 
   deinit() {

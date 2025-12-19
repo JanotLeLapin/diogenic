@@ -12,7 +12,19 @@
     + '/public/diogenic-wasm.wasm'
 
     const diogenic = await Diogenic.instantiate(url)
-    console.log(diogenic.compile('(sine! 440.0 0.0)'))
+    const instr_count = diogenic.compile('(sine! 440.0 0.0)', 48000.0)
+    console.log('compiled: ' + instr_count + ' instructions')
+    if (diogenic.eval()) {
+      console.log('evaluation succeeded')
+    } else {
+      console.log('eval failed')
+      diogenic.deinit()
+      return
+    }
+    const buf = diogenic.getBuffer()
+    for (let i = 0; i < buf.length; i += 2) {
+      console.log('value: ' + buf[i])
+    }
     diogenic.deinit()
   })
 </script>
