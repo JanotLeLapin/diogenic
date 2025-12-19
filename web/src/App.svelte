@@ -1,15 +1,36 @@
 <script lang="ts">
-  import svelteLogo from './assets/svelte.svg'
-  import viteLogo from '/vite.svg'
-  import Counter from './lib/Counter.svelte'
+  import CodeMirror from './lib/CodeMirror.svelte'
   import { onMount } from 'svelte'
   import { Diogenic } from './diogenic'
   import { Audio } from './audio'
+  import { basicSetup, EditorView } from 'codemirror';
+
+  const editorTheme = EditorView.theme({
+    "&": {
+      color: "white",
+      backgroundColor: "#034"
+    },
+    ".cm-content": {
+      caretColor: "white"
+    },
+    "&.cm-focused .cm-cursor": {
+      borderLeftColor: "white"
+    },
+    "&.cm-focused .cm-selectionBackground, ::selection": {
+      backgroundColor: "#074"
+    },
+    ".cm-gutters": {
+      backgroundColor: "#045",
+      color: "#ddd",
+      border: "none"
+    },
+  }, { dark: true })
 
   let DIOGENIC: Diogenic | null = null
   let AUDIO: Audio | null = null
 
-  let src: string = ''
+  let src: string | undefined = $state('hi')
+
   const baseUrl = (import.meta.env.DEV ? 'http://localhost:5173/diogenic/' : import.meta.env.BASE_URL)
 
   async function initDiogenic(): Promise<void> {
@@ -28,7 +49,7 @@
       return
     }
 
-    const instr_count = DIOGENIC.compile(src, 48000.0)
+    const instr_count = DIOGENIC.compile(src || '', 48000.0)
     if (instr_count < 0) {
       console.log('compile error!')
       return
@@ -53,47 +74,9 @@
 </script>
 
 <main>
-  <div>
-    <a href="https://vite.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-  <h1>Vite + Svelte</h1>
+  <CodeMirror
+    extensions={[basicSetup, editorTheme]}
+    bind:doc={src} />
 
-  <textarea bind:value={src}></textarea>
-
-  <button on:click={() => initAudio()}>Click me</button>
-
-  <div class="card">
-    <Counter />
-  </div>
-
-  <p>
-    Check out <a href="https://github.com/sveltejs/kit#readme" target="_blank" rel="noreferrer">SvelteKit</a>, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">
-    Click on the Vite and Svelte logos to learn more
-  </p>
+  <button onclick={() => initAudio()}>Click me</button>
 </main>
-
-<style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
-  }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
-  }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
-  }
-  .read-the-docs {
-    color: #888;
-  }
-</style>
