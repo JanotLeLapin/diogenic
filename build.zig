@@ -28,10 +28,31 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
+    const wasm_exe = b.addExecutable(.{
+        .name = "diogenic-wasm",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("wasm/root.zig"),
+            .target = b.resolveTargetQuery(.{
+                .cpu_arch = .wasm32,
+                .os_tag = .freestanding,
+                .abi = .none,
+            }),
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "diogenic-core", .module = core_mod },
+            },
+        }),
+    });
+
     exe.root_module.link_libc = true;
     exe.root_module.linkSystemLibrary("portaudio", .{});
 
+    wasm_exe.entry = .disabled;
+    wasm_exe.export_memory = true;
+    wasm_exe.rdynamic = true;
+
     b.installArtifact(exe);
+    b.installArtifact(wasm_exe);
 
     const run_step = b.step("run", "Run the app");
     const run_cmd = b.addRunArtifact(exe);
