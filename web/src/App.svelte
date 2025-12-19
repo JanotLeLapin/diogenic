@@ -12,7 +12,8 @@
     + '/public/diogenic-wasm.wasm'
 
     const diogenic = await Diogenic.instantiate(url)
-    console.log(diogenic.foo())
+    console.log(diogenic.compile('(sine! 440.0 0.0)'))
+    diogenic.deinit()
   })
 </script>
 

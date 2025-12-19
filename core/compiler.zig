@@ -1,6 +1,8 @@
 const std = @import("std");
 const log = std.log.scoped(.compiler);
 
+const builtin = @import("builtin");
+
 const engine = @import("engine.zig");
 const CompilerState = engine.CompilerState;
 
@@ -9,6 +11,8 @@ const Instruction = instruction.Instruction;
 
 const parser = @import("parser.zig");
 const Node = parser.Node;
+
+const is_freestanding = builtin.target.os.tag == .freestanding;
 
 pub const Constants = std.StaticStringMap(f32).initComptime(.{
     .{ "PI", std.math.pi },
@@ -36,7 +40,9 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
                     Instruction{ .push = instruction.value.Push{ .value = v } },
                 );
             } else {
-                log.err("VariableNotFound: could not resolve '{s}'", .{tmp.src});
+                if (!is_freestanding) {
+                    log.err("VariableNotFound: could not resolve '{s}'", .{tmp.src});
+                }
                 return error.VariableNotFound;
             }
             return;
@@ -51,7 +57,9 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
         if (instruction.compile(state, tmp)) |instr| {
             try instructions.append(alloc, instr);
         } else |err| {
-            log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
+            if (!is_freestanding) {
+                log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
+            }
             return error.CompilationError;
         }
     } else if (std.mem.eql(u8, "let", op)) {
@@ -89,7 +97,9 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
             i += 2;
         }
     } else {
-        log.err("UnknownExpression: could not compile '{s}'", .{tmp.src});
+        if (!is_freestanding) {
+            log.err("UnknownExpression: could not compile '{s}'", .{tmp.src});
+        }
         return error.UnknownExpression;
     }
 }

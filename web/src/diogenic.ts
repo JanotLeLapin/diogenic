@@ -1,7 +1,10 @@
 type Wasm = WebAssembly.WebAssemblyInstantiatedSource
 
 type Exports = {
-  foo: () => number,
+  memory: any,
+  alloc: (len: number) => number,
+  compile: (src_ptr: number, src_len: number) => number,
+  deinit: () => void,
 }
 
 export class Diogenic {
@@ -12,7 +15,7 @@ export class Diogenic {
   }
 
   private getExports(): Exports {
-    return this.wasm.instance.exports as Exports
+    return this.wasm.instance.exports as any as Exports
   }
 
   static async instantiate(url: string): Promise<Diogenic> {
@@ -22,8 +25,24 @@ export class Diogenic {
       .then((wasm) => new Diogenic(wasm))
   }
 
-  foo(): number {
-    console.log(this.wasm.instance.exports)
-    return this.getExports().foo()
+  compile(src: string): number {
+    const encoder = new TextEncoder()
+    const bytes = encoder.encode(src)
+    const len = bytes.length;
+
+    const ptr = this.getExports().alloc(len)
+
+    const mem = new Uint8Array(
+      this.getExports().memory.buffer,
+      ptr,
+      len,
+    )
+    mem.set(bytes)
+
+    return this.getExports().compile(ptr, len)
+  }
+
+  deinit() {
+    this.getExports().deinit()
   }
 }
