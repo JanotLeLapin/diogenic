@@ -9,6 +9,7 @@
   let DIOGENIC: Diogenic | null = null
   let AUDIO: Audio | null = null
 
+  let src: string = ''
   const baseUrl = (import.meta.env.DEV ? 'http://localhost:5173' : import.meta.env.BASE_URL)
 
   async function initDiogenic(): Promise<void> {
@@ -16,15 +17,23 @@
 
     const diogenic = await Diogenic.instantiate(wasmUrl)
     DIOGENIC = diogenic;
-
-    const instr_count = diogenic.compile('(sine! 440.0 0.0)', 48000.0)
-    console.log('compiled ' + instr_count + ' instructions')
   }
 
   async function initAudio(): Promise<void> {
     if (DIOGENIC == null) {
       return
     }
+
+    if (AUDIO != null) {
+      return
+    }
+
+    const instr_count = DIOGENIC.compile(src, 48000.0)
+    if (instr_count < 0) {
+      console.log('compile error!')
+      return
+    }
+    console.log('compiled ' + instr_count + ' instructions')
 
     const workletUrl = baseUrl + '/public/diogenic-processor.js'
     const audio = await Audio.init(new window.AudioContext(), DIOGENIC, workletUrl)
@@ -53,6 +62,8 @@
     </a>
   </div>
   <h1>Vite + Svelte</h1>
+
+  <textarea bind:value={src}></textarea>
 
   <button on:click={() => initAudio()}>Click me</button>
 
