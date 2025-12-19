@@ -49,7 +49,7 @@ pub const Instructions = .{
     math.DbToAmp,
     math.AmpToDb,
 
-    noise.Noise,
+    // noise.Noise,
 
     shaper.Clamp,
     shaper.Clip,
