@@ -12,7 +12,10 @@ const Node = parser.Node;
 pub const Noise = struct {
     pub const name = "noise!";
 
-    pub fn compile(_: *CompilerState, _: *Node) !@This() {
+    pub fn compile(_: *CompilerState, node: *Node) !@This() {
+        if (node.data.list.items.len != 1) {
+            return error.BadArity;
+        }
         return @This(){};
     }
 

@@ -39,7 +39,10 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
 
         tmp_index: usize,
 
-        pub fn compile(state: *CompilerState, _: *Node) !@This() {
+        pub fn compile(state: *CompilerState, node: *Node) !@This() {
+            if (node.data.list.items.len != 5) {
+                return error.BadArity;
+            }
             const self = @This(){
                 .tmp_index = state.state_index,
             };

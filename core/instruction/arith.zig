@@ -13,7 +13,10 @@ pub fn Arith(comptime label: [:0]const u8, comptime op: Op) type {
     return struct {
         pub const name = label;
 
-        pub fn compile(_: *CompilerState, _: *Node) !@This() {
+        pub fn compile(_: *CompilerState, node: *Node) !@This() {
+            if (node.data.list.items.len != 3) {
+                return error.BadArity;
+            }
             return @This(){};
         }
 

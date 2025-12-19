@@ -12,13 +12,8 @@ pub const Push = struct {
 
     value: f32,
 
-    pub fn compile(_: *CompilerState, node: *Node) !Push {
-        const num = switch (node.data) {
-            .num => |num| num,
-            else => return error.UnexpectedNode,
-        };
-
-        return Push{ .value = num };
+    pub fn compile(_: *CompilerState, _: *Node) !Push {
+        return error.NotCallable;
     }
 
     pub fn eval(self: *const Push, state: *EngineState) void {
@@ -35,7 +30,7 @@ pub const Pop = struct {
     pub const name = "pop";
 
     pub fn compile(_: *CompilerState, _: *Node) !Pop {
-        return Pop{};
+        return error.NotCallable;
     }
 
     pub fn eval(_: *const Pop, state: *EngineState) void {
@@ -48,10 +43,8 @@ pub const Store = struct {
 
     reg_index: usize,
 
-    pub fn compile(state: *CompilerState, _: *Node) !Store {
-        const self = @This(){ .reg_index = state.reg_index };
-        state.reg_index += 1;
-        return self;
+    pub fn compile(_: *CompilerState, _: *Node) !Store {
+        return error.NotCallable;
     }
 
     pub fn eval(self: *const Store, state: *EngineState) void {
@@ -66,7 +59,7 @@ pub const Load = struct {
     reg_index: usize,
 
     pub fn compile(_: *CompilerState, _: *Node) !Load {
-        @panic("attempted to compile low level instruction");
+        return error.NotCallable;
     }
 
     pub fn eval(self: *const Load, state: *EngineState) void {
@@ -80,10 +73,8 @@ pub const Free = struct {
 
     reg_index: usize,
 
-    pub fn compile(state: *CompilerState, _: *Node) !Free {
-        const self = @This(){ .reg_index = state.reg_index };
-        state.reg_index += 1;
-        return self;
+    pub fn compile(_: *CompilerState, _: *Node) !Free {
+        return error.NotCallable;
     }
 
     pub fn eval(_: *const Free, _: *EngineState) void {

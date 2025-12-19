@@ -19,10 +19,13 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
         phase_index: usize,
         static_freq: ?f32,
 
-        pub fn compile(state: *CompilerState, expr: *Node) !@This() {
+        pub fn compile(state: *CompilerState, node: *Node) !@This() {
+            if (node.data.list.items.len != 3) {
+                return error.BadArity;
+            }
             const self = @This(){
                 .phase_index = state.state_index,
-                .static_freq = switch (expr.data.list.items[1].data) {
+                .static_freq = switch (node.data.list.items[1].data) {
                     .num => |num| num,
                     else => null,
                 },
