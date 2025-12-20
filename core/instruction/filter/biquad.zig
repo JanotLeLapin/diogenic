@@ -37,6 +37,9 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
     return struct {
         pub const name = label;
 
+        pub const input_count = 4;
+        pub const output_count = 1;
+
         tmp_index: usize,
 
         pub fn compile(state: *CompilerState, node: *Node) !@This() {
@@ -50,12 +53,12 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
             return self;
         }
 
-        pub fn eval(self: *const @This(), state: *EngineState) void {
-            const in = state.popStack();
-            const g = state.popStack();
-            const q = state.popStack();
-            const fc = state.popStack();
-            const out = state.reserveStack();
+        pub fn eval(self: *const @This(), inputs: []const Block, outputs: []Block, state: *EngineState) void {
+            const fc = &inputs[0];
+            const q = &inputs[1];
+            const g = &inputs[2];
+            const in = &inputs[3];
+            const out = &outputs[0];
             const tmp = state.state[self.tmp_index .. self.tmp_index + 4];
 
             for (fc.channels, q.channels, g.channels, in.channels, &out.channels, 0..) |fc_chan, q_chan, g_chan, in_chan, *out_chan, i| {

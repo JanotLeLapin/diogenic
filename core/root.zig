@@ -12,10 +12,21 @@ const Instruction = instruction.Instruction;
 pub const parser = @import("parser.zig");
 
 pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
-    state.stack_head = 0;
+    var stack_head: usize = 0;
     for (instructions) |instr| {
         switch (instr) {
-            inline else => |device| device.eval(state),
+            inline else => |device| {
+                const T = @TypeOf(device);
+                const in_start = stack_head - T.input_count;
+                const out_end = in_start + T.output_count;
+
+                const inputs = state.stack[in_start..stack_head];
+                const outputs = state.stack[in_start..out_end];
+
+                device.eval(inputs, outputs, state);
+
+                stack_head = out_end;
+            },
         }
     }
 }

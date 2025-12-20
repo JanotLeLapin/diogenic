@@ -15,6 +15,9 @@ pub fn Math(comptime label: [:0]const u8, comptime op: Op) type {
     return struct {
         pub const name = label;
 
+        pub const input_count = 1;
+        pub const output_count = 1;
+
         pub fn compile(_: *CompilerState, node: *Node) !@This() {
             if (node.data.list.items.len != 2) {
                 return error.BadArity;
@@ -22,9 +25,14 @@ pub fn Math(comptime label: [:0]const u8, comptime op: Op) type {
             return @This(){};
         }
 
-        pub fn eval(_: *const @This(), state: *EngineState) void {
-            const in = state.popStack();
-            const out = state.reserveStack();
+        pub fn eval(
+            _: *const @This(),
+            inputs: []const Block,
+            outputs: []Block,
+            _: *EngineState,
+        ) void {
+            const in = &inputs[0];
+            const out = &outputs[0];
 
             for (in.channels, 0..) |in_chan, i| {
                 for (in_chan, 0..) |in_vec, j| {

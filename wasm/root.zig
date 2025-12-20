@@ -51,7 +51,7 @@ export fn eval() bool {
     const instructions = maybe_instructions orelse return false;
     if (maybe_engine_state) |*state| {
         core.eval(state, instructions.items) catch return false;
-        const b = state.popStack();
+        const b = state.stack[0];
         for (0..core.engine.BLOCK_LENGTH) |i| {
             buffer[i * 2] = b.get(0, i);
             buffer[i * 2 + 1] = b.get(1, i);

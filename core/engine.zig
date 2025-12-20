@@ -34,7 +34,6 @@ pub const Block = struct {
 
 pub const EngineState = struct {
     sr: f32,
-    stack_head: usize = 0,
     stack: []Block,
     reg: []Block,
     state: []f32,
@@ -58,17 +57,6 @@ pub const EngineState = struct {
         self.alloc.free(self.stack);
         self.alloc.free(self.reg);
         self.alloc.free(self.state);
-    }
-
-    pub fn popStack(self: *EngineState) *Block {
-        self.stack_head -= 1;
-        return &self.stack[self.stack_head];
-    }
-
-    pub fn reserveStack(self: *EngineState) *Block {
-        const ptr = &self.stack[self.stack_head];
-        self.stack_head += 1;
-        return ptr;
     }
 };
 

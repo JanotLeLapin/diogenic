@@ -12,6 +12,9 @@ const Node = parser.Node;
 pub const Noise = struct {
     pub const name = "noise!";
 
+    pub const input_count = 0;
+    pub const output_count = 1;
+
     state_idx: usize,
 
     pub fn compile(state: *CompilerState, node: *Node) !@This() {
@@ -23,7 +26,12 @@ pub const Noise = struct {
         return self;
     }
 
-    pub fn eval(self: *const @This(), state: *EngineState) void {
+    pub fn eval(
+        self: *const @This(),
+        _: []const Block,
+        outputs: []Block,
+        state: *EngineState,
+    ) void {
         const seed: u64 = (@as(u64, @intCast(@as(u32, @bitCast(state.state[self.state_idx]))))) << 8 | @as(u32, @bitCast(state.state[self.state_idx + 1]));
         var prng = std.Random.DefaultPrng.init(seed);
         var rand = prng.random();
@@ -32,7 +40,7 @@ pub const Noise = struct {
         state.state[self.state_idx] = @bitCast(@as(u32, @truncate(next_seed >> 32)));
         state.state[self.state_idx + 1] = @bitCast(@as(u32, @truncate(next_seed)));
 
-        const out = state.reserveStack();
+        const out = &outputs[0];
         for (&out.channels) |*out_chan| {
             for (out_chan) |*out_vec| {
                 for (0..engine.SIMD_LENGTH) |i| {

@@ -16,6 +16,9 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
     return struct {
         pub const name = label;
 
+        pub const input_count = 2;
+        pub const output_count = 1;
+
         phase_index: usize,
         static_freq: ?f32,
 
@@ -83,11 +86,16 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
             phase.* = acc;
         }
 
-        pub fn eval(self: *const @This(), state: *EngineState) void {
-            const pm = state.popStack();
-            const freq = state.popStack();
+        pub fn eval(
+            self: *const @This(),
+            inputs: []const Block,
+            outputs: []Block,
+            state: *EngineState,
+        ) void {
+            const freq = &inputs[0];
+            const pm = &inputs[1];
             const phase = &state.state[self.phase_index];
-            const out = state.reserveStack();
+            const out = &outputs[0];
 
             if (self.static_freq) |v| {
                 evalStatic(state, v, pm, phase, out);
