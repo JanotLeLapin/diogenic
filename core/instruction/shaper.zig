@@ -52,6 +52,12 @@ fn diode(threshold: Vec, input: Vec) Vec {
     return @max(input - threshold, @as(Vec, @splat(0)));
 }
 
+fn foldback(threshold: Vec, input: Vec) Vec {
+    const coef = @as(Vec, @splat(4.0)) * threshold;
+    const period = (input / coef) + @as(Vec, @splat(0.25));
+    return coef * (@abs(period - @round(period)) - @as(Vec, @splat(0.25)));
+}
+
 fn quantize(bits: Vec, input: Vec) Vec {
     const levels = @exp2(bits);
     const normalized = (input + @as(Vec, @splat(1.0))) * @as(Vec, @splat(0.5));
@@ -62,4 +68,5 @@ fn quantize(bits: Vec, input: Vec) Vec {
 pub const Clamp = Shaper("clamp", clamp);
 pub const Clip = Shaper("clip", clip);
 pub const Diode = Shaper("diode", diode);
+pub const Foldback = Shaper("foldback", foldback);
 pub const Quantize = Shaper("quantize", quantize);

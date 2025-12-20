@@ -54,6 +54,7 @@ pub const Instructions = .{
     shaper.Clamp,
     shaper.Clip,
     shaper.Diode,
+    shaper.Foldback,
     shaper.Quantize,
 
     biquad.High,
