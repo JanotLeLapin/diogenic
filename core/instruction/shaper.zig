@@ -23,8 +23,8 @@ pub fn Shaper(comptime label: [:0]const u8, comptime op: Op) type {
         }
 
         pub fn eval(_: *const @This(), state: *EngineState) void {
-            const in = state.popStack();
             const mix = state.popStack();
+            const in = state.popStack();
             const out = state.reserveStack();
 
             for (in.channels, mix.channels, 0..) |l_chan, r_chan, i| {
