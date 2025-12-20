@@ -19,7 +19,7 @@ pub const Noise = struct {
             return error.BadArity;
         }
         const self = @This(){ .state_idx = state.state_index };
-        state.state_index += 1;
+        state.state_index += 2;
         return self;
     }
 
