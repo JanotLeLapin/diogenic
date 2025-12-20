@@ -45,10 +45,6 @@
       return
     }
 
-    if (AUDIO != null) {
-      return
-    }
-
     const instr_count = DIOGENIC.compile(src || '', 48000.0)
     if (instr_count < 0) {
       console.log('compile error!')
@@ -56,9 +52,11 @@
     }
     console.log('compiled ' + instr_count + ' instructions')
 
-    const workletUrl = baseUrl + 'diogenic-processor.js'
-    const audio = await Audio.init(new window.AudioContext(), DIOGENIC, workletUrl)
-    AUDIO = audio
+    if (AUDIO == null) {
+      const workletUrl = baseUrl + 'diogenic-processor.js'
+      const audio = await Audio.init(new window.AudioContext(), DIOGENIC, workletUrl)
+      AUDIO = audio
+    }
   }
 
   onMount(() => {
