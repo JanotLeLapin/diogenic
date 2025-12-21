@@ -73,9 +73,6 @@ pub fn main() !void {
 
     const root = try core.parser.parse(&tokenizer, ast_alloc.allocator(), gpa.allocator());
 
-    var e = try EngineState.init(gpa.allocator(), 48000);
-    defer e.deinit();
-
     var cs = CompilerState{ .env = std.StringHashMap(usize).init(gpa.allocator()) };
     defer cs.env.deinit();
 
@@ -86,6 +83,9 @@ pub fn main() !void {
         log.err("compilation failed", .{});
         return;
     };
+
+    var e = try core.initState(48000, instructions.items, gpa.allocator());
+    defer e.deinit();
 
     for (instructions.items) |instr| {
         switch (instr) {

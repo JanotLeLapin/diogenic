@@ -11,6 +11,35 @@ const Instruction = instruction.Instruction;
 
 pub const parser = @import("parser.zig");
 
+pub fn initState(sr: f32, instructions: []const Instruction, alloc: std.mem.Allocator) !EngineState {
+    var stack_size: usize = 0;
+    var state_size: usize = 0;
+    var reg_size: usize = 0;
+
+    for (instructions) |instr| {
+        switch (instr) {
+            .pop, .free => {},
+            .push => {
+                stack_size += 1;
+            },
+            .store => {
+                reg_size += 1;
+            },
+            .load => {
+                stack_size += 1;
+            },
+            inline else => |device| {
+                const T = @TypeOf(device);
+                stack_size += T.output_count;
+                state_size += if (@hasDecl(T, "state_count")) T.state_count else 0;
+                reg_size += if (@hasDecl(T, "register_count")) T.register_count else 0;
+            },
+        }
+    }
+
+    return EngineState.init(sr, stack_size, state_size, reg_size, alloc);
+}
+
 pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
     var stack_head: usize = 0;
     var state_head: usize = 0;

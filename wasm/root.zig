@@ -43,7 +43,7 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
         gpa,
     ) catch return -2;
 
-    maybe_engine_state = EngineState.init(gpa, sr) catch return -3;
+    maybe_engine_state = core.initState(sr, maybe_instructions.?.items, gpa) catch return -3;
     return @intCast(maybe_instructions.?.items.len);
 }
 

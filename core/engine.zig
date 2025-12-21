@@ -35,28 +35,35 @@ pub const Block = struct {
 pub const EngineState = struct {
     sr: f32,
     stack: []Block,
-    reg: []Block,
     state: []f32,
+    reg: []Block,
 
     alloc: std.mem.Allocator,
 
-    pub fn init(alloc: std.mem.Allocator, sr: f32) !EngineState {
-        const state = try alloc.alloc(f32, 4096);
-        @memset(state, 0.0);
-
+    pub fn init(
+        sr: f32,
+        stack_size: usize,
+        state_size: usize,
+        reg_size: usize,
+        alloc: std.mem.Allocator,
+    ) !EngineState {
         return .{
             .sr = sr,
-            .stack = try alloc.alloc(Block, 65536),
-            .reg = try alloc.alloc(Block, 256),
-            .state = state,
+            .stack = try alloc.alloc(Block, stack_size),
+            .state = blk: {
+                const state = try alloc.alloc(f32, state_size);
+                @memset(state, 0.0);
+                break :blk state;
+            },
+            .reg = try alloc.alloc(Block, reg_size),
             .alloc = alloc,
         };
     }
 
     pub fn deinit(self: *EngineState) void {
         self.alloc.free(self.stack);
-        self.alloc.free(self.reg);
         self.alloc.free(self.state);
+        self.alloc.free(self.reg);
     }
 };
 
