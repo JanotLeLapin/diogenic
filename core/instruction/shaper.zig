@@ -29,7 +29,8 @@ pub fn Shaper(comptime label: [:0]const u8, comptime op: Op) type {
             _: *const @This(),
             inputs: []const Block,
             outputs: []Block,
-            _: *EngineState,
+            _: []f32,
+            _: []Block,
         ) void {
             const mix = &inputs[0];
             const in = &inputs[1];

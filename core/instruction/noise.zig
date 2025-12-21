@@ -14,31 +14,29 @@ pub const Noise = struct {
 
     pub const input_count = 0;
     pub const output_count = 1;
+    pub const state_count = 2;
 
-    state_idx: usize,
-
-    pub fn compile(state: *CompilerState, node: *Node) !@This() {
+    pub fn compile(_: *CompilerState, node: *Node) !@This() {
         if (node.data.list.items.len != 1) {
             return error.BadArity;
         }
-        const self = @This(){ .state_idx = state.state_index };
-        state.state_index += 2;
-        return self;
+        return @This(){};
     }
 
     pub fn eval(
-        self: *const @This(),
+        _: *const @This(),
         _: []const Block,
         outputs: []Block,
-        state: *EngineState,
+        state: []f32,
+        _: []Block,
     ) void {
-        const seed: u64 = (@as(u64, @intCast(@as(u32, @bitCast(state.state[self.state_idx]))))) << 8 | @as(u32, @bitCast(state.state[self.state_idx + 1]));
+        const seed: u64 = (@as(u64, @intCast(@as(u32, @bitCast(state[0]))))) << 8 | @as(u32, @bitCast(state[1]));
         var prng = std.Random.DefaultPrng.init(seed);
         var rand = prng.random();
 
         const next_seed: u64 = rand.int(u64);
-        state.state[self.state_idx] = @bitCast(@as(u32, @truncate(next_seed >> 32)));
-        state.state[self.state_idx + 1] = @bitCast(@as(u32, @truncate(next_seed)));
+        state[0] = @bitCast(@as(u32, @truncate(next_seed >> 32)));
+        state[1] = @bitCast(@as(u32, @truncate(next_seed)));
 
         const out = &outputs[0];
         for (&out.channels) |*out_chan| {

@@ -18,31 +18,30 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
 
         pub const input_count = 2;
         pub const output_count = 1;
+        pub const state_count = 1;
 
-        phase_index: usize,
         static_freq: ?f32,
 
-        pub fn compile(state: *CompilerState, node: *Node) !@This() {
+        pub fn compile(_: *CompilerState, node: *Node) !@This() {
             if (node.data.list.items.len != 3) {
                 return error.BadArity;
             }
-            const self = @This(){
-                .phase_index = state.state_index,
+            return @This(){
                 .static_freq = switch (node.data.list.items[1].data) {
                     .num => |num| num,
                     else => null,
                 },
             };
-            state.state_index += 1;
-            return self;
         }
 
-        pub fn evalDynamic(state: *EngineState, freq: *const Block, pm: *const Block, phase: *f32, out: *Block) void {
+        pub fn evalDynamic(freq: *const Block, pm: *const Block, phase: *f32, out: *Block) void {
             var acc: f32 = 0.0;
             for (freq.channels, pm.channels, 0..) |freq_chan, pm_chan, i| {
                 acc = phase.*;
                 for (freq_chan, pm_chan, 0..) |freq_vec, pm_vec, j| {
-                    const inc_vec = freq_vec / @as(Vec, @splat(state.sr));
+                    // const inc_vec = freq_vec / @as(Vec, @splat(state.sr));
+                    // FIXME: hardcoded sample rate
+                    const inc_vec = freq_vec / @as(Vec, @splat(48000.0));
                     for (0..engine.SIMD_LENGTH) |k| {
                         const inc = inc_vec[k];
 
@@ -58,8 +57,10 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
             phase.* = acc;
         }
 
-        pub fn evalStatic(state: *EngineState, freq: f32, pm: *const Block, phase: *f32, out: *Block) void {
-            const inc = freq / state.sr;
+        pub fn evalStatic(freq: f32, pm: *const Block, phase: *f32, out: *Block) void {
+            // const inc = freq / state.sr;
+            // FIXME: hardcoded sample rate
+            const inc = freq / 48000.0;
 
             var ramp: Vec = undefined;
             inline for (0..engine.SIMD_LENGTH) |i| {
@@ -90,17 +91,18 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
             self: *const @This(),
             inputs: []const Block,
             outputs: []Block,
-            state: *EngineState,
+            state: []f32,
+            _: []Block,
         ) void {
             const freq = &inputs[0];
             const pm = &inputs[1];
-            const phase = &state.state[self.phase_index];
+            const phase = &state[0];
             const out = &outputs[0];
 
             if (self.static_freq) |v| {
-                evalStatic(state, v, pm, phase, out);
+                evalStatic(v, pm, phase, out);
             } else {
-                evalDynamic(state, freq, pm, phase, out);
+                evalDynamic(freq, pm, phase, out);
             }
         }
     };

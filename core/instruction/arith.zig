@@ -27,7 +27,8 @@ pub fn Arith(comptime label: [:0]const u8, comptime op: Op) type {
             _: *const @This(),
             inputs: []const Block,
             outputs: []Block,
-            _: *EngineState,
+            _: []f32,
+            _: []Block,
         ) void {
             const lhs = &inputs[0];
             const rhs = &inputs[1];
