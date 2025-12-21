@@ -47,6 +47,7 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
 
         pub fn eval(
             _: *const @This(),
+            sr: f32,
             inputs: []const Block,
             outputs: []Block,
             state: []f32,
@@ -62,9 +63,7 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
             for (fc.channels, q.channels, g.channels, in.channels, &out.channels, 0..) |fc_chan, q_chan, g_chan, in_chan, *out_chan, i| {
                 for (fc_chan, q_chan, g_chan, in_chan, 0..) |fc_vec, q_vec, g_vec, in_vec, j| {
                     var p: Params = undefined;
-                    // const nfc = fc_vec / @as(Vec, @splat(state.sr));
-                    // FIXME: hardcoded sr
-                    const nfc = fc_vec / @as(Vec, @splat(48000.0));
+                    const nfc = fc_vec / @as(Vec, @splat(sr));
                     const k = @tan(@as(Vec, @splat(std.math.pi)) * nfc);
                     init(fc_vec, q_vec, g_vec, k, &p);
 

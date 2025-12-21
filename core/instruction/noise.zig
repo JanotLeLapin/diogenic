@@ -22,6 +22,7 @@ pub const Noise = struct {
 
     pub fn eval(
         _: *const @This(),
+        _: f32,
         _: []const Block,
         outputs: []Block,
         state: []f32,

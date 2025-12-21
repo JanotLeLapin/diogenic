@@ -31,14 +31,18 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
             };
         }
 
-        pub fn evalDynamic(freq: *const Block, pm: *const Block, phase: *f32, out: *Block) void {
+        inline fn evalDynamic(
+            sr: f32,
+            freq: *const Block,
+            pm: *const Block,
+            phase: *f32,
+            out: *Block,
+        ) void {
             var acc: f32 = 0.0;
             for (freq.channels, pm.channels, 0..) |freq_chan, pm_chan, i| {
                 acc = phase.*;
                 for (freq_chan, pm_chan, 0..) |freq_vec, pm_vec, j| {
-                    // const inc_vec = freq_vec / @as(Vec, @splat(state.sr));
-                    // FIXME: hardcoded sample rate
-                    const inc_vec = freq_vec / @as(Vec, @splat(48000.0));
+                    const inc_vec = freq_vec / @as(Vec, @splat(sr));
                     for (0..engine.SIMD_LENGTH) |k| {
                         const inc = inc_vec[k];
 
@@ -54,10 +58,14 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
             phase.* = acc;
         }
 
-        pub fn evalStatic(freq: f32, pm: *const Block, phase: *f32, out: *Block) void {
-            // const inc = freq / state.sr;
-            // FIXME: hardcoded sample rate
-            const inc = freq / 48000.0;
+        inline fn evalStatic(
+            sr: f32,
+            freq: f32,
+            pm: *const Block,
+            phase: *f32,
+            out: *Block,
+        ) void {
+            const inc = freq / sr;
 
             var ramp: Vec = undefined;
             inline for (0..engine.SIMD_LENGTH) |i| {
@@ -86,6 +94,7 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
 
         pub fn eval(
             self: *const @This(),
+            sr: f32,
             inputs: []const Block,
             outputs: []Block,
             state: []f32,
@@ -97,9 +106,9 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
             const out = &outputs[0];
 
             if (self.static_freq) |v| {
-                evalStatic(v, pm, phase, out);
+                evalStatic(sr, v, pm, phase, out);
             } else {
-                evalDynamic(freq, pm, phase, out);
+                evalDynamic(sr, freq, pm, phase, out);
             }
         }
     };

@@ -53,6 +53,7 @@ pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
                 const outputs = state.stack[in_start..out_end];
 
                 device.eval(
+                    state.sr,
                     inputs,
                     outputs,
                     state.state[state_head .. state_head + state_count],

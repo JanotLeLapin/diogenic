@@ -24,6 +24,7 @@ pub fn Math(comptime label: [:0]const u8, comptime op: Op) type {
 
         pub fn eval(
             _: *const @This(),
+            _: f32,
             inputs: []const Block,
             outputs: []Block,
             _: []f32,
