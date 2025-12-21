@@ -41,10 +41,7 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
         pub const output_count = 1;
         pub const state_count = 4;
 
-        pub fn compile(_: *CompilerState, node: *Node) !@This() {
-            if (node.data.list.items.len != 5) {
-                return error.BadArity;
-            }
+        pub fn compile(_: *CompilerState, _: *Node) !@This() {
             return @This(){};
         }
 

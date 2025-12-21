@@ -16,10 +16,7 @@ pub const Noise = struct {
     pub const output_count = 1;
     pub const state_count = 2;
 
-    pub fn compile(_: *CompilerState, node: *Node) !@This() {
-        if (node.data.list.items.len != 1) {
-            return error.BadArity;
-        }
+    pub fn compile(_: *CompilerState, _: *Node) !@This() {
         return @This(){};
     }
 

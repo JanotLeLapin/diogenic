@@ -116,10 +116,15 @@ pub fn compile(state: *CompilerState, node: *Node) !Instruction {
 
     switch (i) {
         inline 0...Instructions.len - 1 => |ci| {
+            const T = Instructions[ci];
+            if (expr.items.len != T.input_count + 1) {
+                return error.BadArity;
+            }
+
             return @unionInit(
                 Instruction,
-                Instructions[ci].name,
-                try Instructions[ci].compile(state, node),
+                T.name,
+                try T.compile(state, node),
             );
         },
         else => unreachable,

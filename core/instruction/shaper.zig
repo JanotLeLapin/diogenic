@@ -18,10 +18,7 @@ pub fn Shaper(comptime label: [:0]const u8, comptime op: Op) type {
         pub const input_count = 2;
         pub const output_count = 1;
 
-        pub fn compile(_: *CompilerState, node: *Node) !@This() {
-            if (node.data.list.items.len != 3) {
-                return error.BadArity;
-            }
+        pub fn compile(_: *CompilerState, _: *Node) !@This() {
             return @This(){};
         }
 
