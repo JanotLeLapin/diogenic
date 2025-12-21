@@ -22,7 +22,7 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
 
         static_freq: ?f32,
 
-        pub fn compile(_: *CompilerState, node: *Node) !@This() {
+        pub fn compile(node: *Node) !@This() {
             return @This(){
                 .static_freq = switch (node.data.list.items[1].data) {
                     .num => |num| num,

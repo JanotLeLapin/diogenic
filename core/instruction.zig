@@ -101,7 +101,7 @@ pub fn getExpressionIndex(name: []const u8) ?usize {
     return null;
 }
 
-pub fn compile(state: *CompilerState, node: *Node) !Instruction {
+pub fn compile(node: *Node) !Instruction {
     const expr = switch (node.data) {
         .list => |lst| lst,
         else => return error.BadExpr,
@@ -124,7 +124,7 @@ pub fn compile(state: *CompilerState, node: *Node) !Instruction {
             return @unionInit(
                 Instruction,
                 T.name,
-                try T.compile(state, node),
+                try T.compile(node),
             );
         },
         else => unreachable,

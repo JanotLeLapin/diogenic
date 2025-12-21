@@ -41,7 +41,7 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
         pub const output_count = 1;
         pub const state_count = 4;
 
-        pub fn compile(_: *CompilerState, _: *Node) !@This() {
+        pub fn compile(_: *Node) !@This() {
             return @This(){};
         }
 

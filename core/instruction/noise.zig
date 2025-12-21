@@ -16,7 +16,7 @@ pub const Noise = struct {
     pub const output_count = 1;
     pub const state_count = 2;
 
-    pub fn compile(_: *CompilerState, _: *Node) !@This() {
+    pub fn compile(_: *Node) !@This() {
         return @This(){};
     }
 

@@ -16,7 +16,7 @@ pub fn Arith(comptime label: [:0]const u8, comptime op: Op) type {
         pub const input_count = 2;
         pub const output_count = 1;
 
-        pub fn compile(_: *CompilerState, _: *Node) !@This() {
+        pub fn compile(_: *Node) !@This() {
             return @This(){};
         }
 

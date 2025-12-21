@@ -15,7 +15,7 @@ pub const Push = struct {
 
     value: f32,
 
-    pub fn compile(_: *CompilerState, _: *Node) !Push {
+    pub fn compile(_: *Node) !Push {
         return error.NotCallable;
     }
 };
@@ -26,7 +26,7 @@ pub const Pop = struct {
     pub const input_count = 1;
     pub const output_count = 0;
 
-    pub fn compile(_: *CompilerState, _: *Node) !Pop {
+    pub fn compile(_: *Node) !Pop {
         return error.NotCallable;
     }
 };
@@ -39,7 +39,7 @@ pub const Store = struct {
 
     reg_index: usize,
 
-    pub fn compile(_: *CompilerState, _: *Node) !Store {
+    pub fn compile(_: *Node) !Store {
         return error.NotCallable;
     }
 };
@@ -52,7 +52,7 @@ pub const Load = struct {
 
     reg_index: usize,
 
-    pub fn compile(_: *CompilerState, _: *Node) !Load {
+    pub fn compile(_: *Node) !Load {
         return error.NotCallable;
     }
 };
@@ -65,7 +65,7 @@ pub const Free = struct {
 
     reg_index: usize,
 
-    pub fn compile(_: *CompilerState, _: *Node) !Free {
+    pub fn compile(_: *Node) !Free {
         return error.NotCallable;
     }
 };

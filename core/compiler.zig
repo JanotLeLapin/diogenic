@@ -54,7 +54,7 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
             try compile(state, child, instructions, alloc);
         }
 
-        if (instruction.compile(state, tmp)) |instr| {
+        if (instruction.compile(tmp)) |instr| {
             try instructions.append(alloc, instr);
         } else |err| {
             if (!is_freestanding) {
