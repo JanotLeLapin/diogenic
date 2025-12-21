@@ -6,6 +6,8 @@ const CompilerState = engine.CompilerState;
 const EngineState = engine.EngineState;
 const Vec = engine.Vec;
 
+const meta = @import("./meta.zig");
+
 const parser = @import("../parser.zig");
 const Node = parser.Node;
 
@@ -17,6 +19,11 @@ pub fn Shaper(comptime label: [:0]const u8, comptime op: Op) type {
 
         pub const input_count = 2;
         pub const output_count = 1;
+
+        pub const args: []const meta.Arg = &.{
+            .{ .name = "threshold" },
+            .{ .name = "in", .description = "input signal" },
+        };
 
         pub fn compile(_: *Node) !@This() {
             return @This(){};

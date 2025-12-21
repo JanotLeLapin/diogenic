@@ -79,7 +79,13 @@ pub fn main() !void {
     var instructions = try std.ArrayList(Instruction).initCapacity(gpa.allocator(), 64);
     defer instructions.deinit(gpa.allocator());
 
-    core.compiler.compile(&cs, root.data.list.items[0], &instructions, gpa.allocator()) catch {
+    core.compiler.compile(
+        &cs,
+        root.data.list.items[0],
+        &instructions,
+        gpa.allocator(),
+        ast_alloc.allocator(),
+    ) catch {
         log.err("compilation failed", .{});
         return;
     };

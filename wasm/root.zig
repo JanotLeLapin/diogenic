@@ -41,6 +41,7 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
         root.data.list.items[0],
         &maybe_instructions.?,
         gpa,
+        arena.allocator(),
     ) catch return -2;
 
     maybe_engine_state = core.initState(sr, maybe_instructions.?.items, gpa) catch return -3;

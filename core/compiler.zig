@@ -18,12 +18,18 @@ pub const Constants = std.StaticStringMap(f32).initComptime(.{
     .{ "PI", std.math.pi },
 });
 
-pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(Instruction), alloc: std.mem.Allocator) !void {
+pub fn compile(
+    state: *CompilerState,
+    tmp: *Node,
+    instructions: *std.ArrayList(Instruction),
+    stack_alloc: std.mem.Allocator,
+    ast_alloc: std.mem.Allocator,
+) !void {
     const op = switch (tmp.data) {
         .list => |lst| lst.items[0].data.id,
         .num => |num| {
             try instructions.append(
-                alloc,
+                stack_alloc,
                 Instruction{ .push = instruction.value.Push{ .value = num } },
             );
             return;
@@ -31,12 +37,12 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
         .id => |id| {
             if (state.env.get(id)) |idx| {
                 try instructions.append(
-                    alloc,
+                    stack_alloc,
                     Instruction{ .load = instruction.value.Load{ .reg_index = idx } },
                 );
             } else if (Constants.get(id)) |v| {
                 try instructions.append(
-                    alloc,
+                    stack_alloc,
                     Instruction{ .push = instruction.value.Push{ .value = v } },
                 );
             } else {
@@ -47,20 +53,28 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
             }
             return;
         },
+        else => unreachable,
+    };
+
+    instruction.expand(tmp, ast_alloc) catch |err| {
+        if (!is_freestanding) {
+            log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
+        }
+        return err;
     };
 
     if (instruction.getExpressionIndex(op)) |_| {
         for (tmp.data.list.items[1..]) |child| {
-            try compile(state, child, instructions, alloc);
+            try compile(state, child, instructions, stack_alloc, ast_alloc);
         }
 
         if (instruction.compile(tmp)) |instr| {
-            try instructions.append(alloc, instr);
+            try instructions.append(stack_alloc, instr);
         } else |err| {
             if (!is_freestanding) {
                 log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
             }
-            return error.CompilationError;
+            return err;
         }
     } else if (std.mem.eql(u8, "let", op)) {
         const bindings = tmp.data.list.items[1].data.list;
@@ -73,15 +87,15 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
             state.reg_index += 1;
 
             try state.env.put(name, reg_index);
-            try compile(state, bindings.items[i + 1], instructions, alloc);
-            try instructions.append(alloc, Instruction{
+            try compile(state, bindings.items[i + 1], instructions, stack_alloc, ast_alloc);
+            try instructions.append(stack_alloc, Instruction{
                 .store = instruction.value.Store{ .reg_index = reg_index },
             });
 
             i += 2;
         }
 
-        try compile(state, expr, instructions, alloc);
+        try compile(state, expr, instructions, stack_alloc, ast_alloc);
 
         i = 0;
         while (i < bindings.items.len) {
@@ -90,7 +104,7 @@ pub fn compile(state: *CompilerState, tmp: *Node, instructions: *std.ArrayList(I
             state.reg_index += 1;
 
             _ = state.env.remove(name);
-            try instructions.append(alloc, Instruction{
+            try instructions.append(stack_alloc, Instruction{
                 .free = instruction.value.Free{ .reg_index = reg_index },
             });
 

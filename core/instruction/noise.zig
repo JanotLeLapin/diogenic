@@ -6,6 +6,8 @@ const CompilerState = engine.CompilerState;
 const EngineState = engine.EngineState;
 const Vec = engine.Vec;
 
+const meta = @import("./meta.zig");
+
 const parser = @import("../parser.zig");
 const Node = parser.Node;
 
@@ -15,6 +17,8 @@ pub const Noise = struct {
     pub const input_count = 0;
     pub const output_count = 1;
     pub const state_count = 2;
+
+    pub const args: []meta.Arg = &.{};
 
     pub fn compile(_: *Node) !@This() {
         return @This(){};

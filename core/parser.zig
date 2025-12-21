@@ -20,6 +20,7 @@ pub const Node = struct {
     data: union(enum) {
         list: std.ArrayList(*Node),
         id: []const u8,
+        atom: []const u8,
         num: f32,
     },
     src: []const u8,
@@ -139,7 +140,9 @@ pub fn parse(
 
         const new = try ast_alloc.create(Node);
         new.src = token.lit;
-        if (std.fmt.parseFloat(f32, token.lit)) |num| {
+        if (token.lit[0] == ':') {
+            new.data = .{ .atom = token.lit };
+        } else if (std.fmt.parseFloat(f32, token.lit)) |num| {
             new.data = .{ .num = num };
         } else |_| {
             new.data = .{ .id = token.lit };

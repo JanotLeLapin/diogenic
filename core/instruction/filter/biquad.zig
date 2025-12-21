@@ -10,6 +10,8 @@ const CompilerState = engine.CompilerState;
 const EngineState = engine.EngineState;
 const Vec = engine.Vec;
 
+const meta = @import("../meta.zig");
+
 const parser = @import("../../parser.zig");
 const Node = parser.Node;
 
@@ -40,6 +42,13 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
         pub const input_count = 4;
         pub const output_count = 1;
         pub const state_count = 4;
+
+        pub const args: []const meta.Arg = &.{
+            .{ .name = "freq" },
+            .{ .name = "q", .description = "quality factor", .default = 0.707 },
+            .{ .name = "g", .description = "gain factor", .default = 1.0 },
+            .{ .name = "in", .description = "input signal" },
+        };
 
         pub fn compile(_: *Node) !@This() {
             return @This(){};
