@@ -8,6 +8,7 @@ const Node = parser.Node;
 
 pub const value = @import("instruction/value.zig");
 pub const arith = @import("instruction/arith.zig");
+pub const downsample = @import("instruction/downsample.zig");
 pub const math = @import("instruction/math.zig");
 pub const noise = @import("instruction/noise.zig");
 pub const osc = @import("instruction/osc.zig");
@@ -30,6 +31,8 @@ pub const Instructions = .{
     arith.Leq,
     arith.Gt,
     arith.Geq,
+
+    downsample.Downsample,
 
     osc.Sine,
     osc.Sawtooth,
