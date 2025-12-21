@@ -56,14 +56,14 @@ pub fn compile(
         else => unreachable,
     };
 
-    instruction.expand(tmp, ast_alloc) catch |err| {
-        if (!is_freestanding) {
-            log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
-        }
-        return err;
-    };
-
     if (instruction.getExpressionIndex(op)) |_| {
+        instruction.expand(tmp, ast_alloc) catch |err| {
+            if (!is_freestanding) {
+                log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
+            }
+            return err;
+        };
+
         for (tmp.data.list.items[1..]) |child| {
             try compile(state, child, instructions, stack_alloc, ast_alloc);
         }
