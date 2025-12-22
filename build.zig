@@ -79,4 +79,23 @@ pub fn build(b: *std.Build) void {
 
         b.installArtifact(wasm_exe);
     }
+
+    const docs_exe = b.addExecutable(.{
+        .name = "diogenic-docs",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("docs/main.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{
+                .{ .name = "diogenic-core", .module = core_mod },
+            },
+        }),
+    });
+
+    const run_docs = b.addRunArtifact(docs_exe);
+    const output_file = run_docs.captureStdErr();
+    const install_docs = b.addInstallFile(output_file, "diogenic-docs.md");
+
+    const docs_step = b.step("docs", "Generate docs file");
+    docs_step.dependOn(&install_docs.step);
 }

@@ -17,6 +17,7 @@ pub const OpVec = fn (Vec) Vec;
 pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec) type {
     return struct {
         pub const name = label;
+        pub const description = "instantaneous oscillator amplitude";
 
         pub const input_count = 2;
         pub const output_count = 1;

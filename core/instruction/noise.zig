@@ -13,6 +13,7 @@ const Node = parser.Node;
 
 pub const Noise = struct {
     pub const name = "noise!";
+    pub const description = "normally distributed random value centered around 0 with a standard deviation of 1";
 
     pub const input_count = 0;
     pub const output_count = 1;

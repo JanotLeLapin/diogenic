@@ -16,6 +16,7 @@ pub const Op = fn (Vec) Vec;
 pub fn Math(comptime label: [:0]const u8, comptime op: Op) type {
     return struct {
         pub const name = label;
+        pub const description = "unary mathematical operation";
 
         pub const input_count = 1;
         pub const output_count = 1;

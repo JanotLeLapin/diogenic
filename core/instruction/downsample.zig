@@ -11,6 +11,7 @@ const Node = parser.Node;
 
 pub const Downsample = struct {
     pub const name = "downsample!";
+    pub const description = "reduce the sample rate";
 
     pub const input_count = 2;
     pub const output_count = 1;

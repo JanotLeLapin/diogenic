@@ -38,6 +38,7 @@ inline fn process(p: *Params, in: Vec, z: []f32) Vec {
 pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
     return struct {
         pub const name = label;
+        pub const description = "biquadratic filter";
 
         pub const input_count = 4;
         pub const output_count = 1;
