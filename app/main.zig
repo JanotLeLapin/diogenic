@@ -137,7 +137,8 @@ pub fn main() !void {
             for (0..core.engine.BLOCK_LENGTH) |j| {
                 for (0..2) |k| {
                     const amp = e.stack[0].get(@intCast(k), j);
-                    var y = @floor((amp * 0.5 + 0.5) * @as(f32, @floatFromInt(screenHeight)));
+                    var y = @min(@max(amp, -1.0), 1.0);
+                    y = @floor((y * 0.5 + 0.5) * @as(f32, @floatFromInt(screenHeight)));
                     y = y / 4 + @as(f32, @floatFromInt(k)) * (@as(f32, @floatFromInt(screenHeight)) / 4);
 
                     rl.drawLine(@max(x - 1, 0), prev_y[k], x, @intFromFloat(y), .white);
