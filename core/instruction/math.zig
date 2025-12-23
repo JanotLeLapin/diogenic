@@ -114,7 +114,20 @@ pub const Log10 = Math("log10", log10);
 pub const Logn = Math("logn", logn);
 pub const Exp2 = Math("exp2", exp2);
 pub const Exp = Math("exp", exp);
+
+pub const Asin = Math("asin", fromScalar(std.math.asin));
+pub const Asinh = Math("asinh", fromScalar(std.math.asinh));
+pub const Sin = Math("sin", fromScalar(std.math.sin));
+pub const Sinh = Math("sinh", fromScalar(std.math.sinh));
+pub const Acos = Math("acos", fromScalar(std.math.acos));
+pub const Acosh = Math("acosh", fromScalar(std.math.acosh));
+pub const Cos = Math("cos", fromScalar(std.math.cos));
+pub const Cosh = Math("cosh", fromScalar(std.math.cosh));
 pub const Atan = Math("atan", fromScalar(std.math.atan));
+pub const Atanh = Math("atanh", fromScalar(std.math.atanh));
+pub const Tan = Math("tan", fromScalar(std.math.tan));
+pub const Tanh = Math("tanh", fromScalar(std.math.tanh));
+
 pub const Sigmoid = Math("sigmoid", fromScalar(sigmoid));
 pub const Floor = Math("floor", floor);
 pub const Ceil = Math("ceil", ceil);
