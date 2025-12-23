@@ -1,11 +1,9 @@
 const std = @import("std");
 const log = std.log.scoped(.core);
 
-const vaxis = @import("vaxis");
-const vxfw = vaxis.vxfw;
+const rl = @import("raylib");
 
 const audio = @import("audio.zig");
-const tui = @import("tui.zig");
 
 const core = @import("diogenic-core");
 const CompilerState = core.engine.CompilerState;
@@ -114,21 +112,16 @@ pub fn main() !void {
     try audio.startStream(stream);
     defer _ = audio.stopStream(stream) catch {};
 
-    var app = try vxfw.App.init(gpa.allocator());
-    defer app.deinit();
+    rl.initWindow(800, 450, "diogenic");
+    defer rl.closeWindow();
 
-    const model = try gpa.allocator().create(tui.Model);
-    defer gpa.allocator().destroy(model);
+    rl.setTargetFPS(60);
 
-    model.* = .{
-        .count = 0,
-        .button = .{
-            .label = "Click me!",
-            .onClick = tui.Model.onClick,
-            .userdata = model,
-        },
-        .stream = stream,
-    };
+    while (!rl.windowShouldClose()) {
+        rl.beginDrawing();
+        defer rl.endDrawing();
 
-    try app.run(model.widget(), .{});
+        rl.clearBackground(.white);
+        rl.drawText("hello, world!", 10, 10, 20, .red);
+    }
 }

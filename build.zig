@@ -7,11 +7,6 @@ pub fn build(b: *std.Build) void {
     const buildNative = b.option(bool, "native", "Build native app") orelse true;
     const buildWasm = b.option(bool, "wasm", "Build wasm binary") orelse true;
 
-    const vaxis = b.dependency("vaxis", .{
-        .target = target,
-        .optimize = optimize,
-    });
-
     const core_mod = b.addModule("diogenic-core", .{
         .root_source_file = b.path("core/root.zig"),
         .target = target,
@@ -21,6 +16,11 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the app");
 
     if (buildNative) {
+        const raylib = b.dependency("raylib_zig", .{
+            .target = target,
+            .optimize = optimize,
+        });
+
         const exe = b.addExecutable(.{
             .name = "diogenic",
             .root_module = b.createModule(.{
@@ -29,10 +29,13 @@ pub fn build(b: *std.Build) void {
                 .optimize = optimize,
                 .imports = &.{
                     .{ .name = "diogenic-core", .module = core_mod },
-                    .{ .name = "vaxis", .module = vaxis.module("vaxis") },
+                    .{ .name = "raylib", .module = raylib.module("raylib") },
+                    .{ .name = "raygui", .module = raylib.module("raygui") },
                 },
             }),
         });
+
+        exe.linkLibrary(raylib.artifact("raylib"));
 
         exe.root_module.link_libc = true;
         exe.root_module.linkSystemLibrary("portaudio", .{});
