@@ -122,7 +122,9 @@ pub fn main() !void {
 
     rl.setTargetFPS(@intFromFloat(fps));
 
-    var prev_y: i32 = 0;
+    var prev_y: [2]i32 = undefined;
+    prev_y[0] = 0;
+    prev_y[1] = 0;
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
         defer rl.endDrawing();
@@ -133,12 +135,15 @@ pub fn main() !void {
             core.eval(&e, instructions.items) catch {};
 
             for (0..core.engine.BLOCK_LENGTH) |j| {
-                const amp = e.stack[0].get(0, j);
-                const y: i32 = @intFromFloat(@floor((amp * 0.5 + 0.5) * @as(f32, @floatFromInt(screenHeight))));
+                for (0..2) |k| {
+                    const amp = e.stack[0].get(@intCast(k), j);
+                    var y = @floor((amp * 0.5 + 0.5) * @as(f32, @floatFromInt(screenHeight)));
+                    y = y * 0.5 + @as(f32, @floatFromInt(k)) * (@as(f32, @floatFromInt(screenHeight)) / 2.0);
 
-                rl.drawLine(@max(x - 1, 0), prev_y, x, y, .black);
+                    rl.drawLine(@max(x - 1, 0), prev_y[k], x, @intFromFloat(y), .black);
+                    prev_y[k] = @intFromFloat(y);
+                }
                 x += 1;
-                prev_y = y;
             }
         }
     }
