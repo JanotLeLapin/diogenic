@@ -39,6 +39,7 @@ pub const Instructions = .{
     osc.Sine,
     osc.Sawtooth,
     osc.Square,
+    osc.Triangle,
 
     math.Log2,
     math.Log10,

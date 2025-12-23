@@ -146,6 +146,24 @@ fn squareVec(p: Vec) Vec {
     return @floor(p / @as(Vec, @splat(std.math.pi))) * @as(Vec, @splat(2.0)) - @as(Vec, @splat(1.0));
 }
 
+fn triangle(p: f32) f32 {
+    return if (p < std.math.pi)
+        2.0 / std.math.pi * p - 1.0
+    else
+        3.0 - 2.0 / std.math.pi * p;
+}
+
+fn triangleVec(p: Vec) Vec {
+    const mask = p < @as(Vec, @splat(std.math.pi));
+    return @select(
+        f32,
+        mask,
+        @as(Vec, @splat(2.0 / std.math.pi)) * p - @as(Vec, @splat(1.0)),
+        @as(Vec, @splat(3.0)) - @as(Vec, @splat(2.0 / std.math.pi)) * p,
+    );
+}
+
 pub const Sine = Osc("sine!", sine, sineVec);
 pub const Sawtooth = Osc("sawtooth!", sawtooth, sawtoothVec);
 pub const Square = Osc("square!", square, squareVec);
+pub const Triangle = Osc("triangle!", triangle, triangleVec);
