@@ -101,27 +101,43 @@ pub fn main() !void {
         }
     }
 
-    try audio.init();
-    defer _ = audio.deinit() catch {};
-    var userdata: audio.CallbackData = .{
-        .engine_state = &e,
-        .instructions = instructions.items,
-    };
+    // try audio.init();
+    // defer _ = audio.deinit() catch {};
+    // var userdata: audio.CallbackData = .{
+    //     .engine_state = &e,
+    //     .instructions = instructions.items,
+    // };
 
-    const stream = try audio.openStream(e.sr, &userdata);
-    try audio.startStream(stream);
-    defer _ = audio.stopStream(stream) catch {};
+    // const stream = try audio.openStream(e.sr, &userdata);
+    // try audio.startStream(stream);
+    // defer _ = audio.stopStream(stream) catch {};
 
-    rl.initWindow(800, 450, "diogenic");
+    const screenWidth = 625;
+    const screenHeight = 450;
+    const fps = 60.0;
+    const samplesPerFrame = e.sr / fps;
+    const blocksPerFrame = samplesPerFrame / @as(f32, @floatFromInt(core.engine.BLOCK_LENGTH));
+    rl.initWindow(screenWidth, screenHeight, "diogenic");
     defer rl.closeWindow();
 
-    rl.setTargetFPS(60);
+    rl.setTargetFPS(@intFromFloat(fps));
 
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
         defer rl.endDrawing();
 
         rl.clearBackground(.white);
-        rl.drawText("hello, world!", 10, 10, 20, .red);
+        var x: i32 = 0;
+        for (0..@as(usize, @intFromFloat(@ceil(blocksPerFrame)))) |_| {
+            core.eval(&e, instructions.items) catch {};
+
+            for (0..core.engine.BLOCK_LENGTH) |j| {
+                const amp = e.stack[0].get(0, j);
+                const y: i32 = @intFromFloat(@floor((amp * 0.5 + 0.5) * @as(f32, @floatFromInt(screenHeight))));
+
+                rl.drawCircle(x, y, 1, .red);
+                x += 1;
+            }
+        }
     }
 }
