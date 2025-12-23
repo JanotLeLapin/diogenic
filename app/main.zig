@@ -122,6 +122,7 @@ pub fn main() !void {
 
     rl.setTargetFPS(@intFromFloat(fps));
 
+    var prev_y: i32 = 0;
     while (!rl.windowShouldClose()) {
         rl.beginDrawing();
         defer rl.endDrawing();
@@ -135,8 +136,9 @@ pub fn main() !void {
                 const amp = e.stack[0].get(0, j);
                 const y: i32 = @intFromFloat(@floor((amp * 0.5 + 0.5) * @as(f32, @floatFromInt(screenHeight))));
 
-                rl.drawCircle(x, y, 1, .red);
+                rl.drawLine(@max(x - 1, 0), prev_y, x, y, .black);
                 x += 1;
+                prev_y = y;
             }
         }
     }
