@@ -112,8 +112,8 @@ pub fn main() !void {
     // try audio.startStream(stream);
     // defer _ = audio.stopStream(stream) catch {};
 
-    const screenWidth = 625;
-    const screenHeight = 450;
+    const screenWidth = 850;
+    const screenHeight = 800;
     const fps = 60.0;
     const samplesPerFrame = e.sr / fps;
     const blocksPerFrame = samplesPerFrame / @as(f32, @floatFromInt(core.engine.BLOCK_LENGTH));
@@ -129,7 +129,7 @@ pub fn main() !void {
         rl.beginDrawing();
         defer rl.endDrawing();
 
-        rl.clearBackground(.white);
+        rl.clearBackground(.black);
         var x: i32 = 0;
         for (0..@as(usize, @intFromFloat(@ceil(blocksPerFrame)))) |_| {
             core.eval(&e, instructions.items) catch {};
@@ -138,9 +138,9 @@ pub fn main() !void {
                 for (0..2) |k| {
                     const amp = e.stack[0].get(@intCast(k), j);
                     var y = @floor((amp * 0.5 + 0.5) * @as(f32, @floatFromInt(screenHeight)));
-                    y = y * 0.5 + @as(f32, @floatFromInt(k)) * (@as(f32, @floatFromInt(screenHeight)) / 2.0);
+                    y = y / 4 + @as(f32, @floatFromInt(k)) * (@as(f32, @floatFromInt(screenHeight)) / 4);
 
-                    rl.drawLine(@max(x - 1, 0), prev_y[k], x, @intFromFloat(y), .black);
+                    rl.drawLine(@max(x - 1, 0), prev_y[k], x, @intFromFloat(y), .white);
                     prev_y[k] = @intFromFloat(y);
                 }
                 x += 1;
