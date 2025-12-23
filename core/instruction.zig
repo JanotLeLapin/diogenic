@@ -14,6 +14,7 @@ pub const downsample = @import("instruction/downsample.zig");
 pub const math = @import("instruction/math.zig");
 pub const noise = @import("instruction/noise.zig");
 pub const osc = @import("instruction/osc.zig");
+pub const pan = @import("instruction/pan.zig");
 pub const shaper = @import("instruction/shaper.zig");
 
 pub const biquad = @import("instruction/filter/biquad.zig");
@@ -40,6 +41,8 @@ pub const Instructions = .{
     osc.Sawtooth,
     osc.Square,
     osc.Triangle,
+
+    pan.Pan,
 
     math.Log2,
     math.Log10,
