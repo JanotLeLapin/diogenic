@@ -15,7 +15,9 @@ const Node = parser.Node;
 const is_freestanding = builtin.target.os.tag == .freestanding;
 
 pub const Constants = std.StaticStringMap(f32).initComptime(.{
+    .{ "E", std.math.e },
     .{ "PI", std.math.pi },
+    .{ "PHI", std.math.phi },
 });
 
 pub fn compile(
