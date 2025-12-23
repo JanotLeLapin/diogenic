@@ -14,7 +14,7 @@ const Node = parser.Node;
 pub const Op = fn (f32) f32;
 pub const OpVec = fn (Vec) Vec;
 
-pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec) type {
+pub fn Osc(comptime label: [:0]const u8, comptime op_vec: OpVec) type {
     return struct {
         pub const name = label;
         pub const description = "instantaneous oscillator amplitude";
@@ -51,15 +51,14 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
                 acc = phase.*;
                 for (freq_chan, pm_chan, 0..) |freq_vec, pm_vec, j| {
                     const inc_vec = freq_vec / @as(Vec, @splat(sr));
-                    for (0..engine.SIMD_LENGTH) |k| {
-                        const inc = inc_vec[k];
-
-                        const radians = std.math.pi * 2 * acc;
-                        out.channels[i][j][k] = op(radians + pm_vec[k]);
-
-                        acc += inc;
+                    var acc_vec: Vec = undefined;
+                    inline for (0..engine.SIMD_LENGTH) |k| {
+                        acc_vec[k] = acc;
+                        acc += inc_vec[k];
                         acc -= @floor(acc);
                     }
+                    const radians_vec = @as(Vec, @splat(2 * std.math.pi)) * acc_vec;
+                    out.channels[i][j] = op_vec(radians_vec + pm_vec);
                 }
             }
 
@@ -122,38 +121,19 @@ pub fn Osc(comptime label: [:0]const u8, comptime op: Op, comptime op_vec: OpVec
     };
 }
 
-fn sine(p: f32) f32 {
+fn sine(p: Vec) Vec {
     return @sin(p);
 }
 
-fn sineVec(p: Vec) Vec {
-    return @sin(p);
-}
-
-fn sawtooth(p: f32) f32 {
-    return p / std.math.pi - 1.0;
-}
-
-fn sawtoothVec(p: Vec) Vec {
+fn sawtooth(p: Vec) Vec {
     return p / @as(Vec, @splat(std.math.pi)) - @as(Vec, @splat(1.0));
 }
 
-fn square(p: f32) f32 {
-    return @floor(p / std.math.pi) * 2.0 - 1.0;
-}
-
-fn squareVec(p: Vec) Vec {
+fn square(p: Vec) Vec {
     return @floor(p / @as(Vec, @splat(std.math.pi))) * @as(Vec, @splat(2.0)) - @as(Vec, @splat(1.0));
 }
 
-fn triangle(p: f32) f32 {
-    return if (p < std.math.pi)
-        2.0 / std.math.pi * p - 1.0
-    else
-        3.0 - 2.0 / std.math.pi * p;
-}
-
-fn triangleVec(p: Vec) Vec {
+fn triangle(p: Vec) Vec {
     const mask = p < @as(Vec, @splat(std.math.pi));
     return @select(
         f32,
@@ -163,7 +143,7 @@ fn triangleVec(p: Vec) Vec {
     );
 }
 
-pub const Sine = Osc("sine!", sine, sineVec);
-pub const Sawtooth = Osc("sawtooth!", sawtooth, sawtoothVec);
-pub const Square = Osc("square!", square, squareVec);
-pub const Triangle = Osc("triangle!", triangle, triangleVec);
+pub const Sine = Osc("sine!", sine);
+pub const Sawtooth = Osc("sawtooth!", sawtooth);
+pub const Square = Osc("square!", square);
+pub const Triangle = Osc("triangle!", triangle);
