@@ -68,7 +68,7 @@ pub const Granular = struct {
     pub const args: []const meta.Arg = &.{
         .{ .name = "density", .description = "grain density, in grains per second", .default = 0.0 },
         .{ .name = "size", .description = "grain size, in milliseconds", .default = 100.0 },
-        .{ .name = "speed", .description = "grain playback speed", .default = 0.0 },
+        .{ .name = "speed", .description = "grain playback speed", .default = 1.0 },
         .{ .name = "in", .description = "input signal" },
     };
 
