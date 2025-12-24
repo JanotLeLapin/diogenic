@@ -12,7 +12,9 @@ const parser = @import("../parser.zig");
 const Node = parser.Node;
 
 const MAX_POLYPHONY: usize = 32;
-const HISTORY_SIZE: usize = 48000 * 5;
+const HISTORY_BITS = 18;
+const HISTORY_SIZE: usize = 1 << HISTORY_BITS;
+const HISTORY_MASK: u32 = HISTORY_SIZE - 1;
 
 const Meta = extern struct {
     head: u32,
@@ -114,13 +116,13 @@ pub const Granular = struct {
         }
 
         for (0..engine.BLOCK_LENGTH) |i| {
-            history[(m.head + i) % HISTORY_SIZE] = 0.0;
+            history[(m.head + i) & HISTORY_MASK] = 0.0;
         }
         for (in.channels, &out.channels) |in_chan, *out_chan| {
             for (in_chan, out_chan, 0..) |in_vec, *out_vec, i| {
                 out_vec.* = @splat(0.0);
                 inline for (0..engine.SIMD_LENGTH) |j| {
-                    history[(m.head + i * engine.SIMD_LENGTH + j) % HISTORY_SIZE] += in_vec[j] * 0.5;
+                    history[(m.head + i * engine.SIMD_LENGTH + j) & HISTORY_MASK] += in_vec[j] * 0.5;
                 }
             }
         }
@@ -133,7 +135,7 @@ pub const Granular = struct {
             for (0..engine.BLOCK_LENGTH) |i| {
                 const read_idx: usize = @intFromFloat(@floor(@mod(g.cursor, @as(f32, @floatFromInt(HISTORY_SIZE)))));
                 const alpha = g.cursor - @floor(g.cursor);
-                const sample = history[read_idx] * (1 - alpha) + history[(read_idx + 1) % HISTORY_SIZE] * alpha;
+                const sample = history[read_idx] * (1 - alpha) + history[(read_idx + 1) & HISTORY_MASK] * alpha;
                 inline for (0..2) |j| {
                     const current = out.get(@intCast(j), @intCast(i));
                     out.set(@intCast(j), @intCast(i), current + sample);
@@ -147,6 +149,6 @@ pub const Granular = struct {
             }
         }
 
-        m.head = (m.head + engine.BLOCK_LENGTH) % @as(u32, @intCast(HISTORY_SIZE));
+        m.head = (m.head + engine.BLOCK_LENGTH) & HISTORY_MASK;
     }
 };
