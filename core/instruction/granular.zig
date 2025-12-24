@@ -132,7 +132,8 @@ pub const Granular = struct {
 
             for (0..engine.BLOCK_LENGTH) |i| {
                 const read_idx: usize = @intFromFloat(@floor(@mod(g.cursor, @as(f32, @floatFromInt(HISTORY_SIZE)))));
-                const sample = history[read_idx];
+                const alpha = g.cursor - @floor(g.cursor);
+                const sample = history[read_idx] * (1 - alpha) + history[(read_idx + 1) % HISTORY_SIZE] * alpha;
                 inline for (0..2) |j| {
                     const current = out.get(@intCast(j), @intCast(i));
                     out.set(@intCast(j), @intCast(i), current + sample);
