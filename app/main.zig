@@ -44,27 +44,48 @@ pub const std_options = std.Options{
     .logFn = logFn,
 };
 
+const Args = struct {
+    src: []const u8,
+    action: enum {
+        render,
+        display,
+        playback,
+    },
+};
+
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer std.debug.assert(gpa.deinit() == .ok);
 
-    const src = src: {
+    const args = src: {
         const args = try std.process.argsAlloc(gpa.allocator());
         defer std.process.argsFree(gpa.allocator(), args);
 
-        if (args.len < 2) {
-            log.err("missing input file\n", .{});
+        if (args.len < 3) {
+            log.err("bad usage, expected: diogenic <source> <render|display|playback>\n", .{});
             return;
         }
 
         const file = try std.fs.cwd().openFile(args[1], .{});
         defer file.close();
 
-        break :src try file.readToEndAlloc(gpa.allocator(), 10 * 1024 * 1024);
+        break :src Args{
+            .src = try file.readToEndAlloc(gpa.allocator(), 10 * 1024 * 1024),
+            .action = if (std.mem.eql(u8, "render", args[2]))
+                .render
+            else if (std.mem.eql(u8, "display", args[2]))
+                .display
+            else if (std.mem.eql(u8, "play", args[2]))
+                .playback
+            else {
+                log.err("bad usage, expected: diogenic <source> <render|display|playback>\n", .{});
+                return;
+            },
+        };
     };
-    defer gpa.allocator().free(src);
+    defer gpa.allocator().free(args.src);
 
-    var tokenizer = Tokenizer{ .src = src };
+    var tokenizer = Tokenizer{ .src = args.src };
 
     var ast_alloc = std.heap.ArenaAllocator.init(gpa.allocator());
     defer ast_alloc.deinit();
@@ -101,51 +122,75 @@ pub fn main() !void {
         }
     }
 
-    // try audio.init();
-    // defer _ = audio.deinit() catch {};
-    // var userdata: audio.CallbackData = .{
-    //     .engine_state = &e,
-    //     .instructions = instructions.items,
-    // };
+    switch (args.action) {
+        .display => {
+            const screenWidth = 850;
+            const screenHeight = 800;
+            const fps = 60.0;
+            const samplesPerFrame = e.sr / fps;
+            const blocksPerFrame = samplesPerFrame / @as(f32, @floatFromInt(core.engine.BLOCK_LENGTH));
+            rl.initWindow(screenWidth, screenHeight, "diogenic");
+            defer rl.closeWindow();
 
-    // const stream = try audio.openStream(e.sr, &userdata);
-    // try audio.startStream(stream);
-    // defer _ = audio.stopStream(stream) catch {};
+            rl.setTargetFPS(@intFromFloat(fps));
 
-    const screenWidth = 850;
-    const screenHeight = 800;
-    const fps = 60.0;
-    const samplesPerFrame = e.sr / fps;
-    const blocksPerFrame = samplesPerFrame / @as(f32, @floatFromInt(core.engine.BLOCK_LENGTH));
-    rl.initWindow(screenWidth, screenHeight, "diogenic");
-    defer rl.closeWindow();
+            var prev_y: [2]i32 = undefined;
+            prev_y[0] = 0;
+            prev_y[1] = 0;
+            while (!rl.windowShouldClose()) {
+                rl.beginDrawing();
+                defer rl.endDrawing();
 
-    rl.setTargetFPS(@intFromFloat(fps));
+                rl.clearBackground(.black);
+                var x: i32 = 0;
+                for (0..@as(usize, @intFromFloat(@ceil(blocksPerFrame)))) |_| {
+                    core.eval(&e, instructions.items) catch {};
 
-    var prev_y: [2]i32 = undefined;
-    prev_y[0] = 0;
-    prev_y[1] = 0;
-    while (!rl.windowShouldClose()) {
-        rl.beginDrawing();
-        defer rl.endDrawing();
+                    for (0..core.engine.BLOCK_LENGTH) |j| {
+                        for (0..2) |k| {
+                            const amp = e.stack[0].get(@intCast(k), j);
+                            var y = @min(@max(amp, -1.0), 1.0);
+                            y = @floor((y * 0.5 + 0.5) * @as(f32, @floatFromInt(screenHeight)));
+                            y = y / 4 + @as(f32, @floatFromInt(k)) * (@as(f32, @floatFromInt(screenHeight)) / 4);
 
-        rl.clearBackground(.black);
-        var x: i32 = 0;
-        for (0..@as(usize, @intFromFloat(@ceil(blocksPerFrame)))) |_| {
-            core.eval(&e, instructions.items) catch {};
-
-            for (0..core.engine.BLOCK_LENGTH) |j| {
-                for (0..2) |k| {
-                    const amp = e.stack[0].get(@intCast(k), j);
-                    var y = @min(@max(amp, -1.0), 1.0);
-                    y = @floor((y * 0.5 + 0.5) * @as(f32, @floatFromInt(screenHeight)));
-                    y = y / 4 + @as(f32, @floatFromInt(k)) * (@as(f32, @floatFromInt(screenHeight)) / 4);
-
-                    rl.drawLine(@max(x - 1, 0), prev_y[k], x, @intFromFloat(y), .white);
-                    prev_y[k] = @intFromFloat(y);
+                            rl.drawLine(@max(x - 1, 0), prev_y[k], x, @intFromFloat(y), .white);
+                            prev_y[k] = @intFromFloat(y);
+                        }
+                        x += 1;
+                    }
                 }
-                x += 1;
             }
-        }
+        },
+        .render => {
+            const block_count: usize = @intFromFloat(e.sr / @as(f32, @floatFromInt(core.engine.BLOCK_LENGTH)) * 30);
+            var timer = try std.time.Timer.start();
+            try audio.renderWav32(
+                "out.wav",
+                &e,
+                instructions.items,
+                block_count,
+                gpa.allocator(),
+            );
+            const time: f32 = @floatFromInt(timer.read() / 1_000);
+            log.info("rendered {} blocks, took {d:.3}ms ({d:.5}ms/sample)", .{
+                block_count,
+                (time / 1_000),
+                (time / 1_000) / @as(f32, @floatFromInt(block_count * core.engine.BLOCK_LENGTH)),
+            });
+        },
+        .playback => {
+            try audio.init();
+            defer _ = audio.deinit() catch {};
+            var userdata: audio.CallbackData = .{
+                .engine_state = &e,
+                .instructions = instructions.items,
+            };
+
+            const stream = try audio.openStream(e.sr, &userdata);
+            try audio.startStream(stream);
+            defer _ = audio.stopStream(stream) catch {};
+
+            audio.sleep(15000);
+        },
     }
 }
