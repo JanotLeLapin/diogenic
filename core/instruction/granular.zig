@@ -100,9 +100,8 @@ pub const Granular = struct {
             g.active = true;
             g.lifetime = 1.0;
             g.cursor = @floatFromInt(m.head);
-            g.size = size.get(0, 0);
-            g.speed = speed.get(0, 0);
-            // TODO: clamp size or speed to avoid "overflow"
+            g.size = @max(size.get(0, 0), 1.0);
+            g.speed = @max(speed.get(0, 0), 0.2);
         }
 
         for (&out.channels) |*out_chan| {
