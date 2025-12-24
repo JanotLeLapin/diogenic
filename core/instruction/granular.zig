@@ -12,7 +12,7 @@ const parser = @import("../parser.zig");
 const Node = parser.Node;
 
 const MAX_POLYPHONY: usize = 32;
-const HISTORY_SIZE: usize = 48000 * 5 / engine.BLOCK_LENGTH;
+const HISTORY_SIZE: usize = 48000 * 5;
 
 const Meta = extern struct {
     head: u32,
@@ -34,13 +34,17 @@ inline fn floatCount(comptime T: type) usize {
 const META_FLOATS = floatCount(Meta);
 const GRAIN_META_FLOATS = floatCount(GrainMeta);
 
+fn getHistory(state: []f32) []f32 {
+    return state[0..HISTORY_SIZE];
+}
+
 fn getMeta(state: []f32) *Meta {
-    const bytes = std.mem.sliceAsBytes(state[0..META_FLOATS]);
+    const bytes = std.mem.sliceAsBytes(state[HISTORY_SIZE .. HISTORY_SIZE + META_FLOATS]);
     return &std.mem.bytesAsSlice(Meta, bytes)[0];
 }
 
 fn getGrainMeta(state: []f32) []GrainMeta {
-    const bytes = std.mem.sliceAsBytes(state[META_FLOATS .. META_FLOATS + (MAX_POLYPHONY * GRAIN_META_FLOATS)]);
+    const bytes = std.mem.sliceAsBytes(state[HISTORY_SIZE + META_FLOATS .. HISTORY_SIZE + META_FLOATS + (MAX_POLYPHONY * GRAIN_META_FLOATS)]);
     return std.mem.bytesAsSlice(GrainMeta, bytes);
 }
 
@@ -59,8 +63,7 @@ pub const Granular = struct {
 
     pub const input_count = 4;
     pub const output_count = 1;
-    pub const state_count = META_FLOATS + MAX_POLYPHONY * GRAIN_META_FLOATS;
-    pub const register_count = HISTORY_SIZE;
+    pub const state_count = HISTORY_SIZE + META_FLOATS + MAX_POLYPHONY * GRAIN_META_FLOATS;
 
     pub const args: []const meta.Arg = &.{
         .{ .name = "density", .description = "grain density, in grains per second", .default = 0.0 },
@@ -79,7 +82,7 @@ pub const Granular = struct {
         inputs: []const Block,
         outputs: []Block,
         state: []f32,
-        reg: []Block,
+        _: []Block,
     ) void {
         const density = &inputs[0];
         const size = &inputs[1];
@@ -87,26 +90,36 @@ pub const Granular = struct {
         const in = &inputs[3];
         const out = &outputs[0];
 
+        const history = getHistory(state);
         const grains = getGrainMeta(state);
         const m = getMeta(state);
 
-        reg[m.head] = in.*;
+        for (density.channels[0], size.channels[0], speed.channels[0]) |density_vec, size_vec, speed_vec| {
+            for (0..engine.SIMD_LENGTH) |i| {
+                m.grains_to_register += 1.0 / sr * density_vec[i];
 
-        m.grains_to_register += (@as(f32, @floatFromInt(engine.BLOCK_LENGTH)) / sr) * density.get(0, 0);
-        while (m.grains_to_register > 1.0) {
-            m.grains_to_register -= 1.0;
+                while (m.grains_to_register > 1.0) {
+                    m.grains_to_register -= 1.0;
 
-            const g = getGrainSlot(grains) orelse continue;
-            g.active = true;
-            g.lifetime = 1.0;
-            g.cursor = @floatFromInt(m.head);
-            g.size = @max(size.get(0, 0), 1.0);
-            g.speed = @max(speed.get(0, 0), 0.2);
+                    const g = getGrainSlot(grains) orelse continue;
+                    g.active = true;
+                    g.lifetime = 1.0;
+                    g.cursor = @floatFromInt(m.head);
+                    g.size = @max(size_vec[i], 1.0);
+                    g.speed = @max(speed_vec[i], 0.2);
+                }
+            }
         }
 
-        for (&out.channels) |*out_chan| {
-            for (out_chan) |*out_vec| {
+        for (0..engine.BLOCK_LENGTH) |i| {
+            history[(m.head + i) % HISTORY_SIZE] = 0.0;
+        }
+        for (in.channels, &out.channels) |in_chan, *out_chan| {
+            for (in_chan, out_chan, 0..) |in_vec, *out_vec, i| {
                 out_vec.* = @splat(0.0);
+                inline for (0..engine.SIMD_LENGTH) |j| {
+                    history[(m.head + i * engine.SIMD_LENGTH + j) % HISTORY_SIZE] += in_vec[j] * 0.5;
+                }
             }
         }
 
@@ -115,22 +128,22 @@ pub const Granular = struct {
                 continue;
             }
 
-            const read_idx: usize = @intFromFloat(@floor(@mod(g.cursor, @as(f32, @floatFromInt(HISTORY_SIZE)))));
-            const b = &reg[read_idx];
-
-            for (b.channels, &out.channels) |b_chan, *out_chan| {
-                for (b_chan, out_chan) |b_vec, *out_vec| {
-                    out_vec.* += b_vec;
+            for (0..engine.BLOCK_LENGTH) |i| {
+                const read_idx: usize = @intFromFloat(@floor(@mod(g.cursor, @as(f32, @floatFromInt(HISTORY_SIZE)))));
+                const sample = history[read_idx];
+                inline for (0..2) |j| {
+                    const current = out.get(@intCast(j), @intCast(i));
+                    out.set(@intCast(j), @intCast(i), current + sample);
                 }
-            }
 
-            g.cursor += g.speed;
-            g.lifetime += 1.0;
-            if (g.lifetime > g.size) {
-                g.active = false;
+                g.cursor += g.speed;
+                g.lifetime += 1.0;
+                if (g.lifetime > g.size) {
+                    g.active = false;
+                }
             }
         }
 
-        m.head = (m.head + 1) % @as(u32, @intCast(HISTORY_SIZE));
+        m.head = (m.head + engine.BLOCK_LENGTH) % @as(u32, @intCast(HISTORY_SIZE));
     }
 };
