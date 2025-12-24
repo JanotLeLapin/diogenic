@@ -11,6 +11,7 @@ pub const meta = @import("instruction/meta.zig");
 pub const value = @import("instruction/value.zig");
 pub const arith = @import("instruction/arith.zig");
 pub const downsample = @import("instruction/downsample.zig");
+pub const granular = @import("instruction/granular.zig");
 pub const math = @import("instruction/math.zig");
 pub const noise = @import("instruction/noise.zig");
 pub const osc = @import("instruction/osc.zig");
@@ -36,6 +37,8 @@ pub const Instructions = .{
     arith.Geq,
 
     downsample.Downsample,
+
+    granular.Granular,
 
     osc.Sine,
     osc.Sawtooth,
