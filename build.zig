@@ -39,6 +39,7 @@ pub fn build(b: *std.Build) void {
 
         exe.root_module.link_libc = true;
         exe.root_module.linkSystemLibrary("portaudio", .{});
+        exe.root_module.linkSystemLibrary("sndfile", .{});
 
         b.installArtifact(exe);
 

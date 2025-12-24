@@ -1,5 +1,6 @@
 { zig
 , portaudio
+, libsndfile
 , raylib
 , libGL
 , xorg
@@ -11,7 +12,7 @@
     zig zls pkg-config
   ];
   buildInputs = [
-    portaudio raylib
+    portaudio libsndfile raylib
     libGL
 
     xorg.libX11

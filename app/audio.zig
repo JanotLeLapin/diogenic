@@ -5,15 +5,48 @@ const core = @import("diogenic-core");
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
 
-const portaudio = @cImport({
+const c = @cImport({
     @cInclude("portaudio.h");
+    @cInclude("sndfile.h");
 });
 
-pub const Stream = ?*portaudio.PaStream;
+pub const Stream = ?*c.PaStream;
+
+pub fn renderWav32(
+    filename: []const u8,
+    state: *EngineState,
+    instructions: []const Instruction,
+    block_count: usize,
+    buf_allocator: std.mem.Allocator,
+) !void {
+    var out: [core.engine.BLOCK_LENGTH * 2]f32 = undefined;
+
+    var sfinfo = c.SF_INFO{
+        .frames = @intCast(block_count * core.engine.BLOCK_LENGTH),
+        .channels = 2,
+        .samplerate = @intFromFloat(state.sr),
+        .format = c.SF_FORMAT_WAV | c.SF_FORMAT_FLOAT,
+    };
+
+    const c_filename = try buf_allocator.dupeZ(u8, filename);
+    defer buf_allocator.free(c_filename);
+
+    const f = c.sf_open(c_filename, c.SFM_WRITE, &sfinfo);
+    defer _ = c.sf_close(f);
+
+    for (0..block_count) |_| {
+        try core.eval(state, instructions);
+        for (0..core.engine.BLOCK_LENGTH) |i| {
+            out[i * 2] = state.stack[0].get(0, i);
+            out[i * 2 + 1] = state.stack[0].get(1, i);
+        }
+        _ = c.sf_write_float(f, &out, core.engine.BLOCK_LENGTH * 2);
+    }
+}
 
 inline fn wrapper(code: c_int) !void {
     switch (code) {
-        portaudio.paNoError => {},
+        c.paNoError => {},
         else => |_| {
             return error.PaError;
         },
@@ -29,8 +62,8 @@ pub fn callback(
     input_buffer: ?*const anyopaque,
     output_buffer: ?*anyopaque,
     frames_per_buffer: c_ulong,
-    time_info: ?*const portaudio.PaStreamCallbackTimeInfo,
-    status_flags: portaudio.PaStreamCallbackFlags,
+    time_info: ?*const c.PaStreamCallbackTimeInfo,
+    status_flags: c.PaStreamCallbackFlags,
     user_data: ?*anyopaque,
 ) callconv(.c) i32 {
     const data: *CallbackData = @ptrCast(@alignCast(user_data));
@@ -49,16 +82,16 @@ pub fn callback(
 }
 
 pub fn init() !void {
-    try wrapper(portaudio.Pa_Initialize());
+    try wrapper(c.Pa_Initialize());
 }
 
 pub fn openStream(sr: f32, userdata: *CallbackData) !Stream {
     var stream: Stream = undefined;
-    try wrapper(portaudio.Pa_OpenDefaultStream(
+    try wrapper(c.Pa_OpenDefaultStream(
         &stream,
         0,
         2,
-        portaudio.paFloat32,
+        c.paFloat32,
         sr,
         core.engine.BLOCK_LENGTH,
         &callback,
@@ -68,17 +101,17 @@ pub fn openStream(sr: f32, userdata: *CallbackData) !Stream {
 }
 
 pub fn startStream(stream: Stream) !void {
-    try wrapper(portaudio.Pa_StartStream(stream));
+    try wrapper(c.Pa_StartStream(stream));
 }
 
 pub fn stopStream(stream: Stream) !void {
-    try wrapper(portaudio.Pa_StopStream(stream));
+    try wrapper(c.Pa_StopStream(stream));
 }
 
 pub fn deinit() !void {
-    try wrapper(portaudio.Pa_Terminate());
+    try wrapper(c.Pa_Terminate());
 }
 
 pub fn sleep(time: c_long) void {
-    portaudio.Pa_Sleep(time);
+    c.Pa_Sleep(time);
 }
