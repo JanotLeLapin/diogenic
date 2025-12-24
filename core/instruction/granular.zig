@@ -61,7 +61,7 @@ pub const Granular = struct {
     pub const name = "grains!";
     pub const description = "granular synthesis";
 
-    pub const input_count = 4;
+    pub const input_count = 5;
     pub const output_count = 1;
     pub const state_count = HISTORY_SIZE + META_FLOATS + MAX_POLYPHONY * GRAIN_META_FLOATS;
 
@@ -69,6 +69,7 @@ pub const Granular = struct {
         .{ .name = "density", .description = "grain density, in grains per second", .default = 0.0 },
         .{ .name = "size", .description = "grain size, in milliseconds", .default = 100.0 },
         .{ .name = "speed", .description = "grain playback speed", .default = 1.0 },
+        .{ .name = "position", .description = "grain spawn position, 0 = tail, 1 = head", .default = 0.5 },
         .{ .name = "in", .description = "input signal" },
     };
 
@@ -87,14 +88,15 @@ pub const Granular = struct {
         const density = &inputs[0];
         const size = &inputs[1];
         const speed = &inputs[2];
-        const in = &inputs[3];
+        const position = &inputs[3];
+        const in = &inputs[4];
         const out = &outputs[0];
 
         const history = getHistory(state);
         const grains = getGrainMeta(state);
         const m = getMeta(state);
 
-        for (density.channels[0], size.channels[0], speed.channels[0]) |density_vec, size_vec, speed_vec| {
+        for (density.channels[0], size.channels[0], speed.channels[0], position.channels[0]) |density_vec, size_vec, speed_vec, position_vec| {
             for (0..engine.SIMD_LENGTH) |i| {
                 m.grains_to_register += 1.0 / sr * density_vec[i];
 
@@ -104,7 +106,7 @@ pub const Granular = struct {
                     const g = getGrainSlot(grains) orelse continue;
                     g.active = true;
                     g.lifetime = 1.0;
-                    g.cursor = @floatFromInt(m.head);
+                    g.cursor = @mod(@as(f32, @floatFromInt(m.head)) + position_vec[i] * @as(f32, @floatFromInt(HISTORY_SIZE)), @as(f32, @floatFromInt(HISTORY_SIZE)));
                     g.size = @max(size_vec[i], 1.0);
                     g.speed = @max(speed_vec[i], 0.2);
                 }
