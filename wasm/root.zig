@@ -33,7 +33,7 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
         maybe_instructions = std.ArrayList(Instruction).initCapacity(gpa, 16) catch return -2;
     }
     core.compiler.compile(
-        root.data.list.items[0],
+        root,
         &maybe_instructions.?,
         .{
             .stack_alloc = gpa,
