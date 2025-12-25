@@ -172,10 +172,16 @@ pub fn main() !void {
                 gpa.allocator(),
             );
             const time: f32 = @floatFromInt(timer.read() / 1_000);
-            log.info("rendered {} blocks, took {d:.3}ms ({d:.5}ms/sample)", .{
+            const ms_time = time / 1_000;
+            const time_per_sample = ms_time / @as(f32, @floatFromInt(block_count * core.engine.BLOCK_LENGTH));
+            const time_per_second = time_per_sample * e.sr;
+            const headroom = 1_000 - time_per_second;
+            log.info("rendered {} blocks, took {d:.3}ms ({d:.5}ms/sample, {d:.5}ms/second, {d:.5}ms headroom)", .{
                 block_count,
-                (time / 1_000),
-                (time / 1_000) / @as(f32, @floatFromInt(block_count * core.engine.BLOCK_LENGTH)),
+                ms_time,
+                time_per_sample,
+                time_per_second,
+                headroom,
             });
         },
         .playback => {
