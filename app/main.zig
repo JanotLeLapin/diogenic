@@ -6,7 +6,6 @@ const rl = @import("raylib");
 const audio = @import("audio.zig");
 
 const core = @import("diogenic-core");
-const CompilerState = core.compiler.CompilerState;
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
 const Tokenizer = core.parser.Tokenizer;
@@ -92,18 +91,15 @@ pub fn main() !void {
 
     const root = try core.parser.parse(&tokenizer, ast_alloc.allocator(), gpa.allocator());
 
-    var cs = CompilerState{ .env = std.StringHashMap(usize).init(gpa.allocator()) };
-    defer cs.env.deinit();
-
     var instructions = try std.ArrayList(Instruction).initCapacity(gpa.allocator(), 64);
     defer instructions.deinit(gpa.allocator());
 
     core.compiler.compile(
-        &cs,
-        root.data.list.items[0],
+        root,
         &instructions,
         gpa.allocator(),
         ast_alloc.allocator(),
+        gpa.allocator(),
     ) catch {
         log.err("compilation failed", .{});
         return;

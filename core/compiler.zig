@@ -24,9 +24,15 @@ pub const CompilerState = struct {
     reg_index: usize = 0,
 
     env: std.StringHashMap(usize),
+    func: std.StringHashMap(*Node),
+
+    pub fn deinit(self: *CompilerState) void {
+        self.env.deinit();
+        self.func.deinit();
+    }
 };
 
-pub fn compile(
+pub fn compileExpr(
     state: *CompilerState,
     tmp: *Node,
     instructions: *std.ArrayList(Instruction),
@@ -73,7 +79,7 @@ pub fn compile(
         };
 
         for (tmp.data.list.items[1..]) |child| {
-            try compile(state, child, instructions, stack_alloc, ast_alloc);
+            try compileExpr(state, child, instructions, stack_alloc, ast_alloc);
         }
 
         if (instruction.compile(tmp)) |instr| {
@@ -95,7 +101,7 @@ pub fn compile(
             state.reg_index += 1;
 
             try state.env.put(name, reg_index);
-            try compile(state, bindings.items[i + 1], instructions, stack_alloc, ast_alloc);
+            try compileExpr(state, bindings.items[i + 1], instructions, stack_alloc, ast_alloc);
             try instructions.append(stack_alloc, Instruction{
                 .store = instruction.value.Store{ .reg_index = reg_index },
             });
@@ -103,7 +109,7 @@ pub fn compile(
             i += 2;
         }
 
-        try compile(state, expr, instructions, stack_alloc, ast_alloc);
+        try compileExpr(state, expr, instructions, stack_alloc, ast_alloc);
 
         i = 0;
         while (i < bindings.items.len) {
@@ -123,5 +129,34 @@ pub fn compile(
             log.err("UnknownExpression: could not compile '{s}'", .{tmp.src});
         }
         return error.UnknownExpression;
+    }
+}
+
+pub fn compile(
+    root: *Node,
+    instructions: *std.ArrayList(Instruction),
+    stack_alloc: std.mem.Allocator,
+    ast_alloc: std.mem.Allocator,
+    func_alloc: std.mem.Allocator,
+) !void {
+    var state = CompilerState{
+        .env = std.StringHashMap(usize).init(stack_alloc),
+        .func = std.StringHashMap(*Node).init(func_alloc),
+    };
+    defer state.deinit();
+
+    for (root.data.list.items) |child| {
+        if (std.mem.eql(u8, "defun", child.data.list.items[0].data.id)) {
+            try state.func.put(child.data.list.items[1].data.id, child);
+        } else {
+            try compileExpr(
+                &state,
+                child,
+                instructions,
+                stack_alloc,
+                ast_alloc,
+            );
+            return;
+        }
     }
 }
