@@ -6,7 +6,7 @@ const rl = @import("raylib");
 const audio = @import("audio.zig");
 
 const core = @import("diogenic-core");
-const CompilerState = core.engine.CompilerState;
+const CompilerState = core.compiler.CompilerState;
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
 const Tokenizer = core.parser.Tokenizer;

@@ -4,7 +4,6 @@ const log = std.log.scoped(.compiler);
 const builtin = @import("builtin");
 
 const engine = @import("engine.zig");
-const CompilerState = engine.CompilerState;
 
 const instruction = @import("instruction.zig");
 const Instruction = instruction.Instruction;
@@ -19,6 +18,13 @@ pub const Constants = std.StaticStringMap(f32).initComptime(.{
     .{ "PI", std.math.pi },
     .{ "PHI", std.math.phi },
 });
+
+pub const CompilerState = struct {
+    state_index: usize = 0,
+    reg_index: usize = 0,
+
+    env: std.StringHashMap(usize),
+};
 
 pub fn compile(
     state: *CompilerState,

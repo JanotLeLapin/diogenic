@@ -66,10 +66,3 @@ pub const EngineState = struct {
         self.alloc.free(self.reg);
     }
 };
-
-pub const CompilerState = struct {
-    state_index: usize = 0,
-    reg_index: usize = 0,
-
-    env: std.StringHashMap(usize),
-};
