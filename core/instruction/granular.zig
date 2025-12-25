@@ -87,6 +87,8 @@ pub const Granular = struct {
         state: []f32,
         _: []Block,
     ) void {
+        const inv_sr = 1.0 / sr;
+
         const density = &inputs[0];
         const size = &inputs[1];
         const speed = &inputs[2];
@@ -100,7 +102,7 @@ pub const Granular = struct {
 
         for (density.channels[0], size.channels[0], speed.channels[0], position.channels[0]) |density_vec, size_vec, speed_vec, position_vec| {
             for (0..engine.SIMD_LENGTH) |i| {
-                m.grains_to_register += 1.0 / sr * density_vec[i];
+                m.grains_to_register += inv_sr * density_vec[i];
 
                 while (m.grains_to_register > 1.0) {
                     m.grains_to_register -= 1.0;
@@ -142,7 +144,7 @@ pub const Granular = struct {
                 }
 
                 g.cursor += g.speed;
-                g.lifetime += 1000.0 / sr;
+                g.lifetime += inv_sr * 1000.0;
                 if (g.lifetime > g.size) {
                     g.active = false;
                 }
