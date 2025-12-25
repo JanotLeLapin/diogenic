@@ -1,7 +1,6 @@
 const std = @import("std");
 
 const core = @import("diogenic-core");
-const CompilerState = core.engine.CompilerState;
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
 const Tokenizer = core.parser.Tokenizer;
@@ -22,9 +21,6 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
     const src = src_ptr[0..src_len];
 
     var t = Tokenizer{ .src = src };
-    var cs = CompilerState{
-        .env = std.StringHashMap(usize).init(gpa),
-    };
 
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
@@ -37,11 +33,11 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
         maybe_instructions = std.ArrayList(Instruction).initCapacity(gpa, 16) catch return -2;
     }
     core.compiler.compile(
-        &cs,
         root.data.list.items[0],
         &maybe_instructions.?,
         gpa,
         arena.allocator(),
+        gpa,
     ) catch return -2;
 
     maybe_engine_state = core.initState(sr, maybe_instructions.?.items, gpa) catch return -3;

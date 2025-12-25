@@ -90,6 +90,44 @@ pub fn compileExpr(
             }
             return err;
         }
+    } else if (state.func.get(op)) |func| {
+        const args = func.data.list.items[2].data.list.items;
+        const expr = func.data.list.items[3];
+
+        if (tmp.data.list.items.len - 1 != args.len) {
+            return error.BadArity;
+        }
+
+        var virtual_state = state.*;
+        virtual_state.env = std.StringHashMap(usize).init(stack_alloc);
+        defer virtual_state.env.deinit();
+
+        for (args, tmp.data.list.items[1..]) |arg, input| {
+            try virtual_state.env.put(arg.data.id, virtual_state.reg_index);
+
+            try compileExpr(state, input, instructions, stack_alloc, ast_alloc);
+            try instructions.append(stack_alloc, Instruction{
+                .store = .{ .reg_index = virtual_state.reg_index },
+            });
+            virtual_state.reg_index += 1;
+        }
+
+        try compileExpr(
+            &virtual_state,
+            expr,
+            instructions,
+            stack_alloc,
+            ast_alloc,
+        );
+
+        for (args) |arg| {
+            try instructions.append(stack_alloc, Instruction{
+                .free = .{ .reg_index = virtual_state.env.get(arg.data.id).? },
+            });
+        }
+
+        state.state_index = virtual_state.state_index;
+        state.reg_index = virtual_state.reg_index;
     } else if (std.mem.eql(u8, "let", op)) {
         const bindings = tmp.data.list.items[1].data.list;
         const expr = tmp.data.list.items[2];
