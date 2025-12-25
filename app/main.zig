@@ -97,9 +97,11 @@ pub fn main() !void {
     core.compiler.compile(
         root,
         &instructions,
-        gpa.allocator(),
-        ast_alloc.allocator(),
-        gpa.allocator(),
+        .{
+            .instr_alloc = gpa.allocator(),
+            .ast_alloc = ast_alloc.allocator(),
+            .env_alloc = ast_alloc.allocator(),
+        },
     ) catch {
         log.err("compilation failed", .{});
         return;

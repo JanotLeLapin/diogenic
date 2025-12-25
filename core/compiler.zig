@@ -32,18 +32,26 @@ pub const CompilerState = struct {
     }
 };
 
+pub const CompilerAlloc = struct {
+    /// instructions array list allocator
+    instr_alloc: std.mem.Allocator,
+    /// ast allocator
+    ast_alloc: std.mem.Allocator,
+    /// compiler state environment & functions allocator
+    env_alloc: std.mem.Allocator,
+};
+
 pub fn compileExpr(
     state: *CompilerState,
     tmp: *Node,
     instructions: *std.ArrayList(Instruction),
-    stack_alloc: std.mem.Allocator,
-    ast_alloc: std.mem.Allocator,
+    alloc: CompilerAlloc,
 ) !void {
     const op = switch (tmp.data) {
         .list => |lst| lst.items[0].data.id,
         .num => |num| {
             try instructions.append(
-                stack_alloc,
+                alloc.instr_alloc,
                 Instruction{ .push = instruction.value.Push{ .value = num } },
             );
             return;
@@ -51,12 +59,12 @@ pub fn compileExpr(
         .id => |id| {
             if (state.env.get(id)) |idx| {
                 try instructions.append(
-                    stack_alloc,
+                    alloc.instr_alloc,
                     Instruction{ .load = instruction.value.Load{ .reg_index = idx } },
                 );
             } else if (Constants.get(id)) |v| {
                 try instructions.append(
-                    stack_alloc,
+                    alloc.instr_alloc,
                     Instruction{ .push = instruction.value.Push{ .value = v } },
                 );
             } else {
@@ -71,7 +79,7 @@ pub fn compileExpr(
     };
 
     if (instruction.getExpressionIndex(op)) |_| {
-        instruction.expand(tmp, ast_alloc) catch |err| {
+        instruction.expand(tmp, alloc.ast_alloc) catch |err| {
             if (!is_freestanding) {
                 log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
             }
@@ -79,11 +87,11 @@ pub fn compileExpr(
         };
 
         for (tmp.data.list.items[1..]) |child| {
-            try compileExpr(state, child, instructions, stack_alloc, ast_alloc);
+            try compileExpr(state, child, instructions, alloc);
         }
 
         if (instruction.compile(tmp)) |instr| {
-            try instructions.append(stack_alloc, instr);
+            try instructions.append(alloc.instr_alloc, instr);
         } else |err| {
             if (!is_freestanding) {
                 log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
@@ -99,14 +107,14 @@ pub fn compileExpr(
         }
 
         var virtual_state = state.*;
-        virtual_state.env = std.StringHashMap(usize).init(stack_alloc);
+        virtual_state.env = std.StringHashMap(usize).init(alloc.env_alloc);
         defer virtual_state.env.deinit();
 
         for (args, tmp.data.list.items[1..]) |arg, input| {
             try virtual_state.env.put(arg.data.id, virtual_state.reg_index);
 
-            try compileExpr(state, input, instructions, stack_alloc, ast_alloc);
-            try instructions.append(stack_alloc, Instruction{
+            try compileExpr(state, input, instructions, alloc);
+            try instructions.append(alloc.instr_alloc, Instruction{
                 .store = .{ .reg_index = virtual_state.reg_index },
             });
             virtual_state.reg_index += 1;
@@ -116,12 +124,11 @@ pub fn compileExpr(
             &virtual_state,
             expr,
             instructions,
-            stack_alloc,
-            ast_alloc,
+            alloc,
         );
 
         for (args) |arg| {
-            try instructions.append(stack_alloc, Instruction{
+            try instructions.append(alloc.instr_alloc, Instruction{
                 .free = .{ .reg_index = virtual_state.env.get(arg.data.id).? },
             });
         }
@@ -139,15 +146,15 @@ pub fn compileExpr(
             state.reg_index += 1;
 
             try state.env.put(name, reg_index);
-            try compileExpr(state, bindings.items[i + 1], instructions, stack_alloc, ast_alloc);
-            try instructions.append(stack_alloc, Instruction{
+            try compileExpr(state, bindings.items[i + 1], instructions, alloc);
+            try instructions.append(alloc.instr_alloc, Instruction{
                 .store = instruction.value.Store{ .reg_index = reg_index },
             });
 
             i += 2;
         }
 
-        try compileExpr(state, expr, instructions, stack_alloc, ast_alloc);
+        try compileExpr(state, expr, instructions, alloc);
 
         i = 0;
         while (i < bindings.items.len) {
@@ -156,7 +163,7 @@ pub fn compileExpr(
             state.reg_index += 1;
 
             _ = state.env.remove(name);
-            try instructions.append(stack_alloc, Instruction{
+            try instructions.append(alloc.instr_alloc, Instruction{
                 .free = instruction.value.Free{ .reg_index = reg_index },
             });
 
@@ -173,13 +180,11 @@ pub fn compileExpr(
 pub fn compile(
     root: *Node,
     instructions: *std.ArrayList(Instruction),
-    stack_alloc: std.mem.Allocator,
-    ast_alloc: std.mem.Allocator,
-    func_alloc: std.mem.Allocator,
+    alloc: CompilerAlloc,
 ) !void {
     var state = CompilerState{
-        .env = std.StringHashMap(usize).init(stack_alloc),
-        .func = std.StringHashMap(*Node).init(func_alloc),
+        .env = std.StringHashMap(usize).init(alloc.env_alloc),
+        .func = std.StringHashMap(*Node).init(alloc.env_alloc),
     };
     defer state.deinit();
 
@@ -191,8 +196,7 @@ pub fn compile(
                 &state,
                 child,
                 instructions,
-                stack_alloc,
-                ast_alloc,
+                alloc,
             );
             return;
         }
