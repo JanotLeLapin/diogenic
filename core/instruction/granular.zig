@@ -138,9 +138,12 @@ pub const Granular = struct {
                 const read_idx: usize = @intFromFloat(@floor(@mod(g.cursor, @as(f32, @floatFromInt(HISTORY_SIZE)))));
                 const alpha = g.cursor - @floor(g.cursor);
                 const sample = history[read_idx] * (1 - alpha) + history[(read_idx + 1) & HISTORY_MASK] * alpha;
+                const fade_in = @min(@max(g.lifetime * inv_sr * 1000.0, 0.0), 1.0);
+                const fade_out = @min(@max((g.size - g.lifetime) * inv_sr * 1000.0, 0.0), 1.0);
+                const amp = @min(fade_in, fade_out);
                 inline for (0..2) |j| {
                     const current = out.get(@intCast(j), @intCast(i));
-                    out.set(@intCast(j), @intCast(i), current + sample);
+                    out.set(@intCast(j), @intCast(i), current + sample * amp);
                 }
 
                 g.cursor += g.speed;
