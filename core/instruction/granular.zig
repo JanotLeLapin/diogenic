@@ -142,7 +142,7 @@ pub const Granular = struct {
                 }
 
                 g.cursor += g.speed;
-                g.lifetime += 1.0;
+                g.lifetime += 1000.0 / sr;
                 if (g.lifetime > g.size) {
                     g.active = false;
                 }
