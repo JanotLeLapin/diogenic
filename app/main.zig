@@ -161,7 +161,7 @@ pub fn main() !void {
             }
         },
         .render => {
-            const block_count: usize = @intFromFloat(e.sr / @as(f32, @floatFromInt(core.engine.BLOCK_LENGTH)) * 30);
+            const block_count: usize = @intFromFloat(e.sr / @as(f32, @floatFromInt(core.engine.BLOCK_LENGTH)) * 300);
             var timer = try std.time.Timer.start();
             try audio.renderWav32(
                 "out.wav",
