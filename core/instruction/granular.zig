@@ -27,6 +27,7 @@ const GrainMeta = extern struct {
     cursor: f32,
     speed: f32,
     size: f32,
+    fade: f32,
 };
 
 inline fn floatCount(comptime T: type) usize {
@@ -63,7 +64,7 @@ pub const Granular = struct {
     pub const name = "grains!";
     pub const description = "granular synthesis";
 
-    pub const input_count = 5;
+    pub const input_count = 6;
     pub const output_count = 1;
     pub const state_count = HISTORY_SIZE + META_FLOATS + MAX_POLYPHONY * GRAIN_META_FLOATS;
 
@@ -72,6 +73,7 @@ pub const Granular = struct {
         .{ .name = "size", .description = "grain size, in milliseconds", .default = 100.0 },
         .{ .name = "speed", .description = "grain playback speed", .default = 1.0 },
         .{ .name = "position", .description = "grain spawn position, 0 = tail, 1 = head", .default = 0.5 },
+        .{ .name = "fade", .description = "grain fade in/out, in milliseconds", .default = 100.0 },
         .{ .name = "in", .description = "input signal" },
     };
 
@@ -93,14 +95,21 @@ pub const Granular = struct {
         const size = &inputs[1];
         const speed = &inputs[2];
         const position = &inputs[3];
-        const in = &inputs[4];
+        const fade = &inputs[4];
+        const in = &inputs[5];
         const out = &outputs[0];
 
         const history = getHistory(state);
         const grains = getGrainMeta(state);
         const m = getMeta(state);
 
-        for (density.channels[0], size.channels[0], speed.channels[0], position.channels[0]) |density_vec, size_vec, speed_vec, position_vec| {
+        for (
+            density.channels[0],
+            size.channels[0],
+            speed.channels[0],
+            position.channels[0],
+            fade.channels[0],
+        ) |density_vec, size_vec, speed_vec, position_vec, fade_vec| {
             for (0..engine.SIMD_LENGTH) |i| {
                 m.grains_to_register += inv_sr * density_vec[i];
 
@@ -111,8 +120,9 @@ pub const Granular = struct {
                     g.active = true;
                     g.lifetime = 1.0;
                     g.cursor = @mod(@as(f32, @floatFromInt(m.head)) + position_vec[i] * @as(f32, @floatFromInt(HISTORY_SIZE)), @as(f32, @floatFromInt(HISTORY_SIZE)));
-                    g.size = @max(size_vec[i], 1.0);
                     g.speed = @max(speed_vec[i], 0.2);
+                    g.size = @max(size_vec[i], 1.0);
+                    g.fade = @max(fade_vec[i], 0.0);
                 }
             }
         }
@@ -138,9 +148,12 @@ pub const Granular = struct {
                 const read_idx: usize = @intFromFloat(@floor(@mod(g.cursor, @as(f32, @floatFromInt(HISTORY_SIZE)))));
                 const alpha = g.cursor - @floor(g.cursor);
                 const sample = history[read_idx] * (1 - alpha) + history[(read_idx + 1) & HISTORY_MASK] * alpha;
-                const fade_in = @min(@max(g.lifetime * inv_sr * 1000.0, 0.0), 1.0);
-                const fade_out = @min(@max((g.size - g.lifetime) * inv_sr * 1000.0, 0.0), 1.0);
-                const amp = @min(fade_in, fade_out);
+                const amp = blk: {
+                    const fade_param = if (g.fade > 1.0) g.fade else 1.0;
+                    const fade_in = @min(@max(g.lifetime / fade_param, 0.0), 1.0);
+                    const fade_out = @min(@max((g.size - g.lifetime) / fade_param, 0.0), 1.0);
+                    break :blk @min(fade_in, fade_out);
+                };
                 inline for (0..2) |j| {
                     const current = out.get(@intCast(j), @intCast(i));
                     out.set(@intCast(j), @intCast(i), current + sample * amp);
