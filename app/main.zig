@@ -98,6 +98,7 @@ pub fn main() !void {
         root,
         &instructions,
         .{
+            .stack_alloc = gpa.allocator(),
             .instr_alloc = gpa.allocator(),
             .ast_alloc = ast_alloc.allocator(),
             .env_alloc = ast_alloc.allocator(),

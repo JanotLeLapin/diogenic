@@ -36,6 +36,7 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
         root.data.list.items[0],
         &maybe_instructions.?,
         .{
+            .stack_alloc = gpa,
             .instr_alloc = gpa,
             .ast_alloc = arena.allocator(),
             .env_alloc = arena.allocator(),

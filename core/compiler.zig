@@ -10,8 +10,13 @@ const Instruction = instruction.Instruction;
 
 const parser = @import("parser.zig");
 const Node = parser.Node;
+const Tokenizer = parser.Tokenizer;
 
 const is_freestanding = builtin.target.os.tag == .freestanding;
+
+pub const DiogenicStd = std.StaticStringMap([:0]const u8).initComptime(.{
+    .{ "std/builtin", @embedFile("std/builtin.scm") },
+});
 
 pub const Constants = std.StaticStringMap(f32).initComptime(.{
     .{ "E", std.math.e },
@@ -33,6 +38,8 @@ pub const CompilerState = struct {
 };
 
 pub const CompilerAlloc = struct {
+    /// parser stack allocator
+    stack_alloc: std.mem.Allocator,
     /// instructions array list allocator
     instr_alloc: std.mem.Allocator,
     /// ast allocator
@@ -188,8 +195,17 @@ pub fn compile(
     };
     defer state.deinit();
 
-    for (root.data.list.items) |child| {
-        if (std.mem.eql(u8, "defun", child.data.list.items[0].data.id)) {
+    var i: usize = 0;
+    while (i < root.data.list.items.len) {
+        const child = root.data.list.items[i];
+        if (std.mem.eql(u8, "use", child.data.list.items[0].data.id)) {
+            const src = DiogenicStd.get(child.data.list.items[1].data.id) orelse return error.UnresolvedImport;
+            var t: Tokenizer = .{ .src = src };
+            const ast = try parser.parse(&t, alloc.ast_alloc, alloc.stack_alloc);
+            _ = root.data.list.orderedRemove(i);
+            try root.data.list.insertSlice(alloc.ast_alloc, i, ast.data.list.items);
+            continue;
+        } else if (std.mem.eql(u8, "defun", child.data.list.items[0].data.id)) {
             try state.func.put(child.data.list.items[1].data.id, child);
         } else {
             try compileExpr(
@@ -200,5 +216,6 @@ pub fn compile(
             );
             return;
         }
+        i += 1;
     }
 }
