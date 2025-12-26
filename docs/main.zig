@@ -5,19 +5,28 @@ const core = @import("diogenic-core");
 pub fn main() void {
     inline for (core.instruction.Instructions) |T| {
         if (@hasDecl(T, "description")) {
-            std.debug.print("## `" ++ T.name ++ "`\n\n" ++ T.description ++ "\n\n", .{});
+            std.debug.print(
+                "## `" ++ T.name ++ "`\n\n" ++ T.description ++ ". `{d}` argument{s}.\n\n",
+                .{
+                    T.args.len,
+                    if (T.args.len == 1) "" else "s",
+                },
+            );
             if (T.args.len > 0) {
+                var flag = false;
                 inline for (T.args) |arg| {
-                    std.debug.print("- " ++ arg.name, .{});
-                    if (arg.default) |default| {
-                        std.debug.print(", default: `{d}`", .{default});
-                    }
                     if (arg.description) |description| {
-                        std.debug.print(", " ++ description, .{});
+                        flag = true;
+                        std.debug.print("- " ++ arg.name, .{});
+                        if (arg.default) |default| {
+                            std.debug.print(", default: `{d}`", .{default});
+                        }
+                        std.debug.print(", " ++ description ++ "\n", .{});
                     }
+                }
+                if (flag) {
                     std.debug.print("\n", .{});
                 }
-                std.debug.print("\n", .{});
             }
         }
     }
