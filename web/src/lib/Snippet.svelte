@@ -29,7 +29,13 @@
   let DIOGENIC: Diogenic | null = null
   let AUDIO: Audio | null = null
 
-  let src: string | undefined = $state('hi')
+  let {
+    doc = '',
+  } = $props<{
+    doc?: string,
+  }>();
+
+  let src: string | undefined = $state((() => doc)())
 
   const baseUrl = (import.meta.env.DEV ? 'http://localhost:4321/diogenic/' : import.meta.env.BASE_URL)
 
