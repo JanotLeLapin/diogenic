@@ -1,31 +1,22 @@
 {
   "name": "web",
-  "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "version": "0.0.1",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
-  },
-  "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^6.2.1",
-    "@tsconfig/svelte": "^5.0.6",
-    "@types/node": "^24.10.1",
-    "svelte": "^5.43.8",
-    "svelte-check": "^4.3.4",
-    "typescript": "~5.9.3",
-    "vite": "npm:rolldown-vite@7.2.5"
-  },
-  "pnpm": {
-    "overrides": {
-      "vite": "npm:rolldown-vite@7.2.5"
-    }
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
   },
   "dependencies": {
-    "@codemirror/state": "^6.5.2",
-    "@codemirror/view": "^6.39.4",
-    "codemirror": "^6.0.2"
+    "@astrojs/starlight": "^0.37.1",
+    "@astrojs/svelte": "^7.2.4",
+    "@codemirror/state": "^6.5.3",
+    "astro": "^5.6.1",
+    "codemirror": "^6.0.2",
+    "sharp": "^0.34.2",
+    "svelte": "^5.46.1",
+    "typescript": "^5.9.3"
   }
 }

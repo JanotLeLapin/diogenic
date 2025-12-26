@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CodeMirror from './lib/CodeMirror.svelte'
+  import CodeMirror from './CodeMirror.svelte'
   import { onMount } from 'svelte'
   import { Diogenic } from './diogenic'
   import { Audio } from './audio'
@@ -31,7 +31,7 @@
 
   let src: string | undefined = $state('hi')
 
-  const baseUrl = (import.meta.env.DEV ? 'http://localhost:5173/diogenic/' : import.meta.env.BASE_URL)
+  const baseUrl = (import.meta.env.DEV ? 'http://localhost:4321/diogenic/' : import.meta.env.BASE_URL)
 
   async function initDiogenic(): Promise<void> {
     const wasmUrl = baseUrl + 'diogenic-wasm.wasm'
@@ -71,10 +71,10 @@
   })
 </script>
 
-<main>
+<div>
   <CodeMirror
     extensions={[basicSetup, editorTheme]}
     bind:doc={src} />
 
   <button onclick={() => initAudio()}>Click me</button>
-</main>
+</div>
