@@ -65,13 +65,23 @@
     }
   }
 
+  function deinitAudio() {
+    if (AUDIO == null) {
+      return
+    }
+
+    AUDIO.node.disconnect()
+    AUDIO = null
+  }
+
   onMount(() => {
     initDiogenic().then(() => console.log('initialized!'))
     return () => {
-      if (DIOGENIC == null) {
-        return;
-      }
+      deinitAudio()
 
+      if (DIOGENIC == null) {
+        return
+      }
       DIOGENIC.deinit()
     }
   })
@@ -83,7 +93,8 @@
       extensions={[basicSetup, editorTheme]}
       bind:doc={src} />
   </div>
-  <button onclick={() => initAudio()}>Click me</button>
+  <button onclick={() => initAudio()}>Play</button>
+  <button onclick={() => deinitAudio()}>Stop</button>
 </div>
 
 <style>
