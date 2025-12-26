@@ -7,7 +7,7 @@ import svelte from '@astrojs/svelte';
 // https://astro.build/config
 export default defineConfig({
     site: 'https://janotlelapin.github.io',
-    base: '/diogenic',
+    base: '/diogenic/',
     integrations: [
         starlight({
             title: 'diogenic',
