@@ -1,15 +1,39 @@
 ---
 title: Example Guide
-description: A guide in my new Starlight docs site.
+description: A sample diogenic guide
 ---
 
 import Snippet from '../../../lib/Snippet.svelte'
 
-Guides lead a user through a specific task they want to accomplish, often with a sequence of steps.
-Writing a good guide requires thinking about what your users are trying to do.
+export const snippets = [
+  `(sine! 440.0)`,
+  `(sine! (+ 440.0
+             (* 110.0
+                (triangle! 0.2))))`,
+  `(sine! (+ 440.0
+             (* 110.0
+                (square! 0.2))))`,
+]
 
-## Further reading
+Diogenic is a DSP language/engine. It allows you to write patches as
+S-expressions, and it compiles them to a performant instruction
+sequence.
 
-- Read [about how-to guides](https://diataxis.fr/how-to-guides/) in the Diátaxis framework
+This snippet evaluates to a simple sinusoid wave oscillating at
+440Hz. Try it out!
 
-<Snippet client:only />
+<Snippet doc={snippets[0]} client:only />
+
+A core idea of diogenic is modulation. We could replace 440 with
+a deeply nested S-expression:
+
+<Snippet doc={snippets[1]} client:only />
+
+Here, the frequency of the sinusoid varies between 440±110.
+Notice the `triangle!` expression. This means the frequency will
+smoothly interpolate between 330Hz and 550Hz. We could replace
+it with a square oscillator instead:
+
+<Snippet doc={snippets[2]} client:only />
+
+Try replacing `square!` by `sawtooth!` and see what happens!
