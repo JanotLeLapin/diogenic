@@ -64,8 +64,6 @@ pub const Granular = struct {
     pub const name = "grains!";
     pub const description = "granular synthesis";
 
-    pub const input_count = 6;
-    pub const output_count = 1;
     pub const state_count = HISTORY_SIZE + META_FLOATS + MAX_POLYPHONY * GRAIN_META_FLOATS;
 
     pub const args: []const meta.Arg = &.{

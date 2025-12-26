@@ -15,8 +15,6 @@ pub const Noise = struct {
     pub const name = "noise!";
     pub const description = "normally distributed random value centered around 0 with a standard deviation of 1";
 
-    pub const input_count = 0;
-    pub const output_count = 1;
     pub const state_count = 2;
 
     pub const args: []meta.Arg = &.{};

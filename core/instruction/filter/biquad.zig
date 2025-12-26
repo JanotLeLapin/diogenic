@@ -40,8 +40,6 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
         pub const name = label;
         pub const description = "biquadratic filter";
 
-        pub const input_count = 4;
-        pub const output_count = 1;
         pub const state_count = 4;
 
         pub const args: []const meta.Arg = &.{

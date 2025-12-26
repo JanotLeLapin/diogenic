@@ -30,7 +30,7 @@ pub fn initState(sr: f32, instructions: []const Instruction, alloc: std.mem.Allo
             },
             inline else => |device| {
                 const T = @TypeOf(device);
-                stack_size += T.output_count;
+                stack_size += 1;
                 state_size += if (@hasDecl(T, "state_count")) T.state_count else 0;
                 reg_size += if (@hasDecl(T, "register_count")) T.register_count else 0;
             },
@@ -75,8 +75,8 @@ pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
                 const state_count = if (@hasDecl(T, "state_count")) T.state_count else 0;
                 const reg_count = if (@hasDecl(T, "register_count")) T.register_count else 0;
 
-                const in_start = stack_head - T.input_count;
-                const out_end = in_start + T.output_count;
+                const in_start = stack_head - T.args.len;
+                const out_end = in_start + 1;
 
                 const inputs = state.stack[in_start..stack_head];
                 const outputs = state.stack[in_start..out_end];

@@ -15,9 +15,6 @@ pub const Chebyshev = struct {
     pub const name = "chebyshev";
     pub const description = "first kind Chebyshev function";
 
-    pub const input_count = 2;
-    pub const output_count = 1;
-
     pub const args: []const meta.Arg = &.{
         .{ .name = "order" },
         .{ .name = "in" },

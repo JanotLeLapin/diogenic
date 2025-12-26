@@ -19,8 +19,6 @@ pub fn Osc(comptime label: [:0]const u8, comptime op_vec: OpVec) type {
         pub const name = label;
         pub const description = "instantaneous oscillator amplitude";
 
-        pub const input_count = 2;
-        pub const output_count = 1;
         pub const state_count = 1;
 
         pub const args: []const meta.Arg = &.{

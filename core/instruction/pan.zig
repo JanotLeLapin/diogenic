@@ -19,9 +19,6 @@ pub const Pan = struct {
     pub const name = "pan";
     pub const description = "pan signal between left and right channels";
 
-    pub const input_count = 2;
-    pub const output_count = 1;
-
     pub const args: []const meta.Arg = &.{
         .{ .name = "alpha", .description = "panning modifier: 0 = all left, 0.5 = middle, 1 = all right." },
         .{ .name = "in", .description = "input signal" },
