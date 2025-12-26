@@ -1,3 +1,42 @@
+<script module lang="ts">
+  let DIOGENIC: Diogenic | null = null
+  let DIOGENIC_PROMISE: Promise<Diogenic> | null = null
+  let AUDIO: Audio | null = null
+
+  const baseUrl = (import.meta.env.DEV ? 'http://localhost:4321/diogenic/' : import.meta.env.BASE_URL)
+
+  async function initDiogenic(): Promise<Diogenic> {
+    const wasmUrl = baseUrl + 'diogenic-wasm.wasm'
+
+    return await Diogenic.instantiate(wasmUrl)
+  }
+
+  async function getDiogenic(): Promise<Diogenic> {
+    if (DIOGENIC != null) {
+      return DIOGENIC
+    } else if (DIOGENIC_PROMISE != null) {
+      try {
+        DIOGENIC = await DIOGENIC_PROMISE
+        DIOGENIC_PROMISE = null
+        return DIOGENIC
+      } catch (err) {
+        DIOGENIC_PROMISE = null
+        throw err
+      }
+    } else {
+      DIOGENIC_PROMISE = initDiogenic()
+      try {
+        DIOGENIC = await DIOGENIC_PROMISE
+        DIOGENIC_PROMISE = null
+        return DIOGENIC
+      } catch (err) {
+        DIOGENIC_PROMISE = null
+        throw err
+      }
+    }
+  }
+</script>
+
 <script lang="ts">
   import CodeMirror from './CodeMirror.svelte'
   import { onMount } from 'svelte'
@@ -26,9 +65,6 @@
     },
   }, { dark: true })
 
-  let DIOGENIC: Diogenic | null = null
-  let AUDIO: Audio | null = null
-
   let {
     doc = '',
   } = $props<{
@@ -36,15 +72,6 @@
   }>();
 
   let src: string | undefined = $state((() => doc)())
-
-  const baseUrl = (import.meta.env.DEV ? 'http://localhost:4321/diogenic/' : import.meta.env.BASE_URL)
-
-  async function initDiogenic(): Promise<void> {
-    const wasmUrl = baseUrl + 'diogenic-wasm.wasm'
-
-    const diogenic = await Diogenic.instantiate(wasmUrl)
-    DIOGENIC = diogenic;
-  }
 
   async function initAudio(): Promise<void> {
     if (DIOGENIC == null) {
@@ -77,7 +104,10 @@
   }
 
   onMount(() => {
-    initDiogenic().then(() => console.log('initialized!'))
+    getDiogenic()
+      .then(() => console.log('initialized!'))
+      .catch((err) => console.error(err))
+
     return () => {
       deinitAudio()
 
