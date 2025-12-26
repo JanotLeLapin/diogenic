@@ -13,10 +13,14 @@ const Node = parser.Node;
 
 const Op = fn (Vec, Vec) Vec;
 
-pub fn Shaper(comptime label: [:0]const u8, comptime op: Op) type {
+pub fn Shaper(
+    comptime label: [:0]const u8,
+    comptime custom_description: []const u8,
+    comptime op: Op,
+) type {
     return struct {
         pub const name = label;
-        pub const description = "non-linear waveshaper";
+        pub const description = custom_description;
 
         pub const args: []const meta.Arg = &.{
             .{ .name = "threshold" },
@@ -76,8 +80,8 @@ fn quantize(bits: Vec, input: Vec) Vec {
     return quantized * @as(Vec, @splat(2.0)) - @as(Vec, @splat(1.0));
 }
 
-pub const Clamp = Shaper("clamp", clamp);
-pub const Clip = Shaper("clip", clip);
-pub const Diode = Shaper("diode", diode);
-pub const Foldback = Shaper("foldback", foldback);
-pub const Quantize = Shaper("quantize", quantize);
+pub const Clamp = Shaper("clamp", "clamps the signal between `t-1` and `t+1`", clamp);
+pub const Clip = Shaper("clip", "clamps the signal between `-t` and `+t`", clip);
+pub const Diode = Shaper("diode", "diode wave shaper", diode);
+pub const Foldback = Shaper("foldback", "foldback wave shaper", foldback);
+pub const Quantize = Shaper("quantize", "quantizer wave shaper, smaller threshold means worse quality", quantize);

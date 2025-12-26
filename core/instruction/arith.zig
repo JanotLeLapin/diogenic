@@ -11,10 +11,14 @@ const Node = parser.Node;
 
 pub const Op = fn (Vec, Vec) Vec;
 
-pub fn Arith(comptime label: [:0]const u8, comptime op: Op) type {
+pub fn Arith(
+    comptime label: [:0]const u8,
+    comptime custom_description: []const u8,
+    comptime op: Op,
+) type {
     return struct {
         pub const name = label;
-        pub const description = "binary arithmetic operation";
+        pub const description = custom_description;
 
         pub const args: []const meta.Arg = &.{
             .{ .name = "lhs" },
@@ -81,11 +85,11 @@ fn geq(left: Vec, right: Vec) Vec {
     return cmp(left >= right);
 }
 
-pub const Add = Arith("+", add);
-pub const Sub = Arith("-", sub);
-pub const Mul = Arith("*", mul);
-pub const Div = Arith("/", div);
-pub const Lt = Arith("<", lt);
-pub const Leq = Arith("<=", leq);
-pub const Gt = Arith(">", gt);
-pub const Geq = Arith(">=", geq);
+pub const Add = Arith("+", "arithmetic addition", add);
+pub const Sub = Arith("-", "arithmetic subtraction", sub);
+pub const Mul = Arith("*", "arithmetic multiplication", mul);
+pub const Div = Arith("/", "arithmetic division, no guard against divide by zero", div);
+pub const Lt = Arith("<", "less than comparison", lt);
+pub const Leq = Arith("<=", "less equal than comparison", leq);
+pub const Gt = Arith(">", "greater than comparison", gt);
+pub const Geq = Arith(">=", "greater equal than comparison", geq);

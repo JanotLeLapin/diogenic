@@ -14,10 +14,14 @@ const Node = parser.Node;
 pub const Op = fn (f32) f32;
 pub const OpVec = fn (Vec) Vec;
 
-pub fn Osc(comptime label: [:0]const u8, comptime op_vec: OpVec) type {
+pub fn Osc(
+    comptime label: [:0]const u8,
+    comptime op_name: []const u8,
+    comptime op_vec: OpVec,
+) type {
     return struct {
         pub const name = label;
-        pub const description = "instantaneous oscillator amplitude";
+        pub const description = "instantaneous " ++ op_name ++ " wave amplitude";
 
         pub const state_count = 1;
 
@@ -140,7 +144,7 @@ fn triangle(p: Vec) Vec {
     );
 }
 
-pub const Sine = Osc("sine!", sine);
-pub const Sawtooth = Osc("sawtooth!", sawtooth);
-pub const Square = Osc("square!", square);
-pub const Triangle = Osc("triangle!", triangle);
+pub const Sine = Osc("sine!", "sine", sine);
+pub const Sawtooth = Osc("sawtooth!", "saw tooth", sawtooth);
+pub const Square = Osc("square!", "square", square);
+pub const Triangle = Osc("triangle!", "triangle", triangle);

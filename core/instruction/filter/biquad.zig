@@ -35,10 +35,14 @@ inline fn process(p: *Params, in: Vec, z: []f32) Vec {
     return out;
 }
 
-pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
+pub fn Biquad(
+    comptime label: [:0]const u8,
+    comptime op_name: []const u8,
+    comptime init: OpInit,
+) type {
     return struct {
         pub const name = label;
-        pub const description = "biquadratic filter";
+        pub const description = "biquadratic " ++ op_name ++ " filter";
 
         pub const state_count = 4;
 
@@ -118,7 +122,7 @@ fn notch(_: Vec, q: Vec, _: Vec, k: Vec, p: *Params) void {
     p.b2 = (@as(Vec, @splat(1)) - k / q + k * k) * norm;
 }
 
-pub const High = Biquad("b-highpass!", high);
-pub const Low = Biquad("b-lowpass!", low);
-pub const Band = Biquad("b-bandpass!", band);
-pub const Notch = Biquad("b-notch!", notch);
+pub const High = Biquad("b-highpass!", "high pass", high);
+pub const Low = Biquad("b-lowpass!", "low pass", low);
+pub const Band = Biquad("b-bandpass!", "band pass", band);
+pub const Notch = Biquad("b-notch!", "notch", notch);
