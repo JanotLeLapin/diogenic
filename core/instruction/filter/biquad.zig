@@ -57,7 +57,7 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
             _: *const @This(),
             sr: f32,
             inputs: []const Block,
-            outputs: []Block,
+            out: *Block,
             state: []f32,
             _: []Block,
         ) void {
@@ -65,7 +65,6 @@ pub fn Biquad(comptime label: [:0]const u8, comptime init: OpInit) type {
             const q = &inputs[1];
             const g = &inputs[2];
             const in = &inputs[3];
-            const out = &outputs[0];
             const tmp = state[0..4];
 
             for (fc.channels, q.channels, g.channels, in.channels, &out.channels, 0..) |fc_chan, q_chan, g_chan, in_chan, *out_chan, i| {

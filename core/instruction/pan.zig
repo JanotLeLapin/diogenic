@@ -32,13 +32,12 @@ pub const Pan = struct {
         _: *const @This(),
         _: f32,
         inputs: []const Block,
-        outputs: []Block,
+        out: *Block,
         _: []f32,
         _: []Block,
     ) void {
         const alpha = &inputs[0];
         const in = &inputs[1];
-        const out = &outputs[0];
         for (alpha.channels[0], in.channels[0], 0..) |alpha_vec, in_vec, i| {
             const norm = clamp2pi(alpha_vec) * @as(Vec, @splat(std.math.pi / 2.0));
             const g = @cos(norm);

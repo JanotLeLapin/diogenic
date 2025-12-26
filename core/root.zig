@@ -79,12 +79,12 @@ pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
                 const out_end = in_start + 1;
 
                 const inputs = state.stack[in_start..stack_head];
-                const outputs = state.stack[in_start..out_end];
+                const output = &state.stack[in_start];
 
                 device.eval(
                     state.sr,
                     inputs,
-                    outputs,
+                    output,
                     state.state[state_head .. state_head + state_count],
                     state.reg[reg_head .. reg_head + reg_count],
                 );

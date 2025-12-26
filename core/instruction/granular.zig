@@ -83,7 +83,7 @@ pub const Granular = struct {
         _: *const @This(),
         sr: f32,
         inputs: []const Block,
-        outputs: []Block,
+        out: *Block,
         state: []f32,
         _: []Block,
     ) void {
@@ -95,7 +95,6 @@ pub const Granular = struct {
         const position = &inputs[3];
         const fade = &inputs[4];
         const in = &inputs[5];
-        const out = &outputs[0];
 
         const history = getHistory(state);
         const grains = getGrainMeta(state);

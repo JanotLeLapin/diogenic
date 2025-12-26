@@ -27,7 +27,7 @@ pub const Noise = struct {
         _: *const @This(),
         _: f32,
         _: []const Block,
-        outputs: []Block,
+        out: *Block,
         state: []f32,
         _: []Block,
     ) void {
@@ -39,7 +39,6 @@ pub const Noise = struct {
         state[0] = @bitCast(@as(u32, @truncate(next_seed >> 32)));
         state[1] = @bitCast(@as(u32, @truncate(next_seed)));
 
-        const out = &outputs[0];
         for (&out.channels) |*out_chan| {
             for (out_chan) |*out_vec| {
                 for (0..engine.SIMD_LENGTH) |i| {

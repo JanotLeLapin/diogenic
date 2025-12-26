@@ -101,14 +101,13 @@ pub fn Osc(comptime label: [:0]const u8, comptime op_vec: OpVec) type {
             self: *const @This(),
             sr: f32,
             inputs: []const Block,
-            outputs: []Block,
+            out: *Block,
             state: []f32,
             _: []Block,
         ) void {
             const freq = &inputs[0];
             const pm = &inputs[1];
             const phase = &state[0];
-            const out = &outputs[0];
 
             if (self.static_freq) |v| {
                 evalStatic(sr, v, pm, phase, out);

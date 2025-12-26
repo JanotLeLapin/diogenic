@@ -31,13 +31,12 @@ pub fn Shaper(comptime label: [:0]const u8, comptime op: Op) type {
             _: *const @This(),
             _: f32,
             inputs: []const Block,
-            outputs: []Block,
+            out: *Block,
             _: []f32,
             _: []Block,
         ) void {
             const mix = &inputs[0];
             const in = &inputs[1];
-            const out = &outputs[0];
 
             for (in.channels, mix.channels, 0..) |l_chan, r_chan, i| {
                 for (l_chan, r_chan, 0..) |l_vec, r_vec, j| {

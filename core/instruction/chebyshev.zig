@@ -28,13 +28,12 @@ pub const Chebyshev = struct {
         _: *const @This(),
         _: f32,
         inputs: []const Block,
-        outputs: []Block,
+        out: *Block,
         _: []f32,
         _: []Block,
     ) void {
         const order = &inputs[0];
         const in = &inputs[1];
-        const out = &outputs[0];
 
         for (order.channels, in.channels, &out.channels) |order_chan, in_chan, *out_chan| {
             for (order_chan, in_chan, out_chan) |order_vec, in_vec, *out_vec| {

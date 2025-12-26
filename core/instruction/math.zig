@@ -30,12 +30,11 @@ pub fn Math(comptime label: [:0]const u8, comptime op: Op) type {
             _: *const @This(),
             _: f32,
             inputs: []const Block,
-            outputs: []Block,
+            out: *Block,
             _: []f32,
             _: []Block,
         ) void {
             const in = &inputs[0];
-            const out = &outputs[0];
 
             for (in.channels, 0..) |in_chan, i| {
                 for (in_chan, 0..) |in_vec, j| {

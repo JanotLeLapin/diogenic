@@ -28,13 +28,12 @@ pub const Downsample = struct {
         _: *const @This(),
         sr: f32,
         inputs: []const Block,
-        outputs: []Block,
+        out: *Block,
         state: []f32,
         _: []Block,
     ) void {
         const target_sr = &inputs[0];
         const in = &inputs[1];
-        const out = &outputs[0];
         const latest_sample = &state[0];
         const clock = &state[1];
 
