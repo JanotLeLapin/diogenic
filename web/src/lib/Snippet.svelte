@@ -58,11 +58,13 @@
     }
     console.log('compiled ' + instr_count + ' instructions')
 
-    if (AUDIO == null) {
-      const workletUrl = baseUrl + 'diogenic-processor.js'
-      const audio = await Audio.init(new window.AudioContext(), DIOGENIC, workletUrl)
-      AUDIO = audio
+    if (AUDIO != null) {
+      return
     }
+
+    const workletUrl = baseUrl + 'diogenic-processor.js'
+    const audio = await Audio.init(new window.AudioContext(), DIOGENIC, workletUrl)
+    AUDIO = audio
   }
 
   function deinitAudio() {
@@ -70,7 +72,7 @@
       return
     }
 
-    AUDIO.node.disconnect()
+    AUDIO.deinit()
     AUDIO = null
   }
 

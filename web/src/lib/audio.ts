@@ -58,4 +58,12 @@ export class Audio {
       this.node.port.postMessage({ volume })
     }
   }
+
+  deinit() {
+    this.node.port.postMessage({ type: 'shutdown' })
+    this.node.port.onmessage = null
+    this.node.port.close()
+
+    this.node.disconnect()
+  }
 }

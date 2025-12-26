@@ -9,9 +9,13 @@ class DiogenicProcessor extends AudioWorkletProcessor {
     this.writeIdx = 0
     this.underflowCount = 0
     this.volume = 0.1
+    this.running = true
 
     this.port.onmessage = (e) => {
-      if (e.data.samples) {
+      if (e.data.type === 'shutdown') {
+        console.log('got shutdown')
+        this.running = false
+      } else if (e.data.samples) {
         this.enqueue(e.data.samples)
       } else if (e.data.volume) {
         this.volume = e.data.volume
@@ -37,6 +41,10 @@ class DiogenicProcessor extends AudioWorkletProcessor {
   }
 
   process(_, outputs) {
+    if (!this.running) {
+      return false
+    }
+
     const needed = outputs[0][0].length
 
     if (this.usedSpace() < REQUEST_THRESHOLD) {
