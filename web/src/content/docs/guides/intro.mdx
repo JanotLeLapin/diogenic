@@ -1,6 +1,6 @@
 ---
-title: Example Guide
-description: A sample diogenic guide
+title: Introduction
+description: quick introduction to diogenic concepts
 ---
 
 import Snippet from '../../../lib/Snippet.svelte'
@@ -14,6 +14,8 @@ export const snippets = [
              (* 110.0
                 (square! 0.2))))`,
 ]
+
+## Demo
 
 Diogenic is a DSP language/engine. It allows you to write patches as
 S-expressions, and it compiles them to a performant instruction
@@ -37,3 +39,12 @@ it with a square oscillator instead:
 <Snippet doc={snippets[2]} client:only />
 
 Try replacing `square!` by `sawtooth!` and see what happens!
+
+## Why use diogenic
+
+Diogenic is open source (licensed under GNU GPLv3) and easily
+extensible. It's designed to make patches easy to read and
+write for humans. I believe DSP tools should never be black
+boxes that abstract away logic behind two or three knobs.
+Artists gain artistic freedom by using patches that clearly
+state their intent.
