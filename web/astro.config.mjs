@@ -10,8 +10,8 @@ export default defineConfig({
     base: '/diogenic',
     integrations: [
         starlight({
-            title: 'My Docs',
-            social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/withastro/starlight' }],
+            title: 'diogenic',
+            social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/JanotLeLapin/diogenic' }],
             sidebar: [
                 {
                     label: 'Guides',
