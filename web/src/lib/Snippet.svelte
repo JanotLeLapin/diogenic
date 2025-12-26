@@ -71,10 +71,24 @@
   })
 </script>
 
-<div>
-  <CodeMirror
-    extensions={[basicSetup, editorTheme]}
-    bind:doc={src} />
-
+<div class="snippet-container not-content">
+  <div class="editor-wrap">
+    <CodeMirror
+      extensions={[basicSetup, editorTheme]}
+      bind:doc={src} />
+  </div>
   <button onclick={() => initAudio()}>Click me</button>
 </div>
+
+<style>
+  .snippet-container {
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background: #034;
+  }
+
+  .editor-wrap {
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+</style>

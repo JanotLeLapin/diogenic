@@ -80,9 +80,3 @@
 </script>
 
 <div class="codemirror" bind:this={dom}></div>
-
-<style>
-  .codemirror {
-    display: contents;
-  }
-</style>
