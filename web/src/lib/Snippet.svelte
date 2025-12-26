@@ -8,20 +8,20 @@
   const editorTheme = EditorView.theme({
     "&": {
       color: "white",
-      backgroundColor: "#034"
+      backgroundColor: "var(--sl-color-gray-6)"
     },
     ".cm-content": {
-      caretColor: "white"
+      caretColor: "var(--sl-color-white)"
     },
     "&.cm-focused .cm-cursor": {
-      borderLeftColor: "white"
+      borderLeftColor: "var(--sl-color-white)"
     },
     "&.cm-focused .cm-selectionBackground, ::selection": {
-      backgroundColor: "#074"
+      backgroundColor: "var(--sl-color-gray-5)"
     },
     ".cm-gutters": {
-      backgroundColor: "#045",
-      color: "#ddd",
+      backgroundColor: "var(--sl-color-gray-6)",
+      color: "var(--sl-color-gray-2)",
       border: "none"
     },
   }, { dark: true })
@@ -104,7 +104,7 @@
     border: 1px solid var(--sl-color-gray-5);
     border-radius: 0.5rem;
     padding: 1rem;
-    background: #034;
+    background: var(--sl-color-gray-6);
   }
 
   .editor-wrap {
