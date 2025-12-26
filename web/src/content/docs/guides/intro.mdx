@@ -7,12 +7,26 @@ import Snippet from '../../../lib/Snippet.svelte'
 
 export const snippets = [
   `(sine! 440.0)`,
-  `(sine! (+ 440.0
-             (* 110.0
-                (triangle! 0.2))))`,
-  `(sine! (+ 440.0
-             (* 110.0
-                (square! 0.2))))`,
+  `
+(sine! (+ 440.0
+          (* 110.0
+             (triangle! 0.2))))`,
+  `
+(sine! (+ 440.0
+          (* 110.0
+             (square! 0.2))))
+  `,
+  `
+(let (base 42.0
+      mod-freq (+ 1.0 (* 0.8 (triangle! 0.1)))
+      mod (sine! mod-freq))
+     (sine!
+       (midi->freq
+         (floor
+           (+ base
+              (* 6.0
+                 (+ 6.0 mod)))))))
+  `
 ]
 
 ## Demo
@@ -24,21 +38,42 @@ sequence.
 This snippet evaluates to a simple sinusoid wave oscillating at
 440Hz. Try it out!
 
-<Snippet doc={snippets[0]} client:only />
+<Snippet doc={snippets[0].trim()} client:only />
 
 A core idea of diogenic is modulation. We could replace 440 with
 a deeply nested S-expression:
 
-<Snippet doc={snippets[1]} client:only />
+<Snippet doc={snippets[1].trim()} client:only />
 
 Here, the frequency of the sinusoid varies between 440±110.
 Notice the `triangle!` expression. This means the frequency will
 smoothly interpolate between 330Hz and 550Hz. We could replace
 it with a square oscillator instead:
 
-<Snippet doc={snippets[2]} client:only />
+<Snippet doc={snippets[2].trim()} client:only />
 
 Try replacing `square!` by `sawtooth!` and see what happens!
+
+Here's one last example:
+
+<Snippet doc={snippets[3].trim()} client:only />
+
+First, let's take a look at the declared bindings:
+
+- `base`: `42.0`, the base MIDI pitch, a Fa#2
+- `mod-freq`: the frequency at which the next LFO will oscillate
+- `mod`: a LFO
+
+We use these bindings to express a sinusoid oscillator.
+Its pitch oscillates between `base - 6` and `base + 6`, so `36` and
+`48`. We translate this MIDI pitch to a frequency with the
+`(midi->freq)` function, and this gives us a silly-sounding patch,
+Because the sinusoid frequency depends on an oscillator,
+and the frequency of this oscillator also depends on an oscillator!
+
+So that's just a quick example of how trivial it is to express
+deeply modulated patches with diogenic. Please do check out the
+[language reference](/diogenic/reference) and experiment!
 
 ## Why use diogenic
 
