@@ -32,12 +32,12 @@ pub fn Shaper(
         }
 
         pub fn eval(_: *const @This(), d: engine.EvalData) void {
-            const mix = &d.inputs[0];
+            const t = &d.inputs[0];
             const in = &d.inputs[1];
 
-            for (in.channels, mix.channels, 0..) |l_chan, r_chan, i| {
-                for (l_chan, r_chan, 0..) |l_vec, r_vec, j| {
-                    d.output.channels[i][j] = op(l_vec, r_vec);
+            for (t.channels, in.channels, 0..) |t_chan, in_chan, i| {
+                for (t_chan, in_chan, 0..) |t_vec, in_vec, j| {
+                    d.output.channels[i][j] = op(t_vec, in_vec);
                 }
             }
         }
