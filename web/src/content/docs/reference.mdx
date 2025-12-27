@@ -7,4 +7,57 @@ import Docs from './_docs.md'
 
 Diogenic language reference
 
+## Introduction
+
+Diogenic is a language designed to write DSP patches as
+S-expressions. It borrows a lot of its syntax from
+[Lisp](https://en.wikipedia.org/wiki/Lisp_(programming_language)).
+
+## Variables
+
+Variables are initialized in `let` blocks:
+
+```scm
+(let
+  (freq 440.0
+   threshold (+ 0.5 (* 0.1 (sine! :freq 0.2))))
+  (foldback threshold freq))
+```
+
+A `let` block must contain two children:
+
+- the bindings: an identifier, value couple
+- the expression: an expression that may reference defined variables
+
+Values defined in the bindings section may reference previously
+bound variables:
+
+```scm
+(let
+  (mod-freq 220.0
+   mod-phase PI
+   mod (sine! mod-freq mod-phase))
+  (...))
+```
+
+## Functions
+
+Functions in diogenic are similar to macros in the way they're
+implemented; function names are erased from the final instruction
+sequence during compilation.
+
+```scm
+(defun my-saturation (in)
+  (tanh (* 2.0 (foldback 0.75 in))))
+
+(+ (my-saturation (sine! 220.0))
+   (my-saturation (sine! 440.0)))
+```
+
+## Built-in devices
+
+Pure devices only manipulate the diogenic VM stack. Impure devices
+may also manipulate the state, a persistent f32 array. These are
+marked by and exclamation mark (`!`).
+
 <Docs />

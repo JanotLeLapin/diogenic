@@ -3,10 +3,11 @@ const std = @import("std");
 const core = @import("diogenic-core");
 
 pub fn main() void {
+    std.debug.print("*This version of diogenic includes `{d}` devices.*\n\n", .{core.instruction.Instructions.len});
     inline for (core.instruction.Instructions) |T| {
         if (@hasDecl(T, "description")) {
             std.debug.print(
-                "## `" ++ T.name ++ "`\n\n" ++ T.description ++ ". `{d}` argument{s}.\n\n",
+                "### `" ++ T.name ++ "`\n\n" ++ T.description ++ ". `{d}` argument{s}.\n\n",
                 .{
                     T.args.len,
                     if (T.args.len == 1) "" else "s",
