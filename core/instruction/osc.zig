@@ -14,6 +14,53 @@ const Node = parser.Node;
 pub const Op = fn (f32) f32;
 pub const OpVec = fn (Vec) Vec;
 
+pub const Random = struct {
+    pub const name = "random!";
+    pub const description = "random interpolated instantaneous wave amplitude";
+
+    pub const state_count = 5;
+
+    pub const args: []const meta.Arg = &.{
+        .{ .name = "freq", .description = "random value refresh rate, in Hz" },
+    };
+
+    pub fn compile(_: engine.CompileData) !@This() {
+        return @This(){};
+    }
+
+    pub fn eval(_: *const @This(), d: engine.EvalData) void {
+        const freq = &d.inputs[0];
+        const prev_amp = &d.state[0];
+        const next_amp = &d.state[1];
+        const c = &d.state[2];
+
+        const inv_sr = 1.0 / d.sample_rate;
+
+        for (freq.channels, &d.output.channels) |freq_chan, *out_chan| {
+            for (freq_chan, out_chan) |freq_vec, *out_vec| {
+                for (0..engine.SIMD_LENGTH) |i| {
+                    c.* += inv_sr * freq_vec[i];
+                    out_vec[i] = prev_amp.* * (1.0 - c.*) + next_amp.* * c.*;
+                }
+            }
+        }
+
+        if (c.* > 1.0) {
+            const seed: u64 = (@as(u64, @intCast(@as(u32, @bitCast(d.state[3]))))) << 8 | @as(u32, @bitCast(d.state[4]));
+            var prng = std.Random.DefaultPrng.init(seed);
+            var rand = prng.random();
+
+            const next_seed: u64 = rand.int(u64);
+            d.state[3] = @bitCast(@as(u32, @truncate(next_seed >> 32)));
+            d.state[4] = @bitCast(@as(u32, @truncate(next_seed)));
+
+            c.* = c.* - @floor(c.*);
+            prev_amp.* = next_amp.*;
+            next_amp.* = rand.float(f32) * 2.0 - 1.0;
+        }
+    }
+};
+
 pub fn Osc(
     comptime label: [:0]const u8,
     comptime op_name: []const u8,

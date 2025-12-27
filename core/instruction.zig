@@ -43,6 +43,7 @@ pub const Instructions = .{
 
     granular.Granular,
 
+    osc.Random,
     osc.Sine,
     osc.Sawtooth,
     osc.Square,
