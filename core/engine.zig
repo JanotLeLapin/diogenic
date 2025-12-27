@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const Node = @import("parser.zig").Node;
+
 pub const SIMD_LENGTH = 8;
 pub const BLOCK_LENGTH = 128;
 
@@ -65,4 +67,16 @@ pub const EngineState = struct {
         self.alloc.free(self.state);
         self.alloc.free(self.reg);
     }
+};
+
+pub const CompileData = struct {
+    node: *Node,
+};
+
+pub const EvalData = struct {
+    sample_rate: f32,
+    inputs: []const Block,
+    output: *Block,
+    state: []f32,
+    registry: []Block,
 };

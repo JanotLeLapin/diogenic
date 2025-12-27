@@ -230,10 +230,14 @@ pub fn compile(node: *Node) !Instruction {
         inline 5...Instructions.len - 1 => |ci| {
             const T = Instructions[ci];
 
+            const compile_data: engine.CompileData = .{
+                .node = node,
+            };
+
             return @unionInit(
                 Instruction,
                 T.name,
-                try T.compile(node),
+                try T.compile(compile_data),
             );
         },
         else => unreachable,

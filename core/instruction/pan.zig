@@ -24,29 +24,22 @@ pub const Pan = struct {
         .{ .name = "in", .description = "input signal" },
     };
 
-    pub fn compile(_: *Node) !@This() {
+    pub fn compile(_: engine.CompileData) !@This() {
         return @This(){};
     }
 
-    pub fn eval(
-        _: *const @This(),
-        _: f32,
-        inputs: []const Block,
-        out: *Block,
-        _: []f32,
-        _: []Block,
-    ) void {
-        const alpha = &inputs[0];
-        const in = &inputs[1];
+    pub fn eval(_: *const @This(), d: engine.EvalData) void {
+        const alpha = &d.inputs[0];
+        const in = &d.inputs[1];
         for (alpha.channels[0], in.channels[0], 0..) |alpha_vec, in_vec, i| {
             const norm = clamp2pi(alpha_vec) * @as(Vec, @splat(std.math.pi / 2.0));
             const g = @cos(norm);
-            out.channels[0][i] = in_vec * g;
+            d.output.channels[0][i] = in_vec * g;
         }
         for (alpha.channels[1], in.channels[1], 0..) |alpha_vec, in_vec, i| {
             const norm = clamp2pi(alpha_vec) * @as(Vec, @splat(std.math.pi / 2.0));
             const g = @sin(norm);
-            out.channels[1][i] = in_vec * g;
+            d.output.channels[1][i] = in_vec * g;
         }
     }
 };

@@ -53,28 +53,21 @@ pub fn Biquad(
             .{ .name = "in", .description = "input signal" },
         };
 
-        pub fn compile(_: *Node) !@This() {
+        pub fn compile(_: engine.CompileData) !@This() {
             return @This(){};
         }
 
-        pub fn eval(
-            _: *const @This(),
-            sr: f32,
-            inputs: []const Block,
-            out: *Block,
-            state: []f32,
-            _: []Block,
-        ) void {
-            const fc = &inputs[0];
-            const q = &inputs[1];
-            const g = &inputs[2];
-            const in = &inputs[3];
-            const tmp = state[0..4];
+        pub fn eval(_: *const @This(), d: engine.EvalData) void {
+            const fc = &d.inputs[0];
+            const q = &d.inputs[1];
+            const g = &d.inputs[2];
+            const in = &d.inputs[3];
+            const tmp = d.state[0..4];
 
-            for (fc.channels, q.channels, g.channels, in.channels, &out.channels, 0..) |fc_chan, q_chan, g_chan, in_chan, *out_chan, i| {
+            for (fc.channels, q.channels, g.channels, in.channels, &d.output.channels, 0..) |fc_chan, q_chan, g_chan, in_chan, *out_chan, i| {
                 for (fc_chan, q_chan, g_chan, in_chan, 0..) |fc_vec, q_vec, g_vec, in_vec, j| {
                     var p: Params = undefined;
-                    const nfc = fc_vec / @as(Vec, @splat(sr));
+                    const nfc = fc_vec / @as(Vec, @splat(d.sample_rate));
                     const k = @tan(@as(Vec, @splat(std.math.pi)) * nfc);
                     init(fc_vec, q_vec, g_vec, k, &p);
 

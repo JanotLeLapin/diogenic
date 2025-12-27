@@ -19,27 +19,20 @@ pub const Noise = struct {
 
     pub const args: []meta.Arg = &.{};
 
-    pub fn compile(_: *Node) !@This() {
+    pub fn compile(_: engine.CompileData) !@This() {
         return @This(){};
     }
 
-    pub fn eval(
-        _: *const @This(),
-        _: f32,
-        _: []const Block,
-        out: *Block,
-        state: []f32,
-        _: []Block,
-    ) void {
-        const seed: u64 = (@as(u64, @intCast(@as(u32, @bitCast(state[0]))))) << 8 | @as(u32, @bitCast(state[1]));
+    pub fn eval(_: *const @This(), d: engine.EvalData) void {
+        const seed: u64 = (@as(u64, @intCast(@as(u32, @bitCast(d.state[0]))))) << 8 | @as(u32, @bitCast(d.state[1]));
         var prng = std.Random.DefaultPrng.init(seed);
         var rand = prng.random();
 
         const next_seed: u64 = rand.int(u64);
-        state[0] = @bitCast(@as(u32, @truncate(next_seed >> 32)));
-        state[1] = @bitCast(@as(u32, @truncate(next_seed)));
+        d.state[0] = @bitCast(@as(u32, @truncate(next_seed >> 32)));
+        d.state[1] = @bitCast(@as(u32, @truncate(next_seed)));
 
-        for (&out.channels) |*out_chan| {
+        for (&d.output.channels) |*out_chan| {
             for (out_chan) |*out_vec| {
                 for (0..engine.SIMD_LENGTH) |i| {
                     out_vec[i] = rand.floatNorm(f32);

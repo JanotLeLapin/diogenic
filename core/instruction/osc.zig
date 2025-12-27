@@ -32,9 +32,9 @@ pub fn Osc(
 
         static_freq: ?f32,
 
-        pub fn compile(node: *Node) !@This() {
+        pub fn compile(d: engine.CompileData) !@This() {
             return @This(){
-                .static_freq = switch (node.data.list.items[1].data) {
+                .static_freq = switch (d.node.data.list.items[1].data) {
                     .num => |num| num,
                     else => null,
                 },
@@ -101,22 +101,15 @@ pub fn Osc(
             phase.* = acc;
         }
 
-        pub fn eval(
-            self: *const @This(),
-            sr: f32,
-            inputs: []const Block,
-            out: *Block,
-            state: []f32,
-            _: []Block,
-        ) void {
-            const freq = &inputs[0];
-            const pm = &inputs[1];
-            const phase = &state[0];
+        pub fn eval(self: *const @This(), d: engine.EvalData) void {
+            const freq = &d.inputs[0];
+            const pm = &d.inputs[1];
+            const phase = &d.state[0];
 
             if (self.static_freq) |v| {
-                evalStatic(sr, v, pm, phase, out);
+                evalStatic(d.sample_rate, v, pm, phase, d.output);
             } else {
-                evalDynamic(sr, freq, pm, phase, out);
+                evalDynamic(d.sample_rate, freq, pm, phase, d.output);
             }
         }
     };

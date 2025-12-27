@@ -27,24 +27,17 @@ pub fn Shaper(
             .{ .name = "in", .description = "input signal" },
         };
 
-        pub fn compile(_: *Node) !@This() {
+        pub fn compile(_: engine.CompileData) !@This() {
             return @This(){};
         }
 
-        pub fn eval(
-            _: *const @This(),
-            _: f32,
-            inputs: []const Block,
-            out: *Block,
-            _: []f32,
-            _: []Block,
-        ) void {
-            const mix = &inputs[0];
-            const in = &inputs[1];
+        pub fn eval(_: *const @This(), d: engine.EvalData) void {
+            const mix = &d.inputs[0];
+            const in = &d.inputs[1];
 
             for (in.channels, mix.channels, 0..) |l_chan, r_chan, i| {
                 for (l_chan, r_chan, 0..) |l_vec, r_vec, j| {
-                    out.channels[i][j] = op(l_vec, r_vec);
+                    d.output.channels[i][j] = op(l_vec, r_vec);
                 }
             }
         }

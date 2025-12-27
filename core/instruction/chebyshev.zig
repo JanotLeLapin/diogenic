@@ -20,22 +20,15 @@ pub const Chebyshev = struct {
         .{ .name = "in" },
     };
 
-    pub fn compile(_: *Node) !@This() {
+    pub fn compile(_: engine.CompileData) !@This() {
         return @This(){};
     }
 
-    pub fn eval(
-        _: *const @This(),
-        _: f32,
-        inputs: []const Block,
-        out: *Block,
-        _: []f32,
-        _: []Block,
-    ) void {
-        const order = &inputs[0];
-        const in = &inputs[1];
+    pub fn eval(_: *const @This(), d: engine.EvalData) void {
+        const order = &d.inputs[0];
+        const in = &d.inputs[1];
 
-        for (order.channels, in.channels, &out.channels) |order_chan, in_chan, *out_chan| {
+        for (order.channels, in.channels, &d.output.channels) |order_chan, in_chan, *out_chan| {
             for (order_chan, in_chan, out_chan) |order_vec, in_vec, *out_vec| {
                 const acos_in = blk: {
                     var vec: Vec = undefined;

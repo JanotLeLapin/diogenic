@@ -75,30 +75,23 @@ pub const Granular = struct {
         .{ .name = "in", .description = "input signal" },
     };
 
-    pub fn compile(_: *Node) !@This() {
+    pub fn compile(_: engine.CompileData) !@This() {
         return @This(){};
     }
 
-    pub fn eval(
-        _: *const @This(),
-        sr: f32,
-        inputs: []const Block,
-        out: *Block,
-        state: []f32,
-        _: []Block,
-    ) void {
-        const inv_sr = 1.0 / sr;
+    pub fn eval(_: *const @This(), d: engine.EvalData) void {
+        const inv_sr = 1.0 / d.sample_rate;
 
-        const density = &inputs[0];
-        const size = &inputs[1];
-        const speed = &inputs[2];
-        const position = &inputs[3];
-        const fade = &inputs[4];
-        const in = &inputs[5];
+        const density = &d.inputs[0];
+        const size = &d.inputs[1];
+        const speed = &d.inputs[2];
+        const position = &d.inputs[3];
+        const fade = &d.inputs[4];
+        const in = &d.inputs[5];
 
-        const history = getHistory(state);
-        const grains = getGrainMeta(state);
-        const m = getMeta(state);
+        const history = getHistory(d.state);
+        const grains = getGrainMeta(d.state);
+        const m = getMeta(d.state);
 
         for (
             density.channels[0],
@@ -127,7 +120,7 @@ pub const Granular = struct {
         for (0..engine.BLOCK_LENGTH) |i| {
             history[(m.head + i) & HISTORY_MASK] = 0.0;
         }
-        for (in.channels, &out.channels) |in_chan, *out_chan| {
+        for (in.channels, &d.output.channels) |in_chan, *out_chan| {
             for (in_chan, out_chan, 0..) |in_vec, *out_vec, i| {
                 out_vec.* = @splat(0.0);
                 inline for (0..engine.SIMD_LENGTH) |j| {
@@ -152,8 +145,8 @@ pub const Granular = struct {
                     break :blk @min(fade_in, fade_out);
                 };
                 inline for (0..2) |j| {
-                    const current = out.get(@intCast(j), @intCast(i));
-                    out.set(@intCast(j), @intCast(i), current + sample * amp);
+                    const current = d.output.get(@intCast(j), @intCast(i));
+                    d.output.set(@intCast(j), @intCast(i), current + sample * amp);
                 }
 
                 g.cursor += g.speed;

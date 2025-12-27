@@ -26,23 +26,16 @@ pub fn Math(
             .{ .name = "in" },
         };
 
-        pub fn compile(_: *Node) !@This() {
+        pub fn compile(_: engine.CompileData) !@This() {
             return @This(){};
         }
 
-        pub fn eval(
-            _: *const @This(),
-            _: f32,
-            inputs: []const Block,
-            out: *Block,
-            _: []f32,
-            _: []Block,
-        ) void {
-            const in = &inputs[0];
+        pub fn eval(_: *const @This(), d: engine.EvalData) void {
+            const in = &d.inputs[0];
 
             for (in.channels, 0..) |in_chan, i| {
                 for (in_chan, 0..) |in_vec, j| {
-                    out.channels[i][j] = op(in_vec);
+                    d.output.channels[i][j] = op(in_vec);
                 }
             }
         }

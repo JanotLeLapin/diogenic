@@ -20,24 +20,17 @@ pub const Downsample = struct {
         .{ .name = "in", .description = "input signal" },
     };
 
-    pub fn compile(_: *Node) !@This() {
+    pub fn compile(_: engine.CompileData) !@This() {
         return @This(){};
     }
 
-    pub fn eval(
-        _: *const @This(),
-        sr: f32,
-        inputs: []const Block,
-        out: *Block,
-        state: []f32,
-        _: []Block,
-    ) void {
-        const target_sr = &inputs[0];
-        const in = &inputs[1];
-        const latest_sample = &state[0];
-        const clock = &state[1];
+    pub fn eval(_: *const @This(), d: engine.EvalData) void {
+        const target_sr = &d.inputs[0];
+        const in = &d.inputs[1];
+        const latest_sample = &d.state[0];
+        const clock = &d.state[1];
 
-        for (&target_sr.channels, in.channels, &out.channels) |*target_chan, in_chan, *out_chan| {
+        for (&target_sr.channels, in.channels, &d.output.channels) |*target_chan, in_chan, *out_chan| {
             for (target_chan, in_chan, out_chan) |*target_vec, in_vec, *out_vec| {
                 for (0..engine.SIMD_LENGTH) |i| {
                     if (clock.* <= 0.0) {
@@ -45,7 +38,7 @@ pub const Downsample = struct {
                         clock.* += 1.0;
                     }
 
-                    clock.* -= @min(@max(target_vec[i], 0.0), sr) / sr;
+                    clock.* -= @min(@max(target_vec[i], 0.0), d.sample_rate) / d.sample_rate;
                     out_vec[i] = latest_sample.*;
                 }
             }

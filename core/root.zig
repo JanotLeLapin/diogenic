@@ -81,13 +81,15 @@ pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
                 const inputs = state.stack[in_start..stack_head];
                 const output = &state.stack[in_start];
 
-                device.eval(
-                    state.sr,
-                    inputs,
-                    output,
-                    state.state[state_head .. state_head + state_count],
-                    state.reg[reg_head .. reg_head + reg_count],
-                );
+                const eval_data: engine.EvalData = .{
+                    .sample_rate = state.sr,
+                    .inputs = inputs,
+                    .output = output,
+                    .state = state.state[state_head .. state_head + state_count],
+                    .registry = state.reg[reg_head .. reg_head + reg_count],
+                };
+
+                device.eval(eval_data);
 
                 stack_head = out_end;
                 state_head += state_count;
