@@ -40,23 +40,23 @@ pub const Random = struct {
             for (freq_chan, out_chan) |freq_vec, *out_vec| {
                 for (0..engine.SIMD_LENGTH) |i| {
                     c.* += inv_sr * freq_vec[i];
+                    if (c.* > 1.0) {
+                        const seed: u64 = (@as(u64, @intCast(@as(u32, @bitCast(d.state[3]))))) << 8 | @as(u32, @bitCast(d.state[4]));
+                        var prng = std.Random.DefaultPrng.init(seed);
+                        var rand = prng.random();
+
+                        const next_seed: u64 = rand.int(u64);
+                        d.state[3] = @bitCast(@as(u32, @truncate(next_seed >> 32)));
+                        d.state[4] = @bitCast(@as(u32, @truncate(next_seed)));
+
+                        c.* = c.* - @floor(c.*);
+                        prev_amp.* = next_amp.*;
+                        next_amp.* = rand.float(f32) * 2.0 - 1.0;
+                    }
+
                     out_vec[i] = prev_amp.* * (1.0 - c.*) + next_amp.* * c.*;
                 }
             }
-        }
-
-        if (c.* > 1.0) {
-            const seed: u64 = (@as(u64, @intCast(@as(u32, @bitCast(d.state[3]))))) << 8 | @as(u32, @bitCast(d.state[4]));
-            var prng = std.Random.DefaultPrng.init(seed);
-            var rand = prng.random();
-
-            const next_seed: u64 = rand.int(u64);
-            d.state[3] = @bitCast(@as(u32, @truncate(next_seed >> 32)));
-            d.state[4] = @bitCast(@as(u32, @truncate(next_seed)));
-
-            c.* = c.* - @floor(c.*);
-            prev_amp.* = next_amp.*;
-            next_amp.* = rand.float(f32) * 2.0 - 1.0;
         }
     }
 };
