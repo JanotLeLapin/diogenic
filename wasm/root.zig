@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const core = @import("diogenic-core");
+const CompilerErrorData = core.compiler.CompilerErrorData;
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
 const Tokenizer = core.parser.Tokenizer;
@@ -32,18 +33,28 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
     } else {
         maybe_instructions = std.ArrayList(Instruction).initCapacity(gpa, 16) catch return -2;
     }
-    core.compiler.compile(
+
+    var errors = std.ArrayList(CompilerErrorData).initCapacity(gpa, 16) catch return -3;
+    defer errors.deinit(gpa);
+
+    const res = core.compiler.compile(
         root,
         &maybe_instructions.?,
+        &errors,
         .{
             .stack_alloc = gpa,
             .instr_alloc = gpa,
+            .err_alloc = gpa,
             .ast_alloc = arena.allocator(),
             .env_alloc = arena.allocator(),
         },
-    ) catch return -2;
+    ) catch return -4;
 
-    maybe_engine_state = core.initState(sr, maybe_instructions.?.items, gpa) catch return -3;
+    if (!res) {
+        return -5;
+    }
+
+    maybe_engine_state = core.initState(sr, maybe_instructions.?.items, gpa) catch return -6;
     return @intCast(maybe_instructions.?.items.len);
 }
 
