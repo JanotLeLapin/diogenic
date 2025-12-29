@@ -6,6 +6,7 @@ const rl = @import("raylib");
 const audio = @import("audio.zig");
 
 const core = @import("diogenic-core");
+const CompilerErrorData = core.compiler.CompilerErrorData;
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
 const Tokenizer = core.parser.Tokenizer;
@@ -94,12 +95,17 @@ pub fn main() !void {
     var instructions = try std.ArrayList(Instruction).initCapacity(gpa.allocator(), 64);
     defer instructions.deinit(gpa.allocator());
 
-    core.compiler.compile(
+    var errors = try std.ArrayList(CompilerErrorData).initCapacity(gpa.allocator(), 64);
+    defer errors.deinit(gpa.allocator());
+
+    const compiler_res = core.compiler.compile(
         root,
         &instructions,
+        &errors,
         .{
             .stack_alloc = gpa.allocator(),
             .instr_alloc = gpa.allocator(),
+            .err_alloc = gpa.allocator(),
             .ast_alloc = ast_alloc.allocator(),
             .env_alloc = ast_alloc.allocator(),
         },
@@ -107,6 +113,14 @@ pub fn main() !void {
         log.err("compilation failed", .{});
         return;
     };
+
+    if (!compiler_res) {
+        log.err("compilation failed with the following errors", .{});
+        for (errors.items) |err| {
+            log.err("{f}", .{err});
+        }
+        return;
+    }
 
     var e = try core.initState(48000, instructions.items, gpa.allocator());
     defer e.deinit();

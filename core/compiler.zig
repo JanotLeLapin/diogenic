@@ -1,8 +1,6 @@
 const std = @import("std");
 const log = std.log.scoped(.compiler);
 
-const builtin = @import("builtin");
-
 const engine = @import("engine.zig");
 
 const instruction = @import("instruction.zig");
@@ -12,7 +10,7 @@ const parser = @import("parser.zig");
 const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
-const is_freestanding = builtin.target.os.tag == .freestanding;
+const instruction_compiler = @import("compiler/instruction.zig");
 
 pub const DiogenicStd = std.StaticStringMap([:0]const u8).initComptime(.{
     .{ "std/builtin", @embedFile("std/builtin.scm") },
@@ -23,6 +21,32 @@ pub const Constants = std.StaticStringMap(f32).initComptime(.{
     .{ "PI", std.math.pi },
     .{ "PHI", std.math.phi },
 });
+
+pub const CompilerError = error{
+    UnknownExpr,
+    UnknownArg,
+    BadArity,
+    BadExpr,
+    VariableNotFound,
+    UnresolvedImport,
+};
+
+pub const CompilerErrorData = struct {
+    node: *Node,
+    err: CompilerError,
+
+    pub fn format(
+        self: @This(),
+        writer: *std.Io.Writer,
+    ) std.Io.Writer.Error!void {
+        try writer.print("{s}: {s}", .{
+            @errorName(
+                self.err,
+            ),
+            self.node.src,
+        });
+    }
+};
 
 pub const CompilerState = struct {
     state_index: usize = 0,
@@ -42,6 +66,8 @@ pub const CompilerAlloc = struct {
     stack_alloc: std.mem.Allocator,
     /// instructions array list allocator
     instr_alloc: std.mem.Allocator,
+    /// errors array list allocator
+    err_alloc: std.mem.Allocator,
     /// ast allocator
     ast_alloc: std.mem.Allocator,
     /// compiler state environment & functions allocator
@@ -52,8 +78,11 @@ pub fn compileExpr(
     state: *CompilerState,
     tmp: *Node,
     instructions: *std.ArrayList(Instruction),
+    errors: *std.ArrayList(CompilerErrorData),
     alloc: CompilerAlloc,
-) !void {
+) !bool {
+    var failed = false;
+
     const op = switch (tmp.data) {
         .list => |lst| lst.items[0].data.id,
         .num => |num| {
@@ -61,7 +90,7 @@ pub fn compileExpr(
                 alloc.instr_alloc,
                 Instruction{ .push = instruction.value.Push{ .value = num } },
             );
-            return;
+            return true;
         },
         .id => |id| {
             if (state.env.get(id)) |idx| {
@@ -75,42 +104,57 @@ pub fn compileExpr(
                     Instruction{ .push = instruction.value.Push{ .value = v } },
                 );
             } else {
-                if (!is_freestanding) {
-                    log.err("VariableNotFound: could not resolve '{s}'", .{tmp.src});
-                }
-                return error.VariableNotFound;
+                try errors.append(alloc.err_alloc, .{
+                    .node = tmp,
+                    .err = error.VariableNotFound,
+                });
+                return false;
             }
-            return;
+            return true;
         },
         else => unreachable,
     };
 
     if (instruction.getExpressionIndex(op)) |_| {
-        instruction.expand(tmp, alloc.ast_alloc) catch |err| {
-            if (!is_freestanding) {
-                log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
-            }
-            return err;
+        instruction_compiler.expand(tmp, alloc.ast_alloc) catch |err| {
+            try errors.append(alloc.err_alloc, .{
+                .err = err,
+                .node = tmp,
+            });
+            failed = true;
         };
 
         for (tmp.data.list.items[1..]) |child| {
-            try compileExpr(state, child, instructions, alloc);
+            if (!try compileExpr(
+                state,
+                child,
+                instructions,
+                errors,
+                alloc,
+            )) {
+                failed = true;
+            }
         }
 
-        if (instruction.compile(tmp)) |instr| {
+        if (instruction_compiler.compile(tmp)) |instr| {
             try instructions.append(alloc.instr_alloc, instr);
         } else |err| {
-            if (!is_freestanding) {
-                log.err("{s}: could not compile '{s}'", .{ @errorName(err), tmp.src });
-            }
-            return err;
+            try errors.append(alloc.err_alloc, .{
+                .err = err,
+                .node = tmp,
+            });
+            failed = true;
         }
     } else if (state.func.get(op)) |func| {
         const args = func.data.list.items[2].data.list.items;
         const expr = func.data.list.items[3];
 
         if (tmp.data.list.items.len - 1 != args.len) {
-            return error.BadArity;
+            try errors.append(alloc.err_alloc, .{
+                .err = error.BadArity,
+                .node = tmp,
+            });
+            failed = true;
         }
 
         var virtual_state = state.*;
@@ -120,19 +164,31 @@ pub fn compileExpr(
         for (args, tmp.data.list.items[1..]) |arg, input| {
             try virtual_state.env.put(arg.data.id, virtual_state.reg_index);
 
-            try compileExpr(state, input, instructions, alloc);
+            if (!try compileExpr(
+                state,
+                input,
+                instructions,
+                errors,
+                alloc,
+            )) {
+                failed = true;
+            }
+
             try instructions.append(alloc.instr_alloc, Instruction{
                 .store = .{ .reg_index = virtual_state.reg_index },
             });
             virtual_state.reg_index += 1;
         }
 
-        try compileExpr(
+        if (!try compileExpr(
             &virtual_state,
             expr,
             instructions,
+            errors,
             alloc,
-        );
+        )) {
+            failed = true;
+        }
 
         for (args) |arg| {
             try instructions.append(alloc.instr_alloc, Instruction{
@@ -153,7 +209,16 @@ pub fn compileExpr(
             state.reg_index += 1;
 
             try state.env.put(name, reg_index);
-            try compileExpr(state, bindings.items[i + 1], instructions, alloc);
+            if (!try compileExpr(
+                state,
+                bindings.items[i + 1],
+                instructions,
+                errors,
+                alloc,
+            )) {
+                failed = true;
+            }
+
             try instructions.append(alloc.instr_alloc, Instruction{
                 .store = instruction.value.Store{ .reg_index = reg_index },
             });
@@ -161,7 +226,15 @@ pub fn compileExpr(
             i += 2;
         }
 
-        try compileExpr(state, expr, instructions, alloc);
+        if (!try compileExpr(
+            state,
+            expr,
+            instructions,
+            errors,
+            alloc,
+        )) {
+            failed = true;
+        }
 
         i = 0;
         while (i < bindings.items.len) {
@@ -177,18 +250,22 @@ pub fn compileExpr(
             i += 2;
         }
     } else {
-        if (!is_freestanding) {
-            log.err("UnknownExpression: could not compile '{s}'", .{tmp.src});
-        }
-        return error.UnknownExpression;
+        try errors.append(alloc.err_alloc, .{
+            .err = error.UnknownExpr,
+            .node = tmp,
+        });
+        failed = true;
     }
+
+    return !failed;
 }
 
 pub fn compile(
     root: *Node,
     instructions: *std.ArrayList(Instruction),
+    errors: *std.ArrayList(CompilerErrorData),
     alloc: CompilerAlloc,
-) !void {
+) !bool {
     var state = CompilerState{
         .env = std.StringHashMap(usize).init(alloc.env_alloc),
         .func = std.StringHashMap(*Node).init(alloc.env_alloc),
@@ -199,7 +276,13 @@ pub fn compile(
     while (i < root.data.list.items.len) {
         const child = root.data.list.items[i];
         if (std.mem.eql(u8, "use", child.data.list.items[0].data.id)) {
-            const src = DiogenicStd.get(child.data.list.items[1].data.id) orelse return error.UnresolvedImport;
+            const src = DiogenicStd.get(child.data.list.items[1].data.id) orelse {
+                try errors.append(alloc.err_alloc, .{
+                    .err = error.UnresolvedImport,
+                    .node = child,
+                });
+                return false;
+            };
             var t: Tokenizer = .{ .src = src };
             const ast = try parser.parse(&t, alloc.ast_alloc, alloc.stack_alloc);
             _ = root.data.list.orderedRemove(i);
@@ -208,14 +291,16 @@ pub fn compile(
         } else if (std.mem.eql(u8, "defun", child.data.list.items[0].data.id)) {
             try state.func.put(child.data.list.items[1].data.id, child);
         } else {
-            try compileExpr(
+            return try compileExpr(
                 &state,
                 child,
                 instructions,
+                errors,
                 alloc,
             );
-            return;
         }
         i += 1;
     }
+
+    return true;
 }
