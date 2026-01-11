@@ -16,8 +16,8 @@ pub const Downsample = struct {
     pub const state_count = 2;
 
     pub const args: []const meta.Arg = &.{
-        .{ .name = "sample-rate", .description = "target sample rate" },
         .{ .name = "in", .description = "input signal" },
+        .{ .name = "sample-rate", .description = "target sample rate" },
     };
 
     pub fn compile(_: engine.CompileData) !@This() {

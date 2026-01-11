@@ -67,12 +67,12 @@ pub const Granular = struct {
     pub const state_count = HISTORY_SIZE + META_FLOATS + MAX_POLYPHONY * GRAIN_META_FLOATS;
 
     pub const args: []const meta.Arg = &.{
+        .{ .name = "in", .description = "input signal" },
         .{ .name = "density", .description = "grain density, in grains per second", .default = 10.0 },
         .{ .name = "size", .description = "grain size, in milliseconds", .default = 100.0 },
         .{ .name = "speed", .description = "grain playback speed", .default = 1.0 },
         .{ .name = "position", .description = "grain spawn position, 0 = tail, 1 = head", .default = 0.5 },
         .{ .name = "fade", .description = "grain fade in/out, in milliseconds", .default = 10.0 },
-        .{ .name = "in", .description = "input signal" },
     };
 
     pub fn compile(_: engine.CompileData) !@This() {

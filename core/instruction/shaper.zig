@@ -25,8 +25,8 @@ pub fn Shaper(
         pub const description = custom_description;
 
         pub const args: []const meta.Arg = &.{
-            .{ .name = t_name, .description = t_desc },
             .{ .name = "in", .description = "input signal" },
+            .{ .name = t_name, .description = t_desc },
         };
 
         pub fn compile(_: engine.CompileData) !@This() {

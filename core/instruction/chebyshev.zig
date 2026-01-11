@@ -16,8 +16,8 @@ pub const Chebyshev = struct {
     pub const description = "first kind Chebyshev function";
 
     pub const args: []const meta.Arg = &.{
-        .{ .name = "order" },
         .{ .name = "in" },
+        .{ .name = "order" },
     };
 
     pub fn compile(_: engine.CompileData) !@This() {

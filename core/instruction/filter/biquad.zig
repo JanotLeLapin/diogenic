@@ -47,10 +47,10 @@ pub fn Biquad(
         pub const state_count = 4;
 
         pub const args: []const meta.Arg = &.{
+            .{ .name = "in", .description = "input signal" },
             .{ .name = "freq", .description = "target frequency" },
             .{ .name = "q", .description = "quality factor", .default = 0.707 },
             .{ .name = "g", .description = "gain factor", .default = 1.0 },
-            .{ .name = "in", .description = "input signal" },
         };
 
         pub fn compile(_: engine.CompileData) !@This() {

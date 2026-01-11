@@ -20,8 +20,8 @@ pub const Pan = struct {
     pub const description = "pan signal between left and right channels";
 
     pub const args: []const meta.Arg = &.{
-        .{ .name = "alpha", .description = "panning modifier: 0 = all left, 0.5 = middle, 1 = all right." },
         .{ .name = "in", .description = "input signal" },
+        .{ .name = "alpha", .description = "panning modifier: 0 = all left, 0.5 = middle, 1 = all right." },
     };
 
     pub fn compile(_: engine.CompileData) !@This() {
