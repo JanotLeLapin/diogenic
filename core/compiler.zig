@@ -4,6 +4,7 @@ const log = std.log.scoped(.compiler);
 const engine = @import("engine.zig");
 
 const letBlock = @import("compiler/let.zig");
+const pipeBlock = @import("compiler/pipe.zig");
 
 const instruction = @import("instruction.zig");
 const Instruction = instruction.Instruction;
@@ -28,6 +29,7 @@ const MacroFn = *const fn (*CompilerState, *Node) anyerror!bool;
 
 const Macros = std.StaticStringMap(MacroFn).initComptime(.{
     .{ "let", letBlock.expand },
+    .{ "->", pipeBlock.expand },
 });
 
 pub const CompilerError = error{
