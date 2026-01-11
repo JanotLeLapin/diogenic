@@ -25,8 +25,8 @@ pub const Downsample = struct {
     }
 
     pub fn eval(_: *const @This(), d: engine.EvalData) void {
-        const target_sr = &d.inputs[0];
-        const in = &d.inputs[1];
+        const in = &d.inputs[0];
+        const target_sr = &d.inputs[1];
         const latest_sample = &d.state[0];
         const clock = &d.state[1];
 

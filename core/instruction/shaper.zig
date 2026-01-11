@@ -34,8 +34,8 @@ pub fn Shaper(
         }
 
         pub fn eval(_: *const @This(), d: engine.EvalData) void {
-            const t = &d.inputs[0];
-            const in = &d.inputs[1];
+            const in = &d.inputs[0];
+            const t = &d.inputs[1];
 
             for (t.channels, in.channels, 0..) |t_chan, in_chan, i| {
                 for (t_chan, in_chan, 0..) |t_vec, in_vec, j| {

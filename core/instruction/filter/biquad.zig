@@ -58,10 +58,10 @@ pub fn Biquad(
         }
 
         pub fn eval(_: *const @This(), d: engine.EvalData) void {
-            const fc = &d.inputs[0];
-            const q = &d.inputs[1];
-            const g = &d.inputs[2];
-            const in = &d.inputs[3];
+            const in = &d.inputs[0];
+            const fc = &d.inputs[1];
+            const q = &d.inputs[2];
+            const g = &d.inputs[3];
             const tmp = d.state[0..4];
 
             for (fc.channels, q.channels, g.channels, in.channels, &d.output.channels, 0..) |fc_chan, q_chan, g_chan, in_chan, *out_chan, i| {

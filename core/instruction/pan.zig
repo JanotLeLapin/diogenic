@@ -29,8 +29,8 @@ pub const Pan = struct {
     }
 
     pub fn eval(_: *const @This(), d: engine.EvalData) void {
-        const alpha = &d.inputs[0];
-        const in = &d.inputs[1];
+        const in = &d.inputs[0];
+        const alpha = &d.inputs[1];
         for (alpha.channels[0], in.channels[0], 0..) |alpha_vec, in_vec, i| {
             const norm = clamp2pi(alpha_vec) * @as(Vec, @splat(std.math.pi / 2.0));
             const g = @cos(norm);

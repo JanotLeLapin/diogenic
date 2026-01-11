@@ -82,12 +82,12 @@ pub const Granular = struct {
     pub fn eval(_: *const @This(), d: engine.EvalData) void {
         const inv_sr = 1.0 / d.sample_rate;
 
-        const density = &d.inputs[0];
-        const size = &d.inputs[1];
-        const speed = &d.inputs[2];
-        const position = &d.inputs[3];
-        const fade = &d.inputs[4];
-        const in = &d.inputs[5];
+        const in = &d.inputs[0];
+        const density = &d.inputs[1];
+        const size = &d.inputs[2];
+        const speed = &d.inputs[3];
+        const position = &d.inputs[4];
+        const fade = &d.inputs[5];
 
         const history = getHistory(d.state);
         const grains = getGrainMeta(d.state);

@@ -25,8 +25,8 @@ pub const Chebyshev = struct {
     }
 
     pub fn eval(_: *const @This(), d: engine.EvalData) void {
-        const order = &d.inputs[0];
-        const in = &d.inputs[1];
+        const in = &d.inputs[0];
+        const order = &d.inputs[1];
 
         for (order.channels, in.channels, &d.output.channels) |order_chan, in_chan, *out_chan| {
             for (order_chan, in_chan, out_chan) |order_vec, in_vec, *out_vec| {
