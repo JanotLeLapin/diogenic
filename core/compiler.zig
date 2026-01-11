@@ -3,6 +3,8 @@ const log = std.log.scoped(.compiler);
 
 const engine = @import("engine.zig");
 
+const letBlock = @import("compiler/let.zig");
+
 const instruction = @import("instruction.zig");
 const Instruction = instruction.Instruction;
 
@@ -20,6 +22,12 @@ pub const Constants = std.StaticStringMap(f32).initComptime(.{
     .{ "E", std.math.e },
     .{ "PI", std.math.pi },
     .{ "PHI", std.math.phi },
+});
+
+const MacroFn = *const fn (*CompilerState, *Node) anyerror!bool;
+
+const Macros = std.StaticStringMap(MacroFn).initComptime(.{
+    .{ "let", letBlock.expand },
 });
 
 pub const CompilerError = error{
@@ -78,7 +86,7 @@ pub const CompilerAlloc = struct {
     env_alloc: std.mem.Allocator,
 };
 
-pub fn compileExpr(state: *CompilerState, tmp: *Node) !bool {
+pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
     var failed = false;
 
     const op = switch (tmp.data) {
@@ -178,44 +186,9 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) !bool {
 
         state.state_index = virtual_state.state_index;
         state.reg_index = virtual_state.reg_index;
-    } else if (std.mem.eql(u8, "let", op)) {
-        const bindings = tmp.data.list.items[1].data.list;
-        const expr = tmp.data.list.items[2];
-
-        var i: usize = 0;
-        while (i < bindings.items.len) {
-            const name = bindings.items[i].data.id;
-            const reg_index = state.reg_index;
-            state.reg_index += 1;
-
-            try state.env.put(name, reg_index);
-            if (!try compileExpr(state, bindings.items[i + 1])) {
-                failed = true;
-            }
-
-            try state.instructions.append(state.alloc.instr_alloc, Instruction{
-                .store = instruction.value.Store{ .reg_index = reg_index },
-            });
-
-            i += 2;
-        }
-
-        if (!try compileExpr(state, expr)) {
+    } else if (Macros.get(op)) |f| {
+        if (!try f(state, tmp)) {
             failed = true;
-        }
-
-        i = 0;
-        while (i < bindings.items.len) {
-            const name = bindings.items[i].data.id;
-            const reg_index = state.reg_index;
-            state.reg_index += 1;
-
-            _ = state.env.remove(name);
-            try state.instructions.append(state.alloc.instr_alloc, Instruction{
-                .free = instruction.value.Free{ .reg_index = reg_index },
-            });
-
-            i += 2;
         }
     } else {
         try state.errors.append(state.alloc.err_alloc, .{
