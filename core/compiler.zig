@@ -55,6 +55,10 @@ pub const CompilerState = struct {
     env: std.StringHashMap(usize),
     func: std.StringHashMap(*Node),
 
+    instructions: *std.ArrayList(Instruction),
+    errors: *std.ArrayList(CompilerErrorData),
+    alloc: CompilerAlloc,
+
     pub fn deinit(self: *CompilerState) void {
         self.env.deinit();
         self.func.deinit();
@@ -74,37 +78,31 @@ pub const CompilerAlloc = struct {
     env_alloc: std.mem.Allocator,
 };
 
-pub fn compileExpr(
-    state: *CompilerState,
-    tmp: *Node,
-    instructions: *std.ArrayList(Instruction),
-    errors: *std.ArrayList(CompilerErrorData),
-    alloc: CompilerAlloc,
-) !bool {
+pub fn compileExpr(state: *CompilerState, tmp: *Node) !bool {
     var failed = false;
 
     const op = switch (tmp.data) {
         .list => |lst| lst.items[0].data.id,
         .num => |num| {
-            try instructions.append(
-                alloc.instr_alloc,
+            try state.instructions.append(
+                state.alloc.instr_alloc,
                 Instruction{ .push = instruction.value.Push{ .value = num } },
             );
             return true;
         },
         .id => |id| {
             if (state.env.get(id)) |idx| {
-                try instructions.append(
-                    alloc.instr_alloc,
+                try state.instructions.append(
+                    state.alloc.instr_alloc,
                     Instruction{ .load = instruction.value.Load{ .reg_index = idx } },
                 );
             } else if (Constants.get(id)) |v| {
-                try instructions.append(
-                    alloc.instr_alloc,
+                try state.instructions.append(
+                    state.alloc.instr_alloc,
                     Instruction{ .push = instruction.value.Push{ .value = v } },
                 );
             } else {
-                try errors.append(alloc.err_alloc, .{
+                try state.errors.append(state.alloc.err_alloc, .{
                     .node = tmp,
                     .err = error.VariableNotFound,
                 });
@@ -116,8 +114,8 @@ pub fn compileExpr(
     };
 
     if (instruction.getExpressionIndex(op)) |_| {
-        instruction_compiler.expand(tmp, alloc.ast_alloc) catch |err| {
-            try errors.append(alloc.err_alloc, .{
+        instruction_compiler.expand(tmp, state.alloc.ast_alloc) catch |err| {
+            try state.errors.append(state.alloc.err_alloc, .{
                 .err = err,
                 .node = tmp,
             });
@@ -125,21 +123,15 @@ pub fn compileExpr(
         };
 
         for (tmp.data.list.items[1..]) |child| {
-            if (!try compileExpr(
-                state,
-                child,
-                instructions,
-                errors,
-                alloc,
-            )) {
+            if (!try compileExpr(state, child)) {
                 failed = true;
             }
         }
 
         if (instruction_compiler.compile(tmp)) |instr| {
-            try instructions.append(alloc.instr_alloc, instr);
+            try state.instructions.append(state.alloc.instr_alloc, instr);
         } else |err| {
-            try errors.append(alloc.err_alloc, .{
+            try state.errors.append(state.alloc.err_alloc, .{
                 .err = err,
                 .node = tmp,
             });
@@ -150,7 +142,7 @@ pub fn compileExpr(
         const expr = func.data.list.items[3];
 
         if (tmp.data.list.items.len - 1 != args.len) {
-            try errors.append(alloc.err_alloc, .{
+            try state.errors.append(state.alloc.err_alloc, .{
                 .err = error.BadArity,
                 .node = tmp,
             });
@@ -158,40 +150,28 @@ pub fn compileExpr(
         }
 
         var virtual_state = state.*;
-        virtual_state.env = std.StringHashMap(usize).init(alloc.env_alloc);
+        virtual_state.env = std.StringHashMap(usize).init(state.alloc.env_alloc);
         defer virtual_state.env.deinit();
 
         for (args, tmp.data.list.items[1..]) |arg, input| {
             try virtual_state.env.put(arg.data.id, virtual_state.reg_index);
 
-            if (!try compileExpr(
-                state,
-                input,
-                instructions,
-                errors,
-                alloc,
-            )) {
+            if (!try compileExpr(state, input)) {
                 failed = true;
             }
 
-            try instructions.append(alloc.instr_alloc, Instruction{
+            try state.instructions.append(state.alloc.instr_alloc, Instruction{
                 .store = .{ .reg_index = virtual_state.reg_index },
             });
             virtual_state.reg_index += 1;
         }
 
-        if (!try compileExpr(
-            &virtual_state,
-            expr,
-            instructions,
-            errors,
-            alloc,
-        )) {
+        if (!try compileExpr(&virtual_state, expr)) {
             failed = true;
         }
 
         for (args) |arg| {
-            try instructions.append(alloc.instr_alloc, Instruction{
+            try state.instructions.append(state.alloc.instr_alloc, Instruction{
                 .free = .{ .reg_index = virtual_state.env.get(arg.data.id).? },
             });
         }
@@ -209,30 +189,18 @@ pub fn compileExpr(
             state.reg_index += 1;
 
             try state.env.put(name, reg_index);
-            if (!try compileExpr(
-                state,
-                bindings.items[i + 1],
-                instructions,
-                errors,
-                alloc,
-            )) {
+            if (!try compileExpr(state, bindings.items[i + 1])) {
                 failed = true;
             }
 
-            try instructions.append(alloc.instr_alloc, Instruction{
+            try state.instructions.append(state.alloc.instr_alloc, Instruction{
                 .store = instruction.value.Store{ .reg_index = reg_index },
             });
 
             i += 2;
         }
 
-        if (!try compileExpr(
-            state,
-            expr,
-            instructions,
-            errors,
-            alloc,
-        )) {
+        if (!try compileExpr(state, expr)) {
             failed = true;
         }
 
@@ -243,14 +211,14 @@ pub fn compileExpr(
             state.reg_index += 1;
 
             _ = state.env.remove(name);
-            try instructions.append(alloc.instr_alloc, Instruction{
+            try state.instructions.append(state.alloc.instr_alloc, Instruction{
                 .free = instruction.value.Free{ .reg_index = reg_index },
             });
 
             i += 2;
         }
     } else {
-        try errors.append(alloc.err_alloc, .{
+        try state.errors.append(state.alloc.err_alloc, .{
             .err = error.UnknownExpr,
             .node = tmp,
         });
@@ -269,6 +237,9 @@ pub fn compile(
     var state = CompilerState{
         .env = std.StringHashMap(usize).init(alloc.env_alloc),
         .func = std.StringHashMap(*Node).init(alloc.env_alloc),
+        .instructions = instructions,
+        .errors = errors,
+        .alloc = alloc,
     };
     defer state.deinit();
 
@@ -294,9 +265,6 @@ pub fn compile(
             return try compileExpr(
                 &state,
                 child,
-                instructions,
-                errors,
-                alloc,
             );
         }
         i += 1;
