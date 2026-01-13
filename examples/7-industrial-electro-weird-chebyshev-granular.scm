@@ -9,9 +9,9 @@
             :in (let
                   (order-center 6.0
                    order-freq (+ 0.1 (* 0.1 (sine! 0.4))))
-                  (chebyshev (+ order-center
+                  (chebyshev (triangle! (+ 110.0 (* 12.0 (* (noise!) (sine! 0.1)))))
+                             (+ order-center
                                 (* (- order-center 1.0)
                                    (foldback (+ 0.5 (* 0.45 (triangle! 0.6)))
-                                             (sine! order-freq))))
-                             (triangle! (+ 110.0 (* 12.0 (* (noise!) (sine! 0.1)))))))))
+                                             (sine! order-freq))))))))
 

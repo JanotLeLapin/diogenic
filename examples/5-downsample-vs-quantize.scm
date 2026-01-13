@@ -4,5 +4,5 @@
       mod (sine! 0.6)
       target-sr (+ 8000.0 (* 6000.0 mod))
       bits (+ 1.4 (* 0.6 mod)))
-     (+ (* (< 0.0 cond) (downsample! target-sr carrier))
-        (* (> 0.0 cond) (quantize bits carrier))))
+     (+ (* (< 0.0 cond) (downsample! carrier target-sr))
+        (* (> 0.0 cond) (quantize carrier bits))))
