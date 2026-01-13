@@ -21,4 +21,8 @@
                                         :in (noise!))))
             ; input signal, slowly and softly modulated sine wave
             ; ends up completely mangled by the granular synthesizer
-            :in (sine! (midi->freq (+ 69.0 (* 0.02 (sawtooth! 0.54)))))))
+            :in (-> (sawtooth! 0.54)
+                    (* 0.02)
+                    (+ 69.0)
+                    (midi->freq)
+                    (sine!))))
