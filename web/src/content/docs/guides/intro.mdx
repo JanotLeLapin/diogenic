@@ -20,12 +20,13 @@ export const snippets = [
 (let (base 42.0
       mod-freq (+ 1.0 (* 0.8 (triangle! 0.1)))
       mod (sine! mod-freq))
-     (sine!
-       (midi->freq
-         (floor
-           (+ base
-              (* 6.0
-                 (+ 6.0 mod)))))))
+     (-> mod
+         (+ 6.0)
+         (* 6.0)
+         (+ base)
+         (floor)
+         (midi->freq)
+         (sine!)))
   `
 ]
 
