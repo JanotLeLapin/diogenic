@@ -96,7 +96,7 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
         .num => |num| {
             try state.instructions.append(
                 state.alloc.instr_alloc,
-                Instruction{ .push = instruction.value.Push{ .value = num } },
+                Instruction{ ._push = instruction.value.Push{ .value = num } },
             );
             return true;
         },
@@ -104,12 +104,12 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
             if (state.env.get(id)) |idx| {
                 try state.instructions.append(
                     state.alloc.instr_alloc,
-                    Instruction{ .load = instruction.value.Load{ .reg_index = idx } },
+                    Instruction{ ._load = instruction.value.Load{ .reg_index = idx } },
                 );
             } else if (Constants.get(id)) |v| {
                 try state.instructions.append(
                     state.alloc.instr_alloc,
-                    Instruction{ .push = instruction.value.Push{ .value = v } },
+                    Instruction{ ._push = instruction.value.Push{ .value = v } },
                 );
             } else {
                 try state.errors.append(state.alloc.err_alloc, .{
@@ -171,7 +171,7 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
             }
 
             try state.instructions.append(state.alloc.instr_alloc, Instruction{
-                .store = .{ .reg_index = virtual_state.reg_index },
+                ._store = .{ .reg_index = virtual_state.reg_index },
             });
             virtual_state.reg_index += 1;
         }
@@ -182,7 +182,7 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
 
         for (args) |arg| {
             try state.instructions.append(state.alloc.instr_alloc, Instruction{
-                .free = .{ .reg_index = virtual_state.env.get(arg.data.id).? },
+                ._free = .{ .reg_index = virtual_state.env.get(arg.data.id).? },
             });
         }
 

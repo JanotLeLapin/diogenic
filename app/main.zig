@@ -127,7 +127,7 @@ pub fn main() !void {
 
     for (instructions.items) |instr| {
         switch (instr) {
-            .push => |v| log.debug("instr: value: {d}", .{v.value}),
+            ._push => |v| log.debug("instr: value: {d}", .{v.value}),
             else => {
                 const tag = std.meta.activeTag(instr);
                 log.debug("instr: {s}", .{@tagName(tag)});

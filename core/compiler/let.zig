@@ -30,7 +30,7 @@ pub fn expand(state: *CompilerState, tmp: *Node) anyerror!bool {
         }
 
         try state.instructions.append(state.alloc.instr_alloc, Instruction{
-            .store = instruction.value.Store{ .reg_index = reg_index },
+            ._store = instruction.value.Store{ .reg_index = reg_index },
         });
 
         i += 2;
@@ -48,7 +48,7 @@ pub fn expand(state: *CompilerState, tmp: *Node) anyerror!bool {
 
         _ = state.env.remove(name);
         try state.instructions.append(state.alloc.instr_alloc, Instruction{
-            .free = instruction.value.Free{ .reg_index = reg_index },
+            ._free = instruction.value.Free{ .reg_index = reg_index },
         });
 
         i += 2;

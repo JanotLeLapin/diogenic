@@ -18,14 +18,14 @@ pub fn initState(sr: f32, instructions: []const Instruction, alloc: std.mem.Allo
 
     for (instructions) |instr| {
         switch (instr) {
-            .pop, .free => {},
-            .push => {
+            ._pop, ._free => {},
+            ._push => {
                 stack_size += 1;
             },
-            .store => {
+            ._store => {
                 reg_size += 1;
             },
-            .load => {
+            ._load => {
                 stack_size += 1;
             },
             inline else => |device| {
@@ -46,7 +46,7 @@ pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
     var reg_head: usize = 0;
     for (instructions) |instr| {
         switch (instr) {
-            .push => |push| {
+            ._push => |push| {
                 var b = &state.stack[stack_head];
                 for (&b.channels) |*chan| {
                     for (chan) |*vec| {
@@ -55,18 +55,18 @@ pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
                 }
                 stack_head += 1;
             },
-            .pop => {
+            ._pop => {
                 stack_head -= 1;
             },
-            .store => |store| {
+            ._store => |store| {
                 stack_head -= 1;
                 state.reg[store.reg_index] = state.stack[stack_head];
             },
-            .load => |load| {
+            ._load => |load| {
                 state.stack[stack_head] = state.reg[load.reg_index];
                 stack_head += 1;
             },
-            .free => |free| {
+            ._free => |free| {
                 _ = free;
                 // TODO: free
             },
