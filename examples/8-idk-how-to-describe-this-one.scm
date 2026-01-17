@@ -6,15 +6,14 @@
 
 (defun dephased-bass (freq freq-offset)
   ; one bass per channel each with a frequency offset
-  (+ (pan (bass (+ freq freq-offset)) 0.0)
-     (pan (bass (- freq freq-offset)) 1.0)))
+  (+ (pan (bass (+ freq freq-offset)) -1.0)
+     (pan (bass (- freq freq-offset))  1.0)))
 
 (defun harmonic-synth (freq)
   ; rich synth texture, very cool
-  (let (panning (+ 0.5
-                   (* 0.15
-                      (+ (* 0.5 (triangle! 0.2))
-                         (* 0.5 (square! 0.06))))))
+  (let (panning (* 0.3
+                  (+ (* 0.5 (triangle! 0.2))
+                     (* 0.5 (square! 0.06)))))
     (b-highpass!
       :freq 400.0
       :in (* 0.5
