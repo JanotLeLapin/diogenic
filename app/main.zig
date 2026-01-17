@@ -6,7 +6,7 @@ const rl = @import("raylib");
 const audio = @import("audio.zig");
 
 const core = @import("diogenic-core");
-const CompilerErrorData = core.compiler.CompilerErrorData;
+const CompilerExceptionData = core.compiler.CompilerExceptionData;
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
 const Tokenizer = core.parser.Tokenizer;
@@ -95,7 +95,7 @@ pub fn main() !void {
     var instructions = try std.ArrayList(Instruction).initCapacity(gpa.allocator(), 64);
     defer instructions.deinit(gpa.allocator());
 
-    var errors = try std.ArrayList(CompilerErrorData).initCapacity(gpa.allocator(), 64);
+    var errors = try std.ArrayList(CompilerExceptionData).initCapacity(gpa.allocator(), 64);
     defer errors.deinit(gpa.allocator());
 
     const compiler_res = core.compiler.compile(
@@ -105,7 +105,7 @@ pub fn main() !void {
         .{
             .stack_alloc = gpa.allocator(),
             .instr_alloc = gpa.allocator(),
-            .err_alloc = gpa.allocator(),
+            .exception_alloc = gpa.allocator(),
             .ast_alloc = ast_alloc.allocator(),
             .env_alloc = ast_alloc.allocator(),
         },

@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const core = @import("diogenic-core");
-const CompilerErrorData = core.compiler.CompilerErrorData;
+const CompilerExceptionData = core.compiler.CompilerExceptionData;
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
 const Tokenizer = core.parser.Tokenizer;
@@ -34,17 +34,17 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
         maybe_instructions = std.ArrayList(Instruction).initCapacity(gpa, 16) catch return -2;
     }
 
-    var errors = std.ArrayList(CompilerErrorData).initCapacity(gpa, 16) catch return -3;
-    defer errors.deinit(gpa);
+    var exceptions = std.ArrayList(CompilerExceptionData).initCapacity(gpa, 16) catch return -3;
+    defer exceptions.deinit(gpa);
 
     const res = core.compiler.compile(
         root,
         &maybe_instructions.?,
-        &errors,
+        &exceptions,
         .{
             .stack_alloc = gpa,
             .instr_alloc = gpa,
-            .err_alloc = gpa,
+            .exception_alloc = gpa,
             .ast_alloc = arena.allocator(),
             .env_alloc = arena.allocator(),
         },

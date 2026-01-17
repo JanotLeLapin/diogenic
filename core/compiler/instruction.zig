@@ -1,7 +1,8 @@
 const std = @import("std");
 
 const compiler = @import("../compiler.zig");
-const CompilerError = compiler.CompilerError;
+const CompilerException = compiler.CompilerException;
+const CompilerState = compiler.CompilerState;
 
 const engine = @import("../engine.zig");
 
@@ -13,18 +14,20 @@ const parser = @import("../parser.zig");
 const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
-pub fn expand(node: *Node, alloc: std.mem.Allocator) CompilerError!void {
+pub fn expand(state: *CompilerState, node: *Node) anyerror!bool {
     const expr = switch (node.data) {
         .list => |lst| lst,
-        else => return,
+        else => unreachable,
     };
 
     const id = switch (expr.items[0].data) {
         .id => |id| id,
-        else => return,
+        else => unreachable,
     };
 
-    const i = instruction.getExpressionIndex(id) orelse return error.UnknownExpr;
+    // is this function is called we know the expression
+    // actually exists
+    const i = instruction.getExpressionIndex(id).?;
 
     switch (i) {
         inline 5...Instructions.len - 1 => |ci| {
@@ -45,7 +48,12 @@ pub fn expand(node: *Node, alloc: std.mem.Allocator) CompilerError!void {
                                 break :blk j;
                             }
                         }
-                        return error.UnknownArg;
+
+                        try state.exceptions.append(state.alloc.exception_alloc, .{
+                            .exception = .unknown_arg,
+                            .node = child,
+                        });
+                        return false;
                     };
                     arg_slots[arg_idx] = child;
                     maybe_name = null;
@@ -58,7 +66,11 @@ pub fn expand(node: *Node, alloc: std.mem.Allocator) CompilerError!void {
                             }
 
                             if (slot_idx >= arg_slots.len) {
-                                return error.BadArity;
+                                try state.exceptions.append(state.alloc.exception_alloc, .{
+                                    .exception = .bad_arity,
+                                    .node = child,
+                                });
+                                return false;
                             }
 
                             if (T.args.len > 0) {
@@ -72,45 +84,54 @@ pub fn expand(node: *Node, alloc: std.mem.Allocator) CompilerError!void {
             }
 
             if (maybe_name) |_| {
-                return error.BadArity;
+                try state.exceptions.append(state.alloc.exception_alloc, .{
+                    .exception = .bad_arity,
+                    .node = node,
+                });
+                return false;
             }
 
             const op = node.data.list.items[0];
             node.data.list.clearRetainingCapacity();
-            node.data.list.append(alloc, op) catch unreachable; // FIXME: handle this
+            try node.data.list.append(state.alloc.ast_alloc, op);
             for (arg_slots, T.args) |slot, arg| {
                 if (slot) |child| {
-                    node.data.list.append(alloc, child) catch unreachable; // FIXME: handle this
+                    try node.data.list.append(state.alloc.ast_alloc, child);
                 } else {
                     if (arg.default) |default| {
-                        const default_node = alloc.create(Node) catch unreachable; // FIXME: handle this
+                        const default_node = try state.alloc.ast_alloc.create(Node);
                         default_node.* = .{
                             .src = "DEFAULT",
                             .data = .{ .num = default },
                         };
-                        node.data.list.append(alloc, default_node) catch unreachable; // FIXME: handle this
+                        try node.data.list.append(state.alloc.ast_alloc, default_node);
                     } else {
-                        return error.BadArity;
+                        try state.exceptions.append(state.alloc.exception_alloc, .{
+                            .exception = .bad_arity,
+                            .node = node,
+                        });
                     }
                 }
             }
         },
         else => unreachable,
     }
+
+    return true;
 }
 
-pub fn compile(node: *Node) CompilerError!Instruction {
+pub fn compile(node: *Node) anyerror!Instruction {
     const expr = switch (node.data) {
         .list => |lst| lst,
-        else => return error.BadExpr,
+        else => unreachable,
     };
 
     const id = switch (expr.items[0].data) {
         .id => |id| id,
-        else => return error.BadExpr,
+        else => unreachable,
     };
 
-    const i = instruction.getExpressionIndex(id) orelse return error.UnknownExpr;
+    const i = instruction.getExpressionIndex(id).?;
 
     switch (i) {
         inline 5...Instructions.len - 1 => |ci| {
@@ -123,7 +144,7 @@ pub fn compile(node: *Node) CompilerError!Instruction {
             return @unionInit(
                 Instruction,
                 T.name,
-                T.compile(compile_data) catch unreachable, // FIXME: handle this
+                try T.compile(compile_data),
             );
         },
         else => unreachable,

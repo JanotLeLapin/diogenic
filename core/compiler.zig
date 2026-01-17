@@ -32,26 +32,26 @@ const Macros = std.StaticStringMap(MacroFn).initComptime(.{
     .{ "->", pipeBlock.expand },
 });
 
-pub const CompilerError = error{
-    UnknownExpr,
-    UnknownArg,
-    BadArity,
-    BadExpr,
-    VariableNotFound,
-    UnresolvedImport,
+pub const CompilerException = enum {
+    unknown_expr,
+    unknown_arg,
+    bad_arity,
+    bad_expr,
+    variable_not_found,
+    unresolved_import,
 };
 
-pub const CompilerErrorData = struct {
+pub const CompilerExceptionData = struct {
     node: *Node,
-    err: CompilerError,
+    exception: CompilerException,
 
     pub fn format(
         self: @This(),
         writer: *std.Io.Writer,
     ) std.Io.Writer.Error!void {
         try writer.print("{s}: {s}", .{
-            @errorName(
-                self.err,
+            @tagName(
+                self.exception,
             ),
             self.node.src,
         });
@@ -66,7 +66,7 @@ pub const CompilerState = struct {
     func: std.StringHashMap(*Node),
 
     instructions: *std.ArrayList(Instruction),
-    errors: *std.ArrayList(CompilerErrorData),
+    exceptions: *std.ArrayList(CompilerExceptionData),
     alloc: CompilerAlloc,
 
     pub fn deinit(self: *CompilerState) void {
@@ -81,7 +81,7 @@ pub const CompilerAlloc = struct {
     /// instructions array list allocator
     instr_alloc: std.mem.Allocator,
     /// errors array list allocator
-    err_alloc: std.mem.Allocator,
+    exception_alloc: std.mem.Allocator,
     /// ast allocator
     ast_alloc: std.mem.Allocator,
     /// compiler state environment & functions allocator
@@ -112,9 +112,9 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
                     Instruction{ ._push = instruction.value.Push{ .value = v } },
                 );
             } else {
-                try state.errors.append(state.alloc.err_alloc, .{
+                try state.exceptions.append(state.alloc.exception_alloc, .{
                     .node = tmp,
-                    .err = error.VariableNotFound,
+                    .exception = .variable_not_found,
                 });
                 return false;
             }
@@ -124,13 +124,9 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
     };
 
     if (instruction.getExpressionIndex(op)) |_| {
-        instruction_compiler.expand(tmp, state.alloc.ast_alloc) catch |err| {
-            try state.errors.append(state.alloc.err_alloc, .{
-                .err = err,
-                .node = tmp,
-            });
-            failed = true;
-        };
+        if (!try instruction_compiler.expand(state, tmp)) {
+            return false;
+        }
 
         for (tmp.data.list.items[1..]) |child| {
             if (!try compileExpr(state, child)) {
@@ -138,22 +134,15 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
             }
         }
 
-        if (instruction_compiler.compile(tmp)) |instr| {
-            try state.instructions.append(state.alloc.instr_alloc, instr);
-        } else |err| {
-            try state.errors.append(state.alloc.err_alloc, .{
-                .err = err,
-                .node = tmp,
-            });
-            failed = true;
-        }
+        const instr = try instruction_compiler.compile(tmp);
+        try state.instructions.append(state.alloc.instr_alloc, instr);
     } else if (state.func.get(op)) |func| {
         const args = func.data.list.items[2].data.list.items;
         const expr = func.data.list.items[3];
 
         if (tmp.data.list.items.len - 1 != args.len) {
-            try state.errors.append(state.alloc.err_alloc, .{
-                .err = error.BadArity,
+            try state.exceptions.append(state.alloc.exception_alloc, .{
+                .exception = .bad_arity,
                 .node = tmp,
             });
             failed = true;
@@ -193,8 +182,8 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
             failed = true;
         }
     } else {
-        try state.errors.append(state.alloc.err_alloc, .{
-            .err = error.UnknownExpr,
+        try state.exceptions.append(state.alloc.exception_alloc, .{
+            .exception = .unknown_expr,
             .node = tmp,
         });
         failed = true;
@@ -206,14 +195,14 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
 pub fn compile(
     root: *Node,
     instructions: *std.ArrayList(Instruction),
-    errors: *std.ArrayList(CompilerErrorData),
+    errors: *std.ArrayList(CompilerExceptionData),
     alloc: CompilerAlloc,
 ) !bool {
     var state = CompilerState{
         .env = std.StringHashMap(usize).init(alloc.env_alloc),
         .func = std.StringHashMap(*Node).init(alloc.env_alloc),
         .instructions = instructions,
-        .errors = errors,
+        .exceptions = errors,
         .alloc = alloc,
     };
     defer state.deinit();
@@ -223,8 +212,8 @@ pub fn compile(
         const child = root.data.list.items[i];
         if (std.mem.eql(u8, "use", child.data.list.items[0].data.id)) {
             const src = DiogenicStd.get(child.data.list.items[1].data.id) orelse {
-                try errors.append(alloc.err_alloc, .{
-                    .err = error.UnresolvedImport,
+                try errors.append(alloc.exception_alloc, .{
+                    .exception = .unresolved_import,
                     .node = child,
                 });
                 return false;
