@@ -73,6 +73,8 @@ pub const Instructions = .{
     math.Ceil,
     math.MidiToFreq,
     math.FreqToMidi,
+    math.BiToUni,
+    math.UniToBi,
     math.DbToAmp,
     math.AmpToDb,
 

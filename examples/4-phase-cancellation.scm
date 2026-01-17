@@ -5,4 +5,4 @@
                         ; phase offset set to pi!
         ; we multiply the second sine wave with
         ; an oscillating "phase cancellation rate"
-        (+ 0.5 (* 0.5 foo)))))
+        (bi->uni foo))))

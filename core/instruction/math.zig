@@ -94,6 +94,14 @@ fn freqToMidi(in: Vec) Vec {
     return @as(Vec, @splat(69.0)) + @as(Vec, @splat(12.0)) * @log2(in / @as(Vec, @splat(440.0)));
 }
 
+fn biToUni(in: Vec) Vec {
+    return @mulAdd(Vec, in, @as(Vec, @splat(0.5)), @as(Vec, @splat(0.5)));
+}
+
+fn uniToBi(in: Vec) Vec {
+    return @mulAdd(Vec, in, @as(Vec, @splat(2.0)), @as(Vec, @splat(-1.0)));
+}
+
 fn dbToAmp(in: f32) f32 {
     return std.math.pow(f32, 10.0, in / 20.0);
 }
@@ -124,7 +132,10 @@ pub const Tanh = Math("tanh", "hyperbolic tangent", fromScalar(std.math.tanh));
 pub const Sigmoid = Math("sigmoid", "sigmoid", fromScalar(sigmoid));
 pub const Floor = Math("floor", "floor rounding", floor);
 pub const Ceil = Math("ceil", "ceil rounding", ceil);
+
 pub const MidiToFreq = Math("midi->freq", "midi pitch to frequency unit translation", midiToFreq);
 pub const FreqToMidi = Math("freq->midi", "frequency to midi pitch unit translation", freqToMidi);
+pub const BiToUni = Math("bi->uni", "bipolar [-1; 1] to unipolar [0; 1] signal remapping", biToUni);
+pub const UniToBi = Math("uni->bi", "unipolar [0; 1] to bipolar [-1; 1] signal remapping", uniToBi);
 pub const DbToAmp = Math("db->amp", "decibel to amplitude unit translation", fromScalar(dbToAmp));
 pub const AmpToDb = Math("amp->db", "amplitude to decibel unit translation", fromScalar(ampToDb));
