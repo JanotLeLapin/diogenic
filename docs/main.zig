@@ -21,8 +21,9 @@ pub fn main() void {
                         std.debug.print(", default: `{d}`", .{default});
                     }
                     if (arg.description) |a_desc| {
-                        std.debug.print(", " ++ a_desc ++ "\n", .{});
+                        std.debug.print(", " ++ a_desc, .{});
                     }
+                    std.debug.print("\n", .{});
                 }
                 std.debug.print("\n", .{});
             }
