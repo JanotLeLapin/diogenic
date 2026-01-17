@@ -11,6 +11,10 @@ const meta = @import("./meta.zig");
 const parser = @import("../parser.zig");
 const Node = parser.Node;
 
+inline fn unipolar(a: Vec) Vec {
+    return @mulAdd(Vec, a, @as(Vec, @splat(0.5)), @as(Vec, @splat(0.5)));
+}
+
 inline fn clamp2pi(a: Vec) Vec {
     return @min(@as(Vec, @splat(1.0)), @max(@as(Vec, @splat(0.0)), a));
 }
@@ -21,7 +25,7 @@ pub const Pan = struct {
 
     pub const args: []const meta.Arg = &.{
         .{ .name = "in", .description = "input signal" },
-        .{ .name = "alpha", .description = "panning modifier: 0 = all left, 0.5 = middle, 1 = all right." },
+        .{ .name = "alpha", .description = "panning modifier: -1.0 = all left, 0.0 = middle, 1.0 = all right." },
     };
 
     pub fn compile(_: engine.CompileData) !@This() {
@@ -32,12 +36,12 @@ pub const Pan = struct {
         const in = &d.inputs[0];
         const alpha = &d.inputs[1];
         for (alpha.channels[0], in.channels[0], 0..) |alpha_vec, in_vec, i| {
-            const norm = clamp2pi(alpha_vec) * @as(Vec, @splat(std.math.pi / 2.0));
+            const norm = clamp2pi(unipolar(alpha_vec)) * @as(Vec, @splat(std.math.pi / 2.0));
             const g = @cos(norm);
             d.output.channels[0][i] = in_vec * g;
         }
         for (alpha.channels[1], in.channels[1], 0..) |alpha_vec, in_vec, i| {
-            const norm = clamp2pi(alpha_vec) * @as(Vec, @splat(std.math.pi / 2.0));
+            const norm = clamp2pi(unipolar(alpha_vec)) * @as(Vec, @splat(std.math.pi / 2.0));
             const g = @sin(norm);
             d.output.channels[1][i] = in_vec * g;
         }
