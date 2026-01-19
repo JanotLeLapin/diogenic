@@ -13,33 +13,6 @@ Diogenic is a language designed to write DSP patches as
 S-expressions. It borrows a lot of its syntax from
 [Lisp](https://en.wikipedia.org/wiki/Lisp_(programming_language)).
 
-## Variables
-
-Variables are initialized in `let` blocks:
-
-```scm
-(let
-  (freq 440.0
-   threshold (+ 0.5 (* 0.1 (sine! :freq 0.2))))
-  (foldback threshold freq))
-```
-
-A `let` block must contain two children:
-
-- the bindings: an identifier, value couple
-- the expression: an expression that may reference defined variables
-
-Values defined in the bindings section may reference previously
-bound variables:
-
-```scm
-(let
-  (mod-freq 220.0
-   mod-phase PI
-   mod (sine! mod-freq mod-phase))
-  (...))
-```
-
 ## Functions
 
 Functions in diogenic are similar to macros in the way they're
@@ -52,6 +25,49 @@ sequence during compilation.
 
 (+ (my-saturation (sine! 220.0))
    (my-saturation (sine! 440.0)))
+```
+
+## Macros
+
+### `->`
+
+Pipes the `n`th child to the first argument of the `n+1`th child.
+Useful for long, sequential chains of DSP calls.
+
+```scm
+(-> (sine! 220.0)
+    (cos)
+    (tan)
+    (foldback :threshold 0.8))
+
+; compiles down to:
+(foldback (tan (cos (sine! 220.0))) :threshold 0.8)
+```
+
+## Special Forms
+
+Special forms are expressions that take some unevaluated arguments.
+
+### `let`
+
+Takes name, value couples as reusable bindings
+
+```scm
+(let
+  (freq 440.0
+   threshold (+ 0.5 (* 0.1 (sine! :freq 0.2))))
+  (foldback threshold freq))
+```
+
+Values defined in the bindings section may reference previously
+bound variables:
+
+```scm
+(let
+  (mod-freq 220.0
+   mod-phase PI
+   mod (sine! mod-freq mod-phase))
+  (...))
 ```
 
 ## Built-in devices
