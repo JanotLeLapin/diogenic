@@ -19,8 +19,8 @@ const inline_pass = @import("compiler/inline.zig");
 const InlineState = inline_pass.State;
 
 const instruction_compiler = @import("compiler/instruction.zig");
-const special = @import("compiler/special.zig");
-const Macros = special.Macros;
+const special_compiler = @import("compiler/special.zig");
+const Specials = special_compiler.Specials;
 
 pub const sourcemap = @import("compiler/sourcemap.zig");
 
@@ -129,7 +129,7 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
 
         const instr = try instruction_compiler.compile(tmp);
         try state.instructions.append(state.alloc.instr_alloc, instr);
-    } else if (Macros.get(op)) |f| {
+    } else if (Specials.get(op)) |f| {
         if (!try f(state, tmp)) {
             failed = true;
         }

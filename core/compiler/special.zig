@@ -6,10 +6,10 @@ const CompilerState = compiler.CompilerState;
 const parser = @import("../parser.zig");
 const Node = parser.Node;
 
-const MacroFn = *const fn (*CompilerState, *Node) anyerror!bool;
+const SpecialFn = *const fn (*CompilerState, *Node) anyerror!bool;
 
 const letBlock = @import("special/let.zig");
 
-pub const Macros = std.StaticStringMap(MacroFn).initComptime(.{
+pub const Specials = std.StaticStringMap(SpecialFn).initComptime(.{
     .{ "let", letBlock.expand },
 });
