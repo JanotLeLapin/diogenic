@@ -8,6 +8,14 @@ import svelte from '@astrojs/svelte';
 export default defineConfig({
     site: 'https://janotlelapin.github.io',
     base: '/diogenic/',
+    markdown: {
+        shikiConfig: {
+            langAlias: {
+                scm: 'lisp',
+            },
+            wrap: true,
+        },
+    },
     integrations: [
         starlight({
             title: 'diogenic',
