@@ -152,7 +152,7 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
     } else {
         try state.exceptions.append(state.alloc.exception_alloc, .{
             .exception = .unknown_expr,
-            .node = tmp,
+            .node = tmp.data.list.items[0],
         });
         failed = true;
     }
