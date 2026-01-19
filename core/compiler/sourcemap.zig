@@ -72,9 +72,17 @@ pub fn printExceptionContext(
 
                 var s: usize = 0;
                 while (s < col) : (s += 1) try writer.print(" ", .{});
-                while (s < col + exception.node.src.len - 1) : (s += 1) try writer.print("^", .{});
 
-                try writer.print("^\n", .{});
+                switch (exception.node.data) {
+                    .list => {
+                        try writer.print("^", .{});
+                    },
+                    else => {
+                        while (s < col + exception.node.src.len) : (s += 1) try writer.print("^", .{});
+                    },
+                }
+
+                try writer.print("\n", .{});
             }
         }
     }
