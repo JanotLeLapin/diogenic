@@ -3,8 +3,6 @@ const log = std.log.scoped(.compiler);
 
 const engine = @import("engine.zig");
 
-const function = @import("compiler/function.zig");
-
 const instruction = @import("instruction.zig");
 const Instruction = instruction.Instruction;
 
