@@ -53,6 +53,7 @@ const Args = struct {
         render,
         display,
         playback,
+        inspect,
     },
 };
 
@@ -80,6 +81,8 @@ pub fn main() !void {
                 .display
             else if (std.mem.eql(u8, "play", args[2]))
                 .playback
+            else if (std.mem.eql(u8, "inspect", args[2]))
+                .inspect
             else {
                 log.err("bad usage, expected: diogenic <source> <render|display|playback>\n", .{});
                 return;
@@ -223,5 +226,6 @@ pub fn main() !void {
 
             audio.sleep(15000);
         },
+        .inspect => {},
     }
 }
