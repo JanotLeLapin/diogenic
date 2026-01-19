@@ -41,20 +41,6 @@ pub const CompilerException = enum {
 pub const CompilerExceptionData = struct {
     node: *Node,
     exception: CompilerException,
-
-    pub fn format(
-        self: @This(),
-        writer: *std.Io.Writer,
-    ) std.Io.Writer.Error!void {
-        try writer.print("{s}:\n{s}\nline: {d}, col: {d}", .{
-            @tagName(
-                self.exception,
-            ),
-            self.node.src,
-            self.node.pos.row + 1,
-            self.node.pos.col + 1,
-        });
-    }
 };
 
 pub const CompilerState = struct {
