@@ -103,6 +103,7 @@ pub fn expand(state: *CompilerState, node: *Node) anyerror!bool {
                         default_node.* = .{
                             .src = "DEFAULT",
                             .data = .{ .num = default },
+                            .pos = .{ .col = 0, .row = 0 },
                         };
                         try node.data.list.append(state.alloc.ast_alloc, default_node);
                     } else {

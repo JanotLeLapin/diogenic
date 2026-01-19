@@ -1,19 +1,36 @@
 const std = @import("std");
 
+pub const Pos = struct {
+    row: usize,
+    col: usize,
+};
+
 pub const Tokenizer = struct {
     src: []const u8,
     cursor: usize = 0,
+    line: usize = 0,
+    last_newline: usize = 0,
 
     pub inline fn getChar(self: *const Tokenizer) u8 {
         return self.src[self.cursor];
     }
+
+    pub inline fn getPos(self: *const Tokenizer) Pos {
+        return .{
+            .row = self.line,
+            .col = self.cursor - self.last_newline,
+        };
+    }
 };
 
-pub const Token = union(enum) {
-    sep: u8,
-    lit: []const u8,
-    whitespace,
-    comment,
+pub const Token = struct {
+    pos: Pos,
+    tag: union(enum) {
+        sep: u8,
+        lit: []const u8,
+        whitespace,
+        comment,
+    },
 };
 
 pub const Node = struct {
@@ -24,31 +41,40 @@ pub const Node = struct {
         num: f32,
     },
     src: []const u8,
+    pos: Pos,
 };
 
-pub inline fn isWhitespace(c: u8) bool {
+pub inline fn isWhitespace(c: u8) u8 {
     return switch (c) {
-        '\n', '\t', ' ' => true,
-        else => false,
+        '\n' => 1,
+        '\t', ' ' => 2,
+        else => 0,
     };
 }
 
 pub fn tokenizerSkipWhitespace(t: *Tokenizer) ?Token {
-    if (!isWhitespace(t.getChar())) {
+    const start_pos = t.getPos();
+
+    if (t.cursor >= t.src.len or isWhitespace(t.getChar()) == 0) {
         return null;
     }
 
-    t.cursor += 1;
-    while (true) {
-        if (t.cursor >= t.src.len) {
-            return .whitespace;
-        }
-
-        if (!isWhitespace(t.getChar())) {
-            return .whitespace;
+    while (t.cursor < t.src.len) {
+        switch (isWhitespace(t.getChar())) {
+            0 => break,
+            1 => {
+                t.line += 1;
+                t.last_newline = t.cursor + 1;
+            },
+            else => {},
         }
         t.cursor += 1;
     }
+
+    return .{
+        .pos = start_pos,
+        .tag = .whitespace,
+    };
 }
 
 pub fn tokenizerNext(t: *Tokenizer) ?Token {
@@ -60,9 +86,14 @@ pub fn tokenizerNext(t: *Tokenizer) ?Token {
         return token;
     }
 
+    const start_pos = t.getPos();
+
     switch (t.getChar()) {
         '(', ')' => {
-            const token = Token{ .sep = t.getChar() };
+            const token = Token{
+                .pos = start_pos,
+                .tag = .{ .sep = t.getChar() },
+            };
             t.cursor += 1;
             return token;
         },
@@ -70,7 +101,10 @@ pub fn tokenizerNext(t: *Tokenizer) ?Token {
             while (true) {
                 if (t.cursor >= t.src.len or t.src[t.cursor] == '\n') {
                     _ = tokenizerSkipWhitespace(t);
-                    return .comment;
+                    return .{
+                        .pos = start_pos,
+                        .tag = .comment,
+                    };
                 }
                 t.cursor += 1;
             }
@@ -81,7 +115,7 @@ pub fn tokenizerNext(t: *Tokenizer) ?Token {
     const start = t.cursor;
     t.cursor += 1;
     while (true) {
-        if (t.cursor >= t.src.len or isWhitespace(t.getChar())) {
+        if (t.cursor >= t.src.len or isWhitespace(t.getChar()) > 0) {
             break;
         }
 
@@ -94,7 +128,10 @@ pub fn tokenizerNext(t: *Tokenizer) ?Token {
     }
 
     const lit = t.src[start..t.cursor];
-    return Token{ .lit = lit };
+    return .{
+        .pos = start_pos,
+        .tag = .{ .lit = lit },
+    };
 }
 
 pub fn parse(
@@ -109,11 +146,12 @@ pub fn parse(
     root.* = .{
         .data = .{ .list = try std.ArrayList(*Node).initCapacity(ast_alloc, 8) },
         .src = t.src,
+        .pos = .{ .col = 0, .row = 0 },
     };
     try stack.append(stack_alloc, root);
 
     while (tokenizerNext(t)) |token| {
-        switch (token) {
+        switch (token.tag) {
             .whitespace, .comment => continue,
             .sep => |sep| switch (sep) {
                 '(' => {
@@ -122,6 +160,7 @@ pub fn parse(
                     new.* = .{
                         .data = .{ .list = try std.ArrayList(*Node).initCapacity(ast_alloc, 8) },
                         .src = t.src[start..],
+                        .pos = token.pos,
                     };
                     try stack.getLast().data.list.append(ast_alloc, new);
                     try stack.append(stack_alloc, new);
@@ -139,13 +178,14 @@ pub fn parse(
         }
 
         const new = try ast_alloc.create(Node);
-        new.src = token.lit;
-        if (token.lit[0] == ':') {
-            new.data = .{ .atom = token.lit };
-        } else if (std.fmt.parseFloat(f32, token.lit)) |num| {
+        new.src = token.tag.lit;
+        new.pos = token.pos;
+        if (token.tag.lit[0] == ':') {
+            new.data = .{ .atom = token.tag.lit };
+        } else if (std.fmt.parseFloat(f32, token.tag.lit)) |num| {
             new.data = .{ .num = num };
         } else |_| {
-            new.data = .{ .id = token.lit };
+            new.data = .{ .id = token.tag.lit };
         }
         try stack.getLast().data.list.append(ast_alloc, new);
     }

@@ -44,11 +44,13 @@ pub const CompilerExceptionData = struct {
         self: @This(),
         writer: *std.Io.Writer,
     ) std.Io.Writer.Error!void {
-        try writer.print("{s}: {s}", .{
+        try writer.print("{s}:\n{s}\nline: {d}, col: {d}", .{
             @tagName(
                 self.exception,
             ),
             self.node.src,
+            self.node.pos.row + 1,
+            self.node.pos.col + 1,
         });
     }
 };
