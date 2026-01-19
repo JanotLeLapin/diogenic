@@ -16,6 +16,8 @@ const MacroState = macro_pass.State;
 const inline_pass = @import("compiler/inline.zig");
 const InlineState = inline_pass.State;
 
+const optimize_pass = @import("compiler/optimize.zig");
+
 const instruction_compiler = @import("compiler/instruction.zig");
 const special_compiler = @import("compiler/special.zig");
 const Specials = special_compiler.Specials;
@@ -169,6 +171,8 @@ pub fn compile(
             return false;
         }
     }
+
+    try optimize_pass.optimize(alloc.env_alloc, root);
 
     var state = CompilerState{
         .env = std.StringHashMap(usize).init(alloc.env_alloc),
