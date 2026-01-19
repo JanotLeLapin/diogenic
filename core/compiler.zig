@@ -112,7 +112,7 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
 
     if (instruction.getExpressionIndex(op)) |_| {
         if (!try instruction_compiler.expand(state, tmp)) {
-            return false;
+            failed = true;
         }
 
         for (tmp.data.list.items[1..]) |child| {
