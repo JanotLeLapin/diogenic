@@ -15,7 +15,24 @@ const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
 pub fn expand(state: *CompilerState, tmp: *Node) anyerror!bool {
-    const bindings = tmp.data.list.items[1].data.list;
+    if (tmp.data.list.items.len != 3) {
+        try state.exceptions.append(state.alloc.exception_alloc, .{
+            .exception = .bad_arity,
+            .node = tmp,
+        });
+        return false;
+    }
+
+    const bindings = switch (tmp.data.list.items[1].data) {
+        .list => |lst| lst,
+        else => {
+            try state.exceptions.append(state.alloc.exception_alloc, .{
+                .exception = .unexpected_arg,
+                .node = tmp.data.list.items[1],
+            });
+            return false;
+        },
+    };
     const expr = tmp.data.list.items[2];
 
     var i: usize = 0;

@@ -29,6 +29,7 @@ pub const Constants = std.StaticStringMap(f32).initComptime(.{
 pub const CompilerException = enum {
     unknown_expr,
     unknown_arg,
+    unexpected_arg,
     bad_arity,
     bad_expr,
     variable_not_found,
