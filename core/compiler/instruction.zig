@@ -40,18 +40,18 @@ pub fn expand(state: *CompilerState, node: *Node) anyerror!bool {
 
             var slot_idx: usize = 0;
             var maybe_name: ?[]const u8 = null;
-            for (expr.items[1..]) |child| {
+            for (expr.items[1..], 0..) |child, j| {
                 if (maybe_name) |name| {
                     const arg_idx = blk: {
-                        for (T.args, 0..) |arg, j| {
+                        for (T.args, 0..) |arg, k| {
                             if (std.mem.eql(u8, name, arg.name)) {
-                                break :blk j;
+                                break :blk k;
                             }
                         }
 
                         try state.exceptions.append(state.alloc.exception_alloc, .{
                             .exception = .unknown_arg,
-                            .node = child,
+                            .node = expr.items[j],
                         });
                         return false;
                     };
