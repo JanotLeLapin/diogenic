@@ -12,18 +12,17 @@ const parser = @import("parser.zig");
 const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
-const macro = @import("compiler/macro.zig");
-const MacroState = macro.State;
+const macro_pass = @import("compiler/macro.zig");
+const MacroState = macro_pass.State;
+
+const inline_pass = @import("compiler/inline.zig");
+const InlineState = inline_pass.State;
 
 const instruction_compiler = @import("compiler/instruction.zig");
 const special = @import("compiler/special.zig");
 const Macros = special.Macros;
 
 pub const sourcemap = @import("compiler/sourcemap.zig");
-
-pub const DiogenicStd = std.StaticStringMap([:0]const u8).initComptime(.{
-    .{ "std/builtin", @embedFile("std/builtin.scm") },
-});
 
 pub const Constants = std.StaticStringMap(f32).initComptime(.{
     .{ "E", std.math.e },
@@ -130,10 +129,6 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
 
         const instr = try instruction_compiler.compile(tmp);
         try state.instructions.append(state.alloc.instr_alloc, instr);
-    } else if (state.func.get(op)) |func| {
-        if (!try function.expand(state, tmp, func)) {
-            failed = true;
-        }
     } else if (Macros.get(op)) |f| {
         if (!try f(state, tmp)) {
             failed = true;
@@ -162,7 +157,23 @@ pub fn compile(
             .exceptions_alloc = alloc.exception_alloc,
         };
 
-        if (!try macro.expand(&macro_state, root)) {
+        if (!try macro_pass.expand(&macro_state, root)) {
+            return false;
+        }
+    }
+
+    {
+        var inline_state = InlineState{
+            .exceptions = errors,
+            .func = std.StringHashMap(*Node).init(alloc.env_alloc),
+            .exceptions_alloc = alloc.exception_alloc,
+            .func_alloc = alloc.env_alloc,
+            .ast_alloc = alloc.ast_alloc,
+            .stack_alloc = alloc.stack_alloc,
+        };
+        defer inline_state.func.deinit();
+
+        if (!try inline_pass.analyse(&inline_state, root)) {
             return false;
         }
     }
@@ -176,32 +187,8 @@ pub fn compile(
     };
     defer state.deinit();
 
-    var i: usize = 0;
-    while (i < root.data.list.items.len) {
-        const child = root.data.list.items[i];
-        if (std.mem.eql(u8, "use", child.data.list.items[0].data.id)) {
-            const src = DiogenicStd.get(child.data.list.items[1].data.id) orelse {
-                try errors.append(alloc.exception_alloc, .{
-                    .exception = .unresolved_import,
-                    .node = child,
-                });
-                return false;
-            };
-            var t: Tokenizer = .{ .src = src };
-            const ast = try parser.parse(&t, alloc.ast_alloc, alloc.stack_alloc);
-            _ = root.data.list.orderedRemove(i);
-            try root.data.list.insertSlice(alloc.ast_alloc, i, ast.data.list.items);
-            continue;
-        } else if (std.mem.eql(u8, "defun", child.data.list.items[0].data.id)) {
-            try state.func.put(child.data.list.items[1].data.id, child);
-        } else {
-            return try compileExpr(
-                &state,
-                child,
-            );
-        }
-        i += 1;
-    }
-
-    return true;
+    return try compileExpr(
+        &state,
+        root.data.list.items[root.data.list.items.len - 1],
+    );
 }
