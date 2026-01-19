@@ -4,8 +4,6 @@ const log = std.log.scoped(.compiler);
 const engine = @import("engine.zig");
 
 const function = @import("compiler/function.zig");
-const letBlock = @import("compiler/let.zig");
-const pipeBlock = @import("compiler/pipe.zig");
 
 const instruction = @import("instruction.zig");
 const Instruction = instruction.Instruction;
@@ -15,6 +13,8 @@ const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
 const instruction_compiler = @import("compiler/instruction.zig");
+const special = @import("compiler/special.zig");
+const Macros = special.Macros;
 
 pub const DiogenicStd = std.StaticStringMap([:0]const u8).initComptime(.{
     .{ "std/builtin", @embedFile("std/builtin.scm") },
@@ -24,13 +24,6 @@ pub const Constants = std.StaticStringMap(f32).initComptime(.{
     .{ "E", std.math.e },
     .{ "PI", std.math.pi },
     .{ "PHI", std.math.phi },
-});
-
-const MacroFn = *const fn (*CompilerState, *Node) anyerror!bool;
-
-const Macros = std.StaticStringMap(MacroFn).initComptime(.{
-    .{ "let", letBlock.expand },
-    .{ "->", pipeBlock.expand },
 });
 
 pub const CompilerException = enum {

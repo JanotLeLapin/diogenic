@@ -1,16 +1,16 @@
 const std = @import("std");
 
-const compiler = @import("../compiler.zig");
+const compiler = @import("../../compiler.zig");
 const CompilerError = compiler.CompilerError;
 const CompilerState = compiler.CompilerState;
 
-const engine = @import("../engine.zig");
+const engine = @import("../../engine.zig");
 
-const instruction = @import("../instruction.zig");
+const instruction = @import("../../instruction.zig");
 const Instruction = instruction.Instruction;
 const Instructions = instruction.Instructions;
 
-const parser = @import("../parser.zig");
+const parser = @import("../../parser.zig");
 const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
