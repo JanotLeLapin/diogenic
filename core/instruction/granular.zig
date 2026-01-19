@@ -17,6 +17,7 @@ const HISTORY_SIZE: usize = 1 << HISTORY_BITS;
 const HISTORY_MASK: u32 = HISTORY_SIZE - 1;
 
 const Meta = extern struct {
+    counter: u32,
     head: u32,
     grains_to_register: f32,
 };
@@ -93,6 +94,11 @@ pub const Granular = struct {
         const grains = getGrainMeta(d.state);
         const m = getMeta(d.state);
 
+        const history_len = @min(m.counter, HISTORY_SIZE);
+        const history_len_f: f32 = @floatFromInt(history_len);
+        const head_f: f32 = @floatFromInt(m.head);
+        const size_f: f32 = @floatFromInt(HISTORY_SIZE);
+
         for (
             density.channels[0],
             size.channels[0],
@@ -107,9 +113,11 @@ pub const Granular = struct {
                     m.grains_to_register -= 1.0;
 
                     const g = getGrainSlot(grains) orelse continue;
+
+                    const lookback = (1.0 - position_vec[i]) * history_len_f;
                     g.active = true;
                     g.lifetime = 1.0;
-                    g.cursor = @mod(@as(f32, @floatFromInt(m.head)) + position_vec[i] * @as(f32, @floatFromInt(HISTORY_SIZE)), @as(f32, @floatFromInt(HISTORY_SIZE)));
+                    g.cursor = @mod(head_f - lookback, size_f);
                     g.speed = @max(speed_vec[i], 0.2);
                     g.size = @max(size_vec[i], 1.0);
                     g.fade = @max(fade_vec[i], 0.0);
@@ -158,5 +166,6 @@ pub const Granular = struct {
         }
 
         m.head = (m.head + engine.BLOCK_LENGTH) & HISTORY_MASK;
+        m.counter = @min(HISTORY_SIZE, m.counter + engine.BLOCK_LENGTH);
     }
 };
