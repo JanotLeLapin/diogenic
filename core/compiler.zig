@@ -12,6 +12,9 @@ const parser = @import("parser.zig");
 const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
+const macro = @import("compiler/macro.zig");
+const MacroState = macro.State;
+
 const instruction_compiler = @import("compiler/instruction.zig");
 const special = @import("compiler/special.zig");
 const Macros = special.Macros;
@@ -152,6 +155,18 @@ pub fn compile(
     errors: *std.ArrayList(CompilerExceptionData),
     alloc: CompilerAlloc,
 ) !bool {
+    {
+        const macro_state = MacroState{
+            .exceptions = errors,
+            .ast_alloc = alloc.ast_alloc,
+            .exceptions_alloc = alloc.exception_alloc,
+        };
+
+        if (!try macro.expand(&macro_state, root)) {
+            return false;
+        }
+    }
+
     var state = CompilerState{
         .env = std.StringHashMap(usize).init(alloc.env_alloc),
         .func = std.StringHashMap(*Node).init(alloc.env_alloc),
