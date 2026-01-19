@@ -48,16 +48,10 @@ pub const CompilerState = struct {
     reg_index: usize = 0,
 
     env: std.StringHashMap(usize),
-    func: std.StringHashMap(*Node),
 
     instructions: *std.ArrayList(Instruction),
     exceptions: *std.ArrayList(CompilerExceptionData),
     alloc: CompilerAlloc,
-
-    pub fn deinit(self: *CompilerState) void {
-        self.env.deinit();
-        self.func.deinit();
-    }
 };
 
 pub const CompilerAlloc = struct {
@@ -178,12 +172,11 @@ pub fn compile(
 
     var state = CompilerState{
         .env = std.StringHashMap(usize).init(alloc.env_alloc),
-        .func = std.StringHashMap(*Node).init(alloc.env_alloc),
         .instructions = instructions,
         .exceptions = errors,
         .alloc = alloc,
     };
-    defer state.deinit();
+    defer state.env.deinit();
 
     return try compileExpr(
         &state,
