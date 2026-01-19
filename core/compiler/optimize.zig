@@ -93,7 +93,7 @@ pub fn optimize(map_alloc: std.mem.Allocator, node: *Node) !void {
 
                 i = 0;
                 while (i < bindings.data.list.items.len) {
-                    const binding = map.get(bindings.data.list.items[0].data.id).?;
+                    const binding = map.get(bindings.data.list.items[i].data.id).?;
                     if (binding.shouldPropagate()) {
                         _ = bindings.data.list.orderedRemove(i);
                         _ = bindings.data.list.orderedRemove(i);
