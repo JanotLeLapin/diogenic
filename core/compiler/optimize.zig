@@ -3,7 +3,42 @@ const std = @import("std");
 const parser = @import("../parser.zig");
 const Node = parser.Node;
 
-fn optimizeLetBody(map: std.StringHashMap(*Node), node: *Node) !void {
+const Binding = struct {
+    node: *Node,
+    refcount: usize,
+
+    fn shouldPropagate(self: *const Binding) bool {
+        if (1 >= self.refcount) {
+            return true;
+        }
+
+        switch (self.node.data) {
+            .num => return true,
+            else => {},
+        }
+
+        return false;
+    }
+};
+
+fn countBindings(map: std.StringHashMap(Binding), node: *Node) void {
+    const expr = switch (node.data) {
+        .list => |lst| lst.items,
+        .id => |id| {
+            if (map.getPtr(id)) |binding| {
+                binding.refcount += 1;
+            }
+            return;
+        },
+        else => return,
+    };
+
+    for (expr) |child| {
+        countBindings(map, child);
+    }
+}
+
+fn optimizeLetBody(map: std.StringHashMap(Binding), node: *Node) !void {
     const expr = switch (node.data) {
         .list => |lst| lst.items,
         else => return,
@@ -13,11 +48,8 @@ fn optimizeLetBody(map: std.StringHashMap(*Node), node: *Node) !void {
         switch (child.data) {
             .id => |id| {
                 if (map.get(id)) |binding| {
-                    switch (binding.data) {
-                        .num => {
-                            child.data = binding.data;
-                        },
-                        else => {},
+                    if (binding.shouldPropagate()) {
+                        child.data = binding.node.data;
                     }
                 }
             },
@@ -40,28 +72,37 @@ pub fn optimize(map_alloc: std.mem.Allocator, node: *Node) !void {
     switch (expr[0].data) {
         .id => |op| {
             if (std.mem.eql(u8, "let", op)) {
-                var map = std.StringHashMap(*Node).init(map_alloc);
+                var map = std.StringHashMap(Binding).init(map_alloc);
                 defer map.deinit();
 
                 const bindings = node.data.list.items[1];
+                const body = node.data.list.items[2];
 
                 var i: usize = 0;
-                while (i < bindings.data.list.items.len) {
+                while (i < bindings.data.list.items.len) : (i += 2) {
                     try map.put(
                         bindings.data.list.items[i].data.id,
-                        bindings.data.list.items[i + 1],
-                    );
-
-                    switch (bindings.data.list.items[i + 1].data) {
-                        .num => {
-                            _ = bindings.data.list.orderedRemove(i);
-                            _ = bindings.data.list.orderedRemove(i);
+                        .{
+                            .node = bindings.data.list.items[i + 1],
+                            .refcount = 0,
                         },
-                        else => i += 2,
+                    );
+                }
+
+                countBindings(map, body);
+
+                i = 0;
+                while (i < bindings.data.list.items.len) {
+                    const binding = map.get(bindings.data.list.items[0].data.id).?;
+                    if (binding.shouldPropagate()) {
+                        _ = bindings.data.list.orderedRemove(i);
+                        _ = bindings.data.list.orderedRemove(i);
+                    } else {
+                        i += 2;
                     }
                 }
 
-                try optimizeLetBody(map, node.data.list.items[2]);
+                try optimizeLetBody(map, body);
             }
         },
         else => {},
