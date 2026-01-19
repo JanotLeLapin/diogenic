@@ -16,6 +16,8 @@ const instruction_compiler = @import("compiler/instruction.zig");
 const special = @import("compiler/special.zig");
 const Macros = special.Macros;
 
+pub const sourcemap = @import("compiler/sourcemap.zig");
+
 pub const DiogenicStd = std.StaticStringMap([:0]const u8).initComptime(.{
     .{ "std/builtin", @embedFile("std/builtin.scm") },
 });

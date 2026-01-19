@@ -11,6 +11,9 @@ const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
 const Tokenizer = core.parser.Tokenizer;
 
+const sourcemap = core.compiler.sourcemap;
+const SourceMap = sourcemap.SourceMap;
+
 pub fn logFn(
     comptime message_level: std.log.Level,
     comptime scope: @Type(.enum_literal),
@@ -115,10 +118,19 @@ pub fn main() !void {
     };
 
     if (!compiler_res) {
+        var srcmap = try SourceMap.init(gpa.allocator(), args.src);
+        defer srcmap.deinit();
+
+        var stderr_buffer: [4096]u8 = undefined;
+        var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+        const stderr: *std.Io.Writer = &stderr_writer.interface;
+
         log.err("compilation failed with the following errors", .{});
         for (errors.items) |err| {
-            log.err("{f}", .{err});
+            try sourcemap.printExceptionContext(srcmap, err, stderr);
+            try stderr.flush();
         }
+
         return;
     }
 
