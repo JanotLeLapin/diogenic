@@ -119,7 +119,13 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
             }
             return true;
         },
-        else => unreachable,
+        else => {
+            try state.exceptions.append(state.alloc.exception_alloc, .{
+                .exception = .unknown_expr,
+                .node = tmp,
+            });
+            return false;
+        },
     };
 
     if (instruction.getExpressionIndex(op)) |_| {
