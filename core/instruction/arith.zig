@@ -59,7 +59,7 @@ fn div(lhs: Vec, rhs: Vec) Vec {
 }
 
 inline fn cmp(mask: @Vector(engine.SIMD_LENGTH, bool)) Vec {
-    return @select(f32, mask, @as(Vec, @splat(0.0)), @as(Vec, @splat(1.0)));
+    return @select(f32, mask, @as(Vec, @splat(1.0)), @as(Vec, @splat(0.0)));
 }
 
 fn lt(left: Vec, right: Vec) Vec {
