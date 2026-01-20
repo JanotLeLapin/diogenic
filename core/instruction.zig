@@ -11,6 +11,7 @@ pub const meta = @import("instruction/meta.zig");
 pub const value = @import("instruction/value.zig");
 pub const arith = @import("instruction/arith.zig");
 pub const chebyshev = @import("instruction/chebyshev.zig");
+pub const delay = @import("instruction/delay.zig");
 pub const downsample = @import("instruction/downsample.zig");
 pub const granular = @import("instruction/granular.zig");
 pub const math = @import("instruction/math.zig");
@@ -40,6 +41,8 @@ pub const Instructions = .{
     arith.Max,
 
     chebyshev.Chebyshev,
+
+    delay.Delay,
 
     downsample.Downsample,
 
