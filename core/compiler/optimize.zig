@@ -23,13 +23,13 @@ const Binding = struct {
 
 fn countBindings(map: std.StringHashMap(Binding), node: *Node) void {
     const expr = switch (node.data) {
-        .list => |lst| lst.items,
         .id => |id| {
             if (map.getPtr(id)) |binding| {
                 binding.refcount += 1;
             }
             return;
         },
+        .list => |lst| lst.items,
         else => return,
     };
 
@@ -38,25 +38,71 @@ fn countBindings(map: std.StringHashMap(Binding), node: *Node) void {
     }
 }
 
-fn optimizeLetBody(map: std.StringHashMap(Binding), node: *Node) !void {
+fn propagateBindings(map: std.StringHashMap(Binding), node: *Node) !void {
     const expr = switch (node.data) {
+        .id => |id| {
+            if (map.get(id)) |binding| {
+                if (binding.shouldPropagate()) {
+                    node.data = binding.node.data;
+                    try propagateBindings(map, node);
+                }
+            }
+            return;
+        },
         .list => |lst| lst.items,
         else => return,
     };
 
     for (expr) |child| {
         switch (child.data) {
-            .id => |id| {
-                if (map.get(id)) |binding| {
-                    if (binding.shouldPropagate()) {
-                        child.data = binding.node.data;
-                    }
-                }
-            },
-            .list => try optimizeLetBody(map, child),
+            .list, .id => try propagateBindings(map, child),
             else => {},
         }
     }
+}
+
+pub fn optimizeLet(map_alloc: std.mem.Allocator, node: *Node) !void {
+    var map = std.StringHashMap(Binding).init(map_alloc);
+    defer map.deinit();
+
+    const bindings = node.data.list.items[1];
+    const body = node.data.list.items[2];
+
+    var i: usize = 0;
+    while (i < bindings.data.list.items.len) : (i += 2) {
+        try map.put(
+            bindings.data.list.items[i].data.id,
+            .{
+                .node = bindings.data.list.items[i + 1],
+                .refcount = 0,
+            },
+        );
+    }
+
+    // count references
+    i = 0;
+    while (i < bindings.data.list.items.len) : (i += 2) {
+        countBindings(map, bindings.data.list.items[i + 1]);
+    }
+    countBindings(map, body);
+
+    i = 0;
+    while (i < bindings.data.list.items.len) {
+        const binding = map.get(bindings.data.list.items[i].data.id).?;
+        if (binding.shouldPropagate()) {
+            _ = bindings.data.list.orderedRemove(i);
+            _ = bindings.data.list.orderedRemove(i);
+        } else {
+            i += 2;
+        }
+    }
+
+    // propagate
+    i = 0;
+    while (i < bindings.data.list.items.len) : (i += 2) {
+        try propagateBindings(map, bindings.data.list.items[i + 1]);
+    }
+    try propagateBindings(map, body);
 }
 
 pub fn optimize(map_alloc: std.mem.Allocator, node: *Node) !void {
@@ -72,37 +118,7 @@ pub fn optimize(map_alloc: std.mem.Allocator, node: *Node) !void {
     switch (expr[0].data) {
         .id => |op| {
             if (std.mem.eql(u8, "let", op)) {
-                var map = std.StringHashMap(Binding).init(map_alloc);
-                defer map.deinit();
-
-                const bindings = node.data.list.items[1];
-                const body = node.data.list.items[2];
-
-                var i: usize = 0;
-                while (i < bindings.data.list.items.len) : (i += 2) {
-                    try map.put(
-                        bindings.data.list.items[i].data.id,
-                        .{
-                            .node = bindings.data.list.items[i + 1],
-                            .refcount = 0,
-                        },
-                    );
-                }
-
-                countBindings(map, body);
-
-                i = 0;
-                while (i < bindings.data.list.items.len) {
-                    const binding = map.get(bindings.data.list.items[i].data.id).?;
-                    if (binding.shouldPropagate()) {
-                        _ = bindings.data.list.orderedRemove(i);
-                        _ = bindings.data.list.orderedRemove(i);
-                    } else {
-                        i += 2;
-                    }
-                }
-
-                try optimizeLetBody(map, body);
+                try optimizeLet(map_alloc, node);
             }
         },
         else => {},
