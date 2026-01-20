@@ -50,9 +50,21 @@ pub const Delay = struct {
             inline for (0..2) |j| {
                 state.history[state.head][j] = in.get(j, i);
 
-                const lookback: usize = @intFromFloat(d.sample_rate * delay.get(j, i));
-                const read_idx = (state.head -% lookback) & HISTORY_MASK;
-                d.output.set(j, @intCast(i), state.history[read_idx][j]);
+                const lookback = d.sample_rate * delay.get(j, i);
+                const lookback_int: usize = @intFromFloat(lookback);
+                const alpha = lookback - @as(f32, @floatFromInt(lookback_int));
+
+                const read_idx = (state.head -% lookback_int) & HISTORY_MASK;
+                const next_idx = (state.head -% (lookback_int + 1)) & HISTORY_MASK;
+
+                const read = state.history[read_idx][j];
+                const next = state.history[next_idx][j];
+
+                d.output.set(
+                    j,
+                    @intCast(i),
+                    (1 - alpha) * read + alpha * next,
+                );
             }
             state.head = (state.head + 1) & HISTORY_MASK;
         }
