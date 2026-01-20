@@ -70,6 +70,19 @@ bound variables:
   (...))
 ```
 
+### `map`
+
+Linearly rescales an input signal from a specified range
+to another.
+
+```scm
+(map (sine! :freq 0.2) ; input signal
+     -1.0 1.0 ; input range
+     0.0 0.6) ; output range
+```
+
+`map` expects literal numbers for the ranges.
+
 ## Built-in devices
 
 Pure devices only manipulate the diogenic VM stack. Impure devices
