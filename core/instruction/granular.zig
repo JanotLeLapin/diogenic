@@ -16,13 +16,13 @@ const HISTORY_BITS = 18;
 const HISTORY_SIZE: usize = 1 << HISTORY_BITS;
 const HISTORY_MASK: u32 = HISTORY_SIZE - 1;
 
-const Meta = extern struct {
+const Meta = struct {
     counter: u32,
     head: u32,
     grains_to_register: f32,
 };
 
-const GrainMeta = extern struct {
+const GrainMeta = struct {
     active: bool,
     lifetime: f32,
     cursor: f32,
@@ -31,26 +31,11 @@ const GrainMeta = extern struct {
     fade: f32,
 };
 
-inline fn floatCount(comptime T: type) usize {
-    return (@sizeOf(T) + @sizeOf(f32) - 1) / @sizeOf(f32);
-}
-
-const META_FLOATS = floatCount(Meta);
-const GRAIN_META_FLOATS = floatCount(GrainMeta);
-
-fn getHistory(state: []f32) []f32 {
-    return state[0..HISTORY_SIZE];
-}
-
-fn getMeta(state: []f32) *Meta {
-    const bytes = std.mem.sliceAsBytes(state[HISTORY_SIZE .. HISTORY_SIZE + META_FLOATS]);
-    return &std.mem.bytesAsSlice(Meta, bytes)[0];
-}
-
-fn getGrainMeta(state: []f32) []GrainMeta {
-    const bytes = std.mem.sliceAsBytes(state[HISTORY_SIZE + META_FLOATS .. HISTORY_SIZE + META_FLOATS + (MAX_POLYPHONY * GRAIN_META_FLOATS)]);
-    return std.mem.bytesAsSlice(GrainMeta, bytes);
-}
+const State = struct {
+    history: []f32,
+    grains: []GrainMeta,
+    meta: Meta,
+};
 
 fn getGrainSlot(grains: []GrainMeta) ?*GrainMeta {
     for (grains) |*g| {
@@ -65,8 +50,6 @@ pub const Granular = struct {
     pub const name = "grains!";
     pub const description = "granular synthesis";
 
-    pub const state_count = HISTORY_SIZE + META_FLOATS + MAX_POLYPHONY * GRAIN_META_FLOATS;
-
     pub const args: []const meta.Arg = &.{
         .{ .name = "in", .description = "input signal" },
         .{ .name = "density", .description = "grain density, in grains per second", .default = 10.0 },
@@ -76,11 +59,26 @@ pub const Granular = struct {
         .{ .name = "fade", .description = "grain fade in/out, in milliseconds", .default = 10.0 },
     };
 
-    pub fn compile(_: engine.CompileData) !@This() {
-        return @This(){};
+    state: *State,
+
+    pub fn compile(d: engine.CompileData) !@This() {
+        const state = try d.alloc.create(State);
+        state.* = .{
+            .history = try d.alloc.alloc(f32, HISTORY_SIZE),
+            .grains = try d.alloc.alloc(GrainMeta, MAX_POLYPHONY),
+            .meta = .{
+                .counter = 0,
+                .head = 0,
+                .grains_to_register = 0.0,
+            },
+        };
+
+        return @This(){
+            .state = state,
+        };
     }
 
-    pub fn eval(_: *const @This(), d: engine.EvalData) void {
+    pub fn eval(self: *const @This(), d: engine.EvalData) void {
         const inv_sr = 1.0 / d.sample_rate;
 
         const in = &d.inputs[0];
@@ -90,13 +88,13 @@ pub const Granular = struct {
         const position = &d.inputs[4];
         const fade = &d.inputs[5];
 
-        const history = getHistory(d.state);
-        const grains = getGrainMeta(d.state);
-        const m = getMeta(d.state);
+        const state = self.state;
+        const history = state.history;
+        const grains = state.grains;
 
-        const history_len = @min(m.counter, HISTORY_SIZE);
+        const history_len = @min(state.meta.counter, HISTORY_SIZE);
         const history_len_f: f32 = @floatFromInt(history_len);
-        const head_f: f32 = @floatFromInt(m.head);
+        const head_f: f32 = @floatFromInt(state.meta.head);
         const size_f: f32 = @floatFromInt(HISTORY_SIZE);
 
         for (
@@ -107,10 +105,10 @@ pub const Granular = struct {
             fade.channels[0],
         ) |density_vec, size_vec, speed_vec, position_vec, fade_vec| {
             for (0..engine.SIMD_LENGTH) |i| {
-                m.grains_to_register += inv_sr * density_vec[i];
+                state.meta.grains_to_register += inv_sr * density_vec[i];
 
-                while (m.grains_to_register > 1.0) {
-                    m.grains_to_register -= 1.0;
+                while (state.meta.grains_to_register > 1.0) {
+                    state.meta.grains_to_register -= 1.0;
 
                     const g = getGrainSlot(grains) orelse continue;
 
@@ -126,13 +124,13 @@ pub const Granular = struct {
         }
 
         for (0..engine.BLOCK_LENGTH) |i| {
-            history[(m.head + i) & HISTORY_MASK] = 0.0;
+            history[(state.meta.head + i) & HISTORY_MASK] = 0.0;
         }
         for (in.channels, &d.output.channels) |in_chan, *out_chan| {
             for (in_chan, out_chan, 0..) |in_vec, *out_vec, i| {
                 out_vec.* = @splat(0.0);
                 inline for (0..engine.SIMD_LENGTH) |j| {
-                    history[(m.head + i * engine.SIMD_LENGTH + j) & HISTORY_MASK] += in_vec[j] * 0.5;
+                    history[(state.meta.head + i * engine.SIMD_LENGTH + j) & HISTORY_MASK] += in_vec[j] * 0.5;
                 }
             }
         }
@@ -165,7 +163,7 @@ pub const Granular = struct {
             }
         }
 
-        m.head = (m.head + engine.BLOCK_LENGTH) & HISTORY_MASK;
-        m.counter = @min(HISTORY_SIZE, m.counter + engine.BLOCK_LENGTH);
+        state.meta.head = (state.meta.head + engine.BLOCK_LENGTH) & HISTORY_MASK;
+        state.meta.counter = @min(HISTORY_SIZE, state.meta.counter + engine.BLOCK_LENGTH);
     }
 };
