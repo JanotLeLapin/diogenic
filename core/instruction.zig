@@ -36,6 +36,8 @@ pub const Instructions = .{
     arith.Leq,
     arith.Gt,
     arith.Geq,
+    arith.Min,
+    arith.Max,
 
     chebyshev.Chebyshev,
 

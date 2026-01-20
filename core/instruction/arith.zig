@@ -78,6 +78,14 @@ fn geq(left: Vec, right: Vec) Vec {
     return cmp(left >= right);
 }
 
+fn min(left: Vec, right: Vec) Vec {
+    return @min(left, right);
+}
+
+fn max(left: Vec, right: Vec) Vec {
+    return @max(left, right);
+}
+
 pub const Add = Arith("+", "arithmetic addition", add);
 pub const Sub = Arith("-", "arithmetic subtraction", sub);
 pub const Mul = Arith("*", "arithmetic multiplication", mul);
@@ -86,3 +94,5 @@ pub const Lt = Arith("<", "less than comparison", lt);
 pub const Leq = Arith("<=", "less equal than comparison", leq);
 pub const Gt = Arith(">", "greater than comparison", gt);
 pub const Geq = Arith(">=", "greater equal than comparison", geq);
+pub const Min = Arith("min", "smallest given argument", min);
+pub const Max = Arith("max", "biggest given argument", max);
