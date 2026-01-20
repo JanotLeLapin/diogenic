@@ -67,6 +67,8 @@ pub const CompilerAlloc = struct {
     ast_alloc: std.mem.Allocator,
     /// compiler state environment & functions allocator
     env_alloc: std.mem.Allocator,
+    /// custom instruction compiler alloc
+    custom_instr_alloc: std.mem.Allocator,
 };
 
 pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
@@ -121,7 +123,10 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
             }
         }
 
-        const instr = try instruction_compiler.compile(tmp);
+        const instr = try instruction_compiler.compile(.{
+            .node = tmp,
+            .alloc = state.alloc.custom_instr_alloc,
+        });
         try state.instructions.append(state.alloc.instr_alloc, instr);
     } else if (Specials.get(op)) |f| {
         if (!try f(state, tmp)) {

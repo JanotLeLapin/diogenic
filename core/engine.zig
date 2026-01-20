@@ -71,6 +71,7 @@ pub const EngineState = struct {
 
 pub const CompileData = struct {
     node: *Node,
+    alloc: std.mem.Allocator,
 };
 
 pub const EvalData = struct {

@@ -104,6 +104,9 @@ pub fn main() !void {
     var errors = try std.ArrayList(CompilerExceptionData).initCapacity(gpa.allocator(), 64);
     defer errors.deinit(gpa.allocator());
 
+    var custom_instr_arena = std.heap.ArenaAllocator.init(gpa.allocator());
+    defer custom_instr_arena.deinit();
+
     const compiler_res = core.compiler.compile(
         root,
         &instructions,
@@ -114,6 +117,7 @@ pub fn main() !void {
             .exception_alloc = gpa.allocator(),
             .ast_alloc = ast_alloc.allocator(),
             .env_alloc = ast_alloc.allocator(),
+            .custom_instr_alloc = custom_instr_arena.allocator(),
         },
     ) catch {
         log.err("compilation failed", .{});

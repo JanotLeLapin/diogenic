@@ -121,8 +121,8 @@ pub fn expand(state: *CompilerState, node: *Node) anyerror!bool {
     return true;
 }
 
-pub fn compile(node: *Node) anyerror!Instruction {
-    const expr = switch (node.data) {
+pub fn compile(d: engine.CompileData) anyerror!Instruction {
+    const expr = switch (d.node.data) {
         .list => |lst| lst,
         else => unreachable,
     };
@@ -139,7 +139,8 @@ pub fn compile(node: *Node) anyerror!Instruction {
             const T = Instructions[ci];
 
             const compile_data: engine.CompileData = .{
-                .node = node,
+                .node = d.node,
+                .alloc = d.alloc,
             };
 
             return @unionInit(

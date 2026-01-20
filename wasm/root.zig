@@ -37,6 +37,9 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
     var exceptions = std.ArrayList(CompilerExceptionData).initCapacity(gpa, 16) catch return -3;
     defer exceptions.deinit(gpa);
 
+    var custom_instr_arena = std.heap.ArenaAllocator.init(gpa);
+    defer custom_instr_arena.deinit();
+
     const res = core.compiler.compile(
         root,
         &maybe_instructions.?,
@@ -47,6 +50,7 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
             .exception_alloc = gpa,
             .ast_alloc = arena.allocator(),
             .env_alloc = arena.allocator(),
+            .custom_instr_alloc = custom_instr_arena.allocator(),
         },
     ) catch return -4;
 
