@@ -27,4 +27,7 @@
 
     zls
   ];
+  shellHook = ''
+    ZIG_GLOBAL_CACHE_DIR=$PWD/.zig-cache
+  '';
 }
