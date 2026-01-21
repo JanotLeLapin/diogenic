@@ -16,6 +16,9 @@ const MacroState = macro_pass.State;
 const inline_pass = @import("compiler/inline.zig");
 const InlineState = inline_pass.State;
 
+const alpha_pass = @import("compiler/alpha.zig");
+const AlphaState = alpha_pass.State;
+
 const optimize_pass = @import("compiler/optimize.zig");
 
 const instruction_compiler = @import("compiler/instruction.zig");
@@ -175,6 +178,18 @@ pub fn compile(
         if (!try inline_pass.analyse(&inline_state, root)) {
             return false;
         }
+    }
+
+    {
+        var alpha_state = AlphaState{
+            .bindings = std.StringHashMap(
+                std.ArrayList([]const u8),
+            ).init(alloc.env_alloc),
+            .alloc = alloc.env_alloc,
+        };
+        defer alpha_state.bindings.deinit();
+
+        try alpha_pass.expand(&alpha_state, root);
     }
 
     try optimize_pass.optimize(alloc.env_alloc, root);
