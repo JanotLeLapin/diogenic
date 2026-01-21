@@ -69,19 +69,28 @@ fn renameLet(env: *State, node: *Node) anyerror!void {
     const bindings = node.data.list.items[1];
     const body = node.data.list.items[2];
 
+    var i: usize = 1;
+    while (i < bindings.data.list.items.len) : (i += 2) {
+        try expand(env, bindings.data.list.items[i]);
+    }
+
     var old_names = try std.ArrayList([]const u8).initCapacity(
         env.alloc,
         bindings.data.list.items.len / 2,
     );
 
-    var i: usize = 0;
+    i = 0;
     while (i < bindings.data.list.items.len) : (i += 2) {
-        const old_name = bindings.data.list.items[i].data.id;
+        const key = bindings.data.list.items[i];
+        const old_name = key.data.id;
         try old_names.append(env.alloc, old_name);
         try env.register(old_name);
+
+        if (env.get(old_name)) |new_name| {
+            key.data.id = new_name;
+        }
     }
 
-    try expand(env, bindings);
     try expand(env, body);
 
     for (old_names.items) |name| {
