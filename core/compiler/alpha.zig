@@ -69,9 +69,9 @@ fn renameLet(env: *State, node: *Node) anyerror!void {
     const bindings = node.data.list.items[1];
     const body = node.data.list.items[2];
 
-    var i: usize = 1;
-    while (i < bindings.data.list.items.len) : (i += 2) {
-        try expand(env, bindings.data.list.items[i]);
+    if (0 == bindings.data.list.items.len) {
+        try expand(env, body);
+        return;
     }
 
     var old_names = try std.ArrayList([]const u8).initCapacity(
@@ -79,7 +79,9 @@ fn renameLet(env: *State, node: *Node) anyerror!void {
         bindings.data.list.items.len / 2,
     );
 
-    i = 0;
+    try expand(env, bindings.data.list.items[1]);
+
+    var i: usize = 0;
     while (i < bindings.data.list.items.len) : (i += 2) {
         const key = bindings.data.list.items[i];
         const old_name = key.data.id;
@@ -89,6 +91,12 @@ fn renameLet(env: *State, node: *Node) anyerror!void {
         if (env.get(old_name)) |new_name| {
             key.data.id = new_name;
         }
+
+        const next_i = i + 3;
+        if (next_i >= bindings.data.list.items.len) {
+            continue;
+        }
+        try expand(env, bindings.data.list.items[next_i]);
     }
 
     try expand(env, body);
