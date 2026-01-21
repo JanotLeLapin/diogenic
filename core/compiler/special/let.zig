@@ -59,14 +59,14 @@ pub fn expand(state: *CompilerState, tmp: *Node) anyerror!bool {
 
     i = 0;
     while (i < bindings.items.len) {
-        const name = bindings.items[i].data.id;
-        const reg_index = state.reg_index;
-        state.reg_index += 1;
+        // const name = bindings.items[i].data.id;
+        // const reg_index = state.reg_index;
+        // state.reg_index += 1;
 
-        _ = state.env.remove(name);
-        try state.instructions.append(state.alloc.instr_alloc, Instruction{
-            ._free = instruction.value.Free{ .reg_index = reg_index },
-        });
+        // _ = state.env.remove(name);
+        // try state.instructions.append(state.alloc.instr_alloc, Instruction{
+        //     ._free = instruction.value.Free{ .reg_index = reg_index },
+        // });
 
         i += 2;
     }
