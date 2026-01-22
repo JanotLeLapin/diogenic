@@ -9,7 +9,6 @@ const core = @import("diogenic-core");
 const CompilerExceptionData = core.compiler.CompilerExceptionData;
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
-const Tokenizer = core.parser.Tokenizer;
 
 const sourcemap = core.compiler.sourcemap;
 const SourceMap = sourcemap.SourceMap;
@@ -91,12 +90,8 @@ pub fn main() !void {
     };
     defer gpa.allocator().free(args.src);
 
-    var tokenizer = Tokenizer{ .src = args.src };
-
     var ast_alloc = std.heap.ArenaAllocator.init(gpa.allocator());
     defer ast_alloc.deinit();
-
-    const root = try core.parser.parse(&tokenizer, ast_alloc.allocator(), gpa.allocator());
 
     var instructions = try std.ArrayList(Instruction).initCapacity(gpa.allocator(), 64);
     defer instructions.deinit(gpa.allocator());
@@ -108,7 +103,7 @@ pub fn main() !void {
     defer custom_instr_arena.deinit();
 
     const compiler_res = core.compiler.compile(
-        root,
+        args.src,
         &instructions,
         &errors,
         .{

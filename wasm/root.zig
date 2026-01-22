@@ -4,7 +4,6 @@ const core = @import("diogenic-core");
 const CompilerExceptionData = core.compiler.CompilerExceptionData;
 const EngineState = core.engine.EngineState;
 const Instruction = core.instruction.Instruction;
-const Tokenizer = core.parser.Tokenizer;
 
 const gpa = std.heap.wasm_allocator;
 
@@ -21,12 +20,8 @@ export fn alloc(len: usize) usize {
 export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
     const src = src_ptr[0..src_len];
 
-    var t = Tokenizer{ .src = src };
-
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
-
-    const root = core.parser.parse(&t, arena.allocator(), gpa) catch return -1;
 
     if (maybe_instructions) |*instructions| {
         instructions.clearRetainingCapacity();
@@ -41,7 +36,7 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
     defer custom_instr_arena.deinit();
 
     const res = core.compiler.compile(
-        root,
+        src,
         &maybe_instructions.?,
         &exceptions,
         .{

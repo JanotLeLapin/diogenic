@@ -147,11 +147,14 @@ pub fn compileExpr(state: *CompilerState, tmp: *Node) anyerror!bool {
 }
 
 pub fn compile(
-    root: *Node,
+    src: []const u8,
     instructions: *std.ArrayList(Instruction),
     errors: *std.ArrayList(CompilerExceptionData),
     alloc: CompilerAlloc,
 ) !bool {
+    var t = Tokenizer{ .src = src };
+    const root = try parser.parse(&t, alloc.ast_alloc, alloc.stack_alloc);
+
     {
         const macro_state = MacroState{
             .exceptions = errors,
