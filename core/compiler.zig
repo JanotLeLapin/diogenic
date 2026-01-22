@@ -167,7 +167,7 @@ pub fn compile(
     {
         var inline_state = InlineState{
             .exceptions = errors,
-            .func = std.StringHashMap(*Node).init(alloc.env_alloc),
+            .func = std.StringHashMap(inline_pass.Function).init(alloc.env_alloc),
             .exceptions_alloc = alloc.exception_alloc,
             .func_alloc = alloc.env_alloc,
             .ast_alloc = alloc.ast_alloc,

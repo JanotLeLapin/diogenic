@@ -11,9 +11,14 @@ pub const DiogenicStd = std.StaticStringMap([:0]const u8).initComptime(.{
     .{ "std/builtin", @embedFile("../std/builtin.scm") },
 });
 
+pub const Function = struct {
+    node: *Node,
+    doc: ?[]const u8,
+};
+
 pub const State = struct {
     exceptions: *std.ArrayList(CompilerExceptionData),
-    func: std.StringHashMap(*Node),
+    func: std.StringHashMap(Function),
     exceptions_alloc: std.mem.Allocator,
     func_alloc: std.mem.Allocator,
     ast_alloc: std.mem.Allocator,
@@ -88,7 +93,7 @@ fn expand(state: *State, node: *Node) !bool {
     switch (expr[0].data) {
         .id => |op| {
             if (state.func.get(op)) |func| {
-                if (!try expandFunction(state, node, func)) {
+                if (!try expandFunction(state, node, func.node)) {
                     return false;
                 }
 
@@ -128,7 +133,10 @@ pub fn analyse(state: *State, root: *Node) !bool {
             try root.data.list.insertSlice(state.ast_alloc, i, ast.data.list.items);
             continue;
         } else if (std.mem.eql(u8, "defun", child.data.list.items[0].data.id)) {
-            try state.func.put(child.data.list.items[1].data.id, child);
+            try state.func.put(child.data.list.items[1].data.id, .{
+                .node = child,
+                .doc = null,
+            });
         } else {
             if (!try expand(state, child)) {
                 failed = true;
