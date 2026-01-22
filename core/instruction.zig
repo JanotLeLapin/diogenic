@@ -10,6 +10,7 @@ pub const meta = @import("instruction/meta.zig");
 
 pub const value = @import("instruction/value.zig");
 pub const arith = @import("instruction/arith.zig");
+pub const blend = @import("instruction/blend.zig");
 pub const chebyshev = @import("instruction/chebyshev.zig");
 pub const delay = @import("instruction/delay.zig");
 pub const downsample = @import("instruction/downsample.zig");
@@ -39,6 +40,8 @@ pub const Instructions = .{
     arith.Geq,
     arith.Min,
     arith.Max,
+
+    blend.Blend,
 
     chebyshev.Chebyshev,
 
