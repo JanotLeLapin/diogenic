@@ -9,3 +9,9 @@
 (defun builtin/comb (in delay depth polarity)
   (+ (* in (- 1 (* 0.5 depth)))
      (* (* polarity (delay! in delay)) (* 0.5 depth))))
+
+(defun builtin/slew (in time)
+  (b-lowpass! :in in
+              :q 0.2
+              :freq (/ 5.0
+                       (* (* 2 PI) time))))
