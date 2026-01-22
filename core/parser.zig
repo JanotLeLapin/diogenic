@@ -28,6 +28,7 @@ pub const Token = struct {
     tag: union(enum) {
         sep: u8,
         lit: []const u8,
+        string: []const u8,
         whitespace,
         comment,
     },
@@ -38,6 +39,7 @@ pub const Node = struct {
         list: std.ArrayList(*Node),
         id: []const u8,
         atom: []const u8,
+        str: []const u8,
         num: f32,
     },
     src: []const u8,
@@ -109,6 +111,24 @@ pub fn tokenizerNext(t: *Tokenizer) ?Token {
                 t.cursor += 1;
             }
         },
+        '"' => {
+            const start = t.cursor;
+            while (true) {
+                t.cursor += 1;
+
+                if (t.cursor >= t.src.len) {
+                    return null;
+                }
+
+                if (t.src[t.cursor] == '"') {
+                    t.cursor += 1;
+                    return .{
+                        .pos = start_pos,
+                        .tag = .{ .string = t.src[start..t.cursor] },
+                    };
+                }
+            }
+        },
         else => {},
     }
 
@@ -173,6 +193,16 @@ pub fn parse(
                     continue;
                 },
                 else => {},
+            },
+            .string => |str| {
+                const new = try ast_alloc.create(Node);
+                new.* = .{
+                    .data = .{ .str = str[1..(str.len - 1)] },
+                    .pos = token.pos,
+                    .src = t.src,
+                };
+                try stack.getLast().data.list.append(ast_alloc, new);
+                continue;
             },
             else => {},
         }

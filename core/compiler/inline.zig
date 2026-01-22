@@ -133,10 +133,21 @@ pub fn analyse(state: *State, root: *Node) !bool {
             try root.data.list.insertSlice(state.ast_alloc, i, ast.data.list.items);
             continue;
         } else if (std.mem.eql(u8, "defun", child.data.list.items[0].data.id)) {
-            try state.func.put(child.data.list.items[1].data.id, .{
-                .node = child,
-                .doc = null,
-            });
+            switch (child.data.list.items[3].data) {
+                .str => |doc| {
+                    _ = child.data.list.orderedRemove(3);
+                    try state.func.put(child.data.list.items[1].data.id, .{
+                        .node = child,
+                        .doc = doc,
+                    });
+                },
+                else => {
+                    try state.func.put(child.data.list.items[1].data.id, .{
+                        .node = child,
+                        .doc = null,
+                    });
+                },
+            }
         } else {
             if (!try expand(state, child)) {
                 failed = true;
