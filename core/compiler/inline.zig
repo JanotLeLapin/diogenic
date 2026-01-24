@@ -123,10 +123,10 @@ pub fn analyse(state: *State, root: *Node) !bool {
                         if (builtin.target.os.tag == .freestanding) {
                             break :blk null;
                         }
-                        const file = try std.fs.cwd().openFile(path, .{});
+                        const file = std.fs.cwd().openFile(path, .{}) catch break :blk null;
                         defer file.close();
 
-                        break :blk try file.readToEndAlloc(state.ast_alloc, 10 * 1024 * 1024);
+                        break :blk file.readToEndAlloc(state.ast_alloc, 10 * 1024 * 1024) catch break :blk null;
                     },
                     .id => |path| break :blk DiogenicStd.get(path),
                     else => break :blk null,
