@@ -1,3 +1,4 @@
+const builtin = @import("builtin");
 const std = @import("std");
 
 const compiler = @import("../compiler.zig");
@@ -116,7 +117,23 @@ pub fn analyse(state: *State, root: *Node) !bool {
     while (i < root.data.list.items.len) {
         const child = root.data.list.items[i];
         if (std.mem.eql(u8, "use", child.data.list.items[0].data.id)) {
-            const src = DiogenicStd.get(child.data.list.items[1].data.id) orelse {
+            const maybe_src = blk: {
+                switch (child.data.list.items[1].data) {
+                    .str => |path| {
+                        if (builtin.target.os.tag == .freestanding) {
+                            break :blk null;
+                        }
+                        const file = try std.fs.cwd().openFile(path, .{});
+                        defer file.close();
+
+                        break :blk try file.readToEndAlloc(state.ast_alloc, 10 * 1024 * 1024);
+                    },
+                    .id => |path| break :blk DiogenicStd.get(path),
+                    else => break :blk null,
+                }
+            };
+
+            const src = maybe_src orelse {
                 try state.exceptions.append(state.exceptions_alloc, .{
                     .exception = .unresolved_import,
                     .node = child,
@@ -125,6 +142,7 @@ pub fn analyse(state: *State, root: *Node) !bool {
                 failed = true;
                 continue;
             };
+
             var t: Tokenizer = .{ .src = src };
             const ast = try parser.parse(&t, state.ast_alloc, state.stack_alloc);
             _ = root.data.list.orderedRemove(i);
