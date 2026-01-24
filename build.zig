@@ -7,10 +7,19 @@ pub fn build(b: *std.Build) void {
     const buildNative = b.option(bool, "native", "Build native app") orelse true;
     const buildWasm = b.option(bool, "wasm", "Build wasm binary") orelse true;
 
+    const std_mod = b.addModule("diogenic-std", .{
+        .root_source_file = b.path("std/root.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
     const core_mod = b.addModule("diogenic-core", .{
         .root_source_file = b.path("core/root.zig"),
         .target = target,
         .optimize = optimize,
+        .imports = &.{
+            .{ .name = "diogenic-std", .module = std_mod },
+        },
     });
 
     const run_step = b.step("run", "Run the app");

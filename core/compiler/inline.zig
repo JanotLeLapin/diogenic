@@ -7,9 +7,7 @@ const parser = @import("../parser.zig");
 const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
-pub const DiogenicStd = std.StaticStringMap([:0]const u8).initComptime(.{
-    .{ "std/builtin", @embedFile("../std/builtin.scm") },
-});
+const DiogenicStd = @import("diogenic-std").Standard;
 
 pub const Function = struct {
     node: *Node,
