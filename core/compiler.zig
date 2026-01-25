@@ -10,19 +10,19 @@ const parser = @import("parser.zig");
 const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
-const macro_pass = @import("compiler/macro.zig");
+pub const macro_pass = @import("compiler/macro.zig");
 const MacroState = macro_pass.State;
 
-const inline_pass = @import("compiler/inline.zig");
+pub const inline_pass = @import("compiler/inline.zig");
 const InlineState = inline_pass.State;
 
-const alpha_pass = @import("compiler/alpha.zig");
+pub const alpha_pass = @import("compiler/alpha.zig");
 const AlphaState = alpha_pass.State;
 
-const optimize_pass = @import("compiler/optimize.zig");
+pub const optimize_pass = @import("compiler/optimize.zig");
 
-const instruction_compiler = @import("compiler/instruction.zig");
-const special_compiler = @import("compiler/special.zig");
+pub const instruction_compiler = @import("compiler/instruction.zig");
+pub const special_compiler = @import("compiler/special.zig");
 const Specials = special_compiler.Specials;
 
 pub const sourcemap = @import("compiler/sourcemap.zig");

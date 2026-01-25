@@ -101,14 +101,27 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "diogenic-core", .module = core_mod },
+                .{ .name = "diogenic-std", .module = std_mod },
             },
         }),
     });
 
-    const run_docs = b.addRunArtifact(docs_exe);
-    const output_file = run_docs.captureStdErr();
-    const install_docs = b.addInstallFile(output_file, "diogenic-docs.md");
+    const install_device_docs = blk: {
+        const run_docs = b.addRunArtifact(docs_exe);
+        const output_file = run_docs.captureStdErr();
+        break :blk b.addInstallFile(output_file, "diogenic-device-docs.md");
+    };
 
-    const docs_step = b.step("docs", "Generate docs file");
-    docs_step.dependOn(&install_docs.step);
+    const install_std_docs = blk: {
+        const run_docs = b.addRunArtifact(docs_exe);
+        run_docs.addArgs(&.{ "--stdlib", "std/builtin" });
+        const output_file = run_docs.captureStdErr();
+        break :blk b.addInstallFile(output_file, "diogenic-std-docs.md");
+    };
+
+    const device_docs_step = b.step("device-docs", "Generate docs file");
+    device_docs_step.dependOn(&install_device_docs.step);
+
+    const std_docs_step = b.step("std-docs", "Generate docs file");
+    std_docs_step.dependOn(&install_std_docs.step);
 }
