@@ -1,4 +1,7 @@
-(defun builtin/pitch-shift (target-pitch grain-size in)
+(defun builtin/pitch-shift
+  (in
+   (target-pitch :doc "pitch difference, in semitones, between dry and wet signal")
+   (grain-size :doc "grain size, in milliseconds"))
   "Modifies the pitch of the input signal using granular synthesis."
   (* 0.1
      (grains! :size grain-size
@@ -7,12 +10,18 @@
               :position (< target-pitch 0.0)
               :in in)))
 
-(defun builtin/comb (in delay depth polarity)
+(defun builtin/comb
+  (in
+   (delay :doc "delay, in seconds, between dry and wet signal")
+   (depth :doc "mix, in range [0; 1], between the dry and wet signal")
+   (polarity :doc "sets the sign of the wet signal"))
   "Adds a delay to the dry signal."
   (+ (* in (- 1 (* 0.5 depth)))
      (* (* polarity (delay! in delay)) (* 0.5 depth))))
 
-(defun builtin/slew (in time)
+(defun builtin/slew
+  (in
+   (time :doc "slew time, in seconds"))
   "Smooths the input signal using a lowpass filter."
   (b-lowpass! :in in
               :q 0.2

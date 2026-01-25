@@ -10,8 +10,13 @@ const Tokenizer = parser.Tokenizer;
 
 const DiogenicStd = @import("diogenic-std").Standard;
 
+pub const Arg = struct {
+    doc: ?[]const u8,
+};
+
 pub const Function = struct {
     node: *Node,
+    args: std.StringHashMap(Arg),
     doc: ?[]const u8,
 };
 
@@ -27,10 +32,10 @@ pub const State = struct {
 pub fn expandFunction(
     state: *State,
     tmp: *Node,
-    func: *Node,
+    func: Function,
 ) anyerror!bool {
-    const args = func.data.list.items[2].data.list.items;
-    const expr = func.data.list.items[3];
+    const args = func.node.data.list.items[2].data.list.items;
+    const expr = func.node.data.list.items[3];
 
     if (tmp.data.list.items.len - 1 != args.len) {
         try state.exceptions.append(state.exceptions_alloc, .{
@@ -56,7 +61,12 @@ pub fn expandFunction(
         .src = "FUNC",
     };
 
-    for (args, tmp.data.list.items[1..]) |arg_name, arg_value| {
+    for (args, tmp.data.list.items[1..]) |arg_node, arg_value| {
+        const arg_name = switch (arg_node.data) {
+            .id => arg_node,
+            .list => |lst| lst.items[0],
+            else => unreachable,
+        };
         try bindingsNode.data.list.append(state.ast_alloc, arg_name);
         try bindingsNode.data.list.append(state.ast_alloc, arg_value);
     }
@@ -92,7 +102,7 @@ fn expand(state: *State, node: *Node) !bool {
     switch (expr[0].data) {
         .id => |op| {
             if (state.func.get(op)) |func| {
-                if (!try expandFunction(state, node, func.node)) {
+                if (!try expandFunction(state, node, func)) {
                     return false;
                 }
 
@@ -149,21 +159,37 @@ pub fn analyze(state: *State, root: *Node) !bool {
             try root.data.list.insertSlice(state.ast_alloc, i, ast.data.list.items);
             continue;
         } else if (std.mem.eql(u8, "defun", child.data.list.items[0].data.id)) {
-            switch (child.data.list.items[3].data) {
-                .str => |doc| {
-                    _ = child.data.list.orderedRemove(3);
-                    try state.func.put(child.data.list.items[1].data.id, .{
-                        .node = child,
-                        .doc = doc,
-                    });
-                },
-                else => {
-                    try state.func.put(child.data.list.items[1].data.id, .{
-                        .node = child,
+            const name = child.data.list.items[1].data.id;
+            var args = std.StringHashMap(Arg).init(state.ast_alloc);
+            for (child.data.list.items[2].data.list.items) |arg_node| {
+                switch (arg_node.data) {
+                    .id => |id| try args.put(id, .{
                         .doc = null,
-                    });
-                },
+                    }),
+                    .list => |lst| {
+                        // FIXME: it's all hardcoded for now
+                        const arg_name = lst.items[0].data.id;
+                        const arg_doc = if (lst.items.len >= 3) lst.items[2].data.str else null;
+
+                        try args.put(arg_name, .{ .doc = arg_doc });
+                    },
+                    else => {},
+                }
             }
+            const doc: ?[]const u8 = blk: {
+                switch (child.data.list.items[3].data) {
+                    .str => |doc| {
+                        _ = child.data.list.orderedRemove(3);
+                        break :blk doc;
+                    },
+                    else => break :blk null,
+                }
+            };
+            try state.func.put(name, .{
+                .node = child,
+                .args = args,
+                .doc = doc,
+            });
         } else {
             if (!try expand(state, child)) {
                 failed = true;
