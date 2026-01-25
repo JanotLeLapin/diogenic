@@ -12,6 +12,7 @@
   in {
     devShells = eachSystem ({ pkgs, ... }: {
       default = pkgs.callPackage ./shell.nix {};
+      web = pkgs.callPackage ./web/shell.nix {};
     });
     packages = eachSystem ({ pkgs, ... }: { default = pkgs.callPackage ./default.nix {}; });
   };
