@@ -178,7 +178,7 @@ pub fn compile(
         };
         defer inline_state.func.deinit();
 
-        if (!try inline_pass.analyse(&inline_state, root)) {
+        if (!try inline_pass.analyze(&inline_state, root)) {
             return false;
         }
     }

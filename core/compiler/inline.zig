@@ -111,7 +111,7 @@ fn expand(state: *State, node: *Node) !bool {
     return !failed;
 }
 
-pub fn analyse(state: *State, root: *Node) !bool {
+pub fn analyze(state: *State, root: *Node) !bool {
     var failed = false;
     var i: usize = 0;
     while (i < root.data.list.items.len) {
