@@ -1,6 +1,8 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import remarkDirective from 'remark-directive';
+import { remarkInclude } from './src/plugins/remark-include.mjs';
 
 import svelte from '@astrojs/svelte';
 
@@ -15,6 +17,7 @@ export default defineConfig({
             },
             wrap: true,
         },
+        remarkPlugins: [remarkDirective, remarkInclude],
     },
     integrations: [
         starlight({
