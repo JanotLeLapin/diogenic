@@ -34,6 +34,12 @@ export default defineConfig({
                     label: 'Reference',
                     slug: 'reference',
                 },
+                {
+                    label: 'Standard Lib',
+                    items: [
+                        { label: 'Builtin', slug: 'std/builtin' },
+                    ]
+                }
             ],
         }),
         svelte()

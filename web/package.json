@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "doc:sync": "cp ../zig-out/diogenic-device-docs.md src/content/docs/_device-docs.md",
+    "doc:sync": "./sync.sh",
     "dev": "pnpm run doc:sync && astro dev",
     "start": "pnpm run doc:sync && astro dev",
     "build": "pnpm run doc:sync && astro build",
