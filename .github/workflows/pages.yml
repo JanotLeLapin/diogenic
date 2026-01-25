@@ -37,7 +37,9 @@ jobs:
           zig build --release=small -Dnative=false
           cp zig-out/bin/diogenic-wasm.wasm ./web/public
       - name: Generate docs
-        run: zig build docs
+        run: |
+          zig build device-docs
+          zig build std-docs
       - name: Build site
         run: |
           cd web
