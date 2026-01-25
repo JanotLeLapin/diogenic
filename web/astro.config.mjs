@@ -28,6 +28,7 @@ export default defineConfig({
                     label: 'Guides',
                     items: [
                         { label: 'Introduction', slug: 'guides/intro' },
+                        { label: 'Bass Synthesis', slug: 'guides/synthesis-guide' },
                     ],
                 },
                 {

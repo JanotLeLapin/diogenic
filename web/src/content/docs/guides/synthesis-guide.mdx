@@ -1,0 +1,140 @@
+---
+title: Synthesizing a Bass
+description: in depth, step-by-step, bass conception guide
+---
+
+import Snippet from '../../../lib/Snippet.svelte'
+
+export const snippets = [
+  `
+(+ (sawtooth! 55.01)
+   (sawtooth! 54.99))
+  `,
+  `
+(defun dephased-sawtooth (freq detune)
+  (let (offset (* 0.5 detune))
+    (+ (sawtooth! (+ freq offset))
+       (sawtooth! (- freq offset)))))
+(+ (dephased-sawtooth 55.0 0.2)
+   (dephased-sawtooth (* 3 55.0) 0.5))
+  `,
+  `
+(use std/builtin)
+(defun dephased-sawtooth (freq detune)
+  (let (offset (* 0.5 detune))
+    (+ (sawtooth! (+ freq offset))
+       (sawtooth! (- freq offset)))))
+(-> (+ (dephased-sawtooth 55.0 (map (sine! 0.08) -1 1 0.06 0.2))
+       (pan (dephased-sawtooth (* 3 55.0) (map (sine! 0.12) -1 1 0.24 0.66))
+            (* 0.75 (triangle! 0.1))))
+    (tanh)
+    (clip 0.6)
+    (b-lowpass!
+      :freq (-> (sawtooth! 0.6)
+                (builtin/slew 0.1)
+                (map -1 1 200 800))
+      :q 0.6)
+    (quantize 4.2))
+  `
+]
+
+Let's create a bass patch using diogenic.
+
+We'll start with two slightly dephased sawtooths to emulate a smooth
+flanger effect:
+
+<Snippet doc={snippets[0].trim()} client:only />
+
+This sounds good, we can wrap it in a reusable function:
+
+```scm
+(defun dephased-sawtooth (freq detune)
+  (let (offset (* 0.5 detune))
+    (+ (sawtooth! (+ freq offset))
+       (sawtooth! (- freq offset)))))
+
+; now this is equivalent to the previous snippet:
+(dephased-sawtooth 55.0 0.2)
+```
+
+Now, I want to add rich harmonics, so on top of the fundamental
+I'll add the same dephased sawtooths oscillating at the given
+frequency multiplied by 3. This introduces a third harmonic
+which will add a thick density to the bass:
+
+```scm
+(+ (dephased-sawtooth 55.0 0.2)
+   (dephased-sawtooth (* 3 55.0) 0.5)) ; notice the slightly
+                                       ; increased detune here
+```
+
+Before moving on, let's hear how it sounds so far:
+
+<Snippet doc={snippets[1].trim()} client:only />
+
+Perfect, now I'll just pass this signal through a small saturator,
+then through a hard clip, then through a low pass filter and
+finally through a quantizer.
+This is a long, sequential chain of DSP effects, so I'll use the
+`->` macro:
+
+```scm
+(-> (+ (dephased-sawtooth 55.0 0.2)
+       (dephased-sawtooth (* 3 55.0) 0.5))
+    (tanh)
+    (clip 0.6)
+    (b-lowpass!
+      :freq 850.0
+      :q 0.6)
+    (quantize 4.2))
+```
+
+Now this could be a nice abrasive EDM or digicore bass, but it
+still sounds a bit boring. Luckily, with diogenic, we can modulate
+any parameter with any signal. Let's try it out.
+
+First, I want to slowly pan the fifth harmonic over time:
+
+```scm
+(-> (+ (dephased-sawtooth 55.0 0.2)
+       (pan (dephased-sawtooth (* 3 55.0) 0.5)
+            (* 0.75 (triangle! 0.1))))
+    ...)
+```
+
+I'll also slowly sweep over the low pass frequency:
+
+```scm
+(use std/builtin) ; IMPORTANT
+                  ; don't forget to import std/builtin
+
+(-> ...
+    (b-lowpass!
+      :freq (-> (sawtooth: 0.4)
+                (builtin/slew 0.1)
+                (map -1 1 500 1200))
+      :q 0.6)
+    ...)
+```
+
+Let's also modulate the detune rate over time:
+
+```scm
+(-> (+ (dephased-sawtooth 55.0 (map (sine! 0.08) -1 1 0.06 0.2))
+       (pan (dephased-sawtooth (* 3 55.0) (map (sine! 0.12) -1 1 0.24 0.66))
+            (* 0.75 (triangle! 0.1))))
+    ...)
+```
+
+You get the idea, any parameter can be modulated.
+
+Let's hear the final result:
+
+<Snippet doc={snippets[2].trim()} client:only />
+
+In just a few lines, we transformed a sterile signal into a
+much more organic, aggressive bass patch. This highlights the
+philosophy of diogenic: everything is a signal.
+
+By treating parameters like modulable streams rather than static
+numbers, you can easily create sounds that feel alive.
