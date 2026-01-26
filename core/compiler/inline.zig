@@ -50,6 +50,7 @@ pub fn expandFunction(
         .pos = tmp.pos,
         .data = .{ .id = "let" },
         .src = "FUNC",
+        .src_file = "",
     };
 
     const bindingsNode = try state.ast_alloc.create(Node);
@@ -59,6 +60,7 @@ pub fn expandFunction(
             .list = try std.ArrayList(*Node).initCapacity(state.ast_alloc, args.len * 2),
         },
         .src = "FUNC",
+        .src_file = "",
     };
 
     for (args, tmp.data.list.items[1..]) |arg_node, arg_value| {
@@ -78,6 +80,7 @@ pub fn expandFunction(
             .list = try std.ArrayList(*Node).initCapacity(state.ast_alloc, 3),
         },
         .src = "FUNC",
+        .src_file = "",
     };
 
     try resNode.data.list.append(state.ast_alloc, letNode);

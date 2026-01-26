@@ -102,6 +102,7 @@ pub fn expand(state: *CompilerState, node: *Node) anyerror!bool {
                         const default_node = try state.alloc.ast_alloc.create(Node);
                         default_node.* = .{
                             .src = "DEFAULT",
+                            .src_file = "",
                             .data = .{ .num = default },
                             .pos = .{ .col = 0, .row = 0 },
                         };

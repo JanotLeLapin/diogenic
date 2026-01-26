@@ -43,6 +43,7 @@ pub const Node = struct {
         num: f32,
     },
     src: []const u8,
+    src_file: []const u8,
     pos: Pos,
 };
 
@@ -167,6 +168,7 @@ pub fn parse(
         .data = .{ .list = try std.ArrayList(*Node).initCapacity(ast_alloc, 8) },
         .src = t.src,
         .pos = .{ .col = 0, .row = 0 },
+        .src_file = t.src,
     };
     try stack.append(stack_alloc, root);
 
@@ -181,6 +183,7 @@ pub fn parse(
                         .data = .{ .list = try std.ArrayList(*Node).initCapacity(ast_alloc, 8) },
                         .src = t.src[start..],
                         .pos = token.pos,
+                        .src_file = t.src,
                     };
                     try stack.getLast().data.list.append(ast_alloc, new);
                     try stack.append(stack_alloc, new);
@@ -199,7 +202,8 @@ pub fn parse(
                 new.* = .{
                     .data = .{ .str = str[1..(str.len - 1)] },
                     .pos = token.pos,
-                    .src = t.src,
+                    .src = t.src, // FIXME: is this normal?
+                    .src_file = t.src,
                 };
                 try stack.getLast().data.list.append(ast_alloc, new);
                 continue;
@@ -209,6 +213,7 @@ pub fn parse(
 
         const new = try ast_alloc.create(Node);
         new.src = token.tag.lit;
+        new.src_file = t.src;
         new.pos = token.pos;
         if (token.tag.lit[0] == ':') {
             new.data = .{ .atom = token.tag.lit };

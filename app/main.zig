@@ -120,8 +120,8 @@ pub fn main() !void {
     };
 
     if (!compiler_res) {
-        var srcmap = try SourceMap.init(gpa.allocator(), args.src);
-        defer srcmap.deinit();
+        var srcmaps = std.StringHashMap(SourceMap).init(gpa.allocator());
+        defer srcmaps.deinit();
 
         var stderr_buffer: [4096]u8 = undefined;
         var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
@@ -129,8 +129,18 @@ pub fn main() !void {
 
         log.err("compilation failed with the following errors", .{});
         for (errors.items) |err| {
+            const srcmap = srcmaps.get(err.node.src_file) orelse blk: {
+                const srcmap = try SourceMap.init(gpa.allocator(), err.node.src_file);
+                try srcmaps.put(err.node.src_file, srcmap);
+                break :blk srcmap;
+            };
             try sourcemap.printExceptionContext(srcmap, err, stderr);
             try stderr.flush();
+        }
+
+        var iter = srcmaps.valueIterator();
+        while (iter.next()) |srcmap| {
+            srcmap.deinit();
         }
 
         return;
