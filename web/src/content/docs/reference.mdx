@@ -25,6 +25,25 @@ sequence during compilation.
    (my-saturation (sine! 440.0)))
 ```
 
+You may use functions defined in other files:
+
+```scm
+; my-lib.scm
+(use std/builtin)
+
+(defun sawtooth-lfo (freq)
+  (builtin/slew ; slew is a function imported from std/builtin
+    (sawtooth! freq)
+    0.05))
+```
+
+```scm
+; main.scm
+(use "my-lib.scm")
+
+(sine! (map (sawtooth-lfo 0.2) -1 1 220.0 440.0))
+```
+
 ## Macros
 
 ### `->`
