@@ -12,6 +12,8 @@ const Module = types.Module;
 const ModuleMap = types.ModuleMap;
 const State = types.State;
 
+const macroExpand = @import("macro.zig").expand;
+
 const parser = @import("../parser.zig");
 const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
@@ -156,6 +158,8 @@ pub fn resolveImports(
 
     var t: Tokenizer = .{ .src = src };
     const ast = try parser.parse(&t, state.arena_alloc, state.stack_alloc);
+
+    try macroExpand(state, ast);
 
     var imports = try std.ArrayList(*Module).initCapacity(state.arena_alloc, 1);
     var functions = FunctionMap.init(state.arena_alloc);
