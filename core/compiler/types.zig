@@ -39,3 +39,9 @@ pub const Module = struct {
 };
 
 pub const ModuleMap = std.StringHashMap(*Module);
+
+pub const State = struct {
+    map: *ModuleMap,
+    arena_alloc: std.mem.Allocator,
+    stack_alloc: std.mem.Allocator,
+};

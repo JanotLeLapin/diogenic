@@ -10,16 +10,11 @@ const Function = types.Function;
 const FunctionMap = types.FunctionMap;
 const Module = types.Module;
 const ModuleMap = types.ModuleMap;
+const State = types.State;
 
 const parser = @import("../parser.zig");
 const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
-
-pub const State = struct {
-    map: *ModuleMap,
-    arena_alloc: std.mem.Allocator,
-    stack_alloc: std.mem.Allocator,
-};
 
 fn resolveUse(node: *Node, file_alloc: std.mem.Allocator) ?struct {
     []const u8,
