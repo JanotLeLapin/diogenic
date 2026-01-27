@@ -4,6 +4,7 @@ const parser = @import("../parser.zig");
 const Node = parser.Node;
 
 pub const Argument = struct {
+    id_node: *Node,
     doc: ?[]const u8,
 };
 

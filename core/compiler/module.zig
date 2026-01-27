@@ -65,7 +65,10 @@ fn resolveArg(node: *Node) ?struct {
 } {
     const lst = switch (node.data) {
         .id => |id| {
-            return .{ id, Argument{ .doc = null } };
+            return .{ id, Argument{
+                .id_node = node,
+                .doc = null,
+            } };
         },
         .list => |lst| lst.items,
         else => return null,
@@ -85,7 +88,10 @@ fn resolveArg(node: *Node) ?struct {
         else => return null,
     };
 
-    return .{ arg_name, Argument{ .doc = arg_doc } };
+    return .{ arg_name, Argument{
+        .id_node = lst[0],
+        .doc = arg_doc,
+    } };
 }
 
 fn resolveFunc(node: *Node, alloc: std.mem.Allocator) !?struct {
