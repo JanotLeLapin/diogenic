@@ -156,9 +156,9 @@ fn resolveFunc(node: *Node, alloc: std.mem.Allocator) !?struct {
 }
 
 pub fn resolveImports(
+    state: *State,
     name: []const u8,
     src: []const u8,
-    state: *State,
 ) !*Module {
     _ = name;
 
@@ -174,7 +174,7 @@ pub fn resolveImports(
         if (resolveUse(child, state.arena_alloc)) |res| {
             const use_name, const use_src = res;
             const use_mod = state.map.get(use_name) orelse blk: {
-                const use_mod = try resolveImports(use_name, use_src, state);
+                const use_mod = try resolveImports(state, use_name, use_src);
                 try state.map.put(use_name, use_mod);
                 break :blk use_mod;
             };
