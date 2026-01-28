@@ -1,0 +1,164 @@
+const std = @import("std");
+
+const engine = @import("../engine.zig");
+const CompileData = engine.CompileData;
+
+const instr = @import("../instruction.zig");
+const Instr = instr.Instruction;
+const Instrs = instr.Instructions;
+
+const types = @import("types.zig");
+const State = types.State;
+
+const parser = @import("../parser.zig");
+const Node = parser.Node;
+
+fn reorderExprArgs(state: *State, node: *Node, comptime T: type) !void {
+    var lst = switch (node.data) {
+        .list => |lst| lst,
+        else => return,
+    };
+    const args = lst.items[1..];
+
+    var arg_slots: [T.args.len]?*Node = undefined;
+    inline for (&arg_slots) |*slot| {
+        slot.* = null;
+    }
+
+    var slot_idx: usize = 0;
+    var maybe_name: ?[]const u8 = null;
+    for (args) |child| {
+        if (maybe_name) |name| {
+            const arg_idx = blk: {
+                for (T.args, 0..) |arg, j| {
+                    if (std.mem.eql(u8, name, arg.name)) {
+                        break :blk j;
+                    }
+                }
+
+                // FIXME: unknown arg atom
+                return;
+            };
+
+            arg_slots[arg_idx] = child;
+            maybe_name = null;
+        } else {
+            switch (child.data) {
+                .atom => |atom| {
+                    maybe_name = atom[1..];
+                    continue;
+                },
+                else => {},
+            }
+
+            while (slot_idx < arg_slots.len and arg_slots[slot_idx] != null) {
+                slot_idx += 1;
+            }
+
+            if (slot_idx >= arg_slots.len) {
+                // FIXME: extra arg
+                return;
+            }
+
+            if (T.args.len > 0) {
+                arg_slots[slot_idx] = child;
+            }
+
+            slot_idx += 1;
+        }
+    }
+
+    if (maybe_name) |_| {
+        // FIXME: bad arity; trailing atom
+        return;
+    }
+
+    const op = node.data.list.items[0];
+    node.data.list.clearRetainingCapacity();
+    try node.data.list.append(state.arena_alloc, op);
+
+    for (arg_slots, T.args) |slot, arg| {
+        if (slot) |child| {
+            try node.data.list.append(state.arena_alloc, child);
+        } else {
+            if (arg.default) |default| {
+                const default_node = try state.arena_alloc.create(Node);
+                default_node.* = .{
+                    .data = .{ .num = default },
+                    .src = "_",
+                    .src_file = node.src_file,
+                    .pos = node.pos,
+                };
+                try node.data.list.append(state.arena_alloc, default_node);
+            } else {
+                // FIXME: missing arg without a default value
+                return;
+            }
+        }
+    }
+}
+
+fn compileExpr(d: CompileData, comptime T: type) anyerror!Instr {
+    return @unionInit(Instr, T.name, try T.compile(d));
+}
+
+pub fn expand(state: *State, node: *Node) anyerror!void {
+    const expr = switch (node.data) {
+        .list => |lst| lst.items,
+        .num => |num| {
+            try state.pushInstr(Instr{
+                ._push = instr.value.Push{ .value = num },
+            });
+            return;
+        },
+        .id => |id| {
+            if (state.env.get(id)) |reg| {
+                try state.pushInstr(Instr{
+                    ._load = instr.value.Load{ .reg_index = reg },
+                });
+            } else {
+                // FIXME: unrecognized symbol
+            }
+            return;
+        },
+        else => {
+            // FIXME: unknown expr
+            return;
+        },
+    };
+
+    if (1 > expr.len) {
+        // FIXME: empty list?
+        return;
+    }
+
+    const op = switch (expr[0].data) {
+        .id => |id| id,
+        else => {
+            // FIXME: unexpected node
+            return;
+        },
+    };
+
+    if (instr.getExpressionIndex(op)) |idx| {
+        switch (idx) {
+            inline 5...Instrs.len - 1 => |i| {
+                const T = Instrs[i];
+                try reorderExprArgs(state, node, T);
+
+                for (node.data.list.items[1..]) |child| {
+                    try expand(state, child);
+                }
+
+                const d: CompileData = .{
+                    .alloc = state.arena_alloc, // FIXME: use dedicated alloc later
+                    .node = node,
+                };
+
+                const instruction = try compileExpr(d, T);
+                try state.pushInstr(instruction);
+            },
+            else => unreachable,
+        }
+    }
+}

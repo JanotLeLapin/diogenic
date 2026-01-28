@@ -1,5 +1,8 @@
 const std = @import("std");
 
+const instr = @import("../instruction.zig");
+const Instr = instr.Instruction;
+
 const parser = @import("../parser.zig");
 const Node = parser.Node;
 
@@ -43,6 +46,12 @@ pub const ModuleMap = std.StringHashMap(*Module);
 
 pub const State = struct {
     map: *ModuleMap,
+    instr_seq: *std.ArrayList(Instr),
+    env: *std.StringHashMap(usize),
     arena_alloc: std.mem.Allocator,
     stack_alloc: std.mem.Allocator,
+
+    pub fn pushInstr(self: *State, instruction: Instr) !void {
+        try self.instr_seq.append(self.stack_alloc, instruction);
+    }
 };
