@@ -29,31 +29,31 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
         maybe_instructions = std.ArrayList(Instruction).initCapacity(gpa, 16) catch return -2;
     }
 
-    var exceptions = std.ArrayList(CompilerExceptionData).initCapacity(gpa, 16) catch return -3;
+    var mod_map = core.compiler.types.ModuleMap.init(arena.allocator());
+
+    var exceptions = std.ArrayList(core.compiler.types.Exception).initCapacity(gpa, 8) catch return -3;
     defer exceptions.deinit(gpa);
 
-    var custom_instr_arena = std.heap.ArenaAllocator.init(gpa);
-    defer custom_instr_arena.deinit();
+    var env = std.StringHashMap(usize).init(gpa);
+    defer env.deinit();
 
-    const res = core.compiler.compile(
-        src,
-        &maybe_instructions.?,
-        &exceptions,
-        .{
-            .stack_alloc = gpa,
-            .instr_alloc = gpa,
-            .exception_alloc = gpa,
-            .ast_alloc = arena.allocator(),
-            .env_alloc = arena.allocator(),
-            .custom_instr_alloc = custom_instr_arena.allocator(),
-        },
-    ) catch return -4;
+    var state = core.compiler.types.State{
+        .map = &mod_map,
+        .instr_seq = &maybe_instructions.?,
+        .exceptions = &exceptions,
+        .env = &env,
+        .arena_alloc = arena.allocator(),
+        .stack_alloc = gpa,
+    };
+    const mod = core.compiler.module.resolveImports(&state, "main", src) catch return -4;
+    core.compiler.function.expand(&state, mod) catch return -5;
+    core.compiler.rpn.expand(&state, mod.root.data.list.getLast()) catch return -6;
 
-    if (!res) {
-        return -5;
+    if (0 < exceptions.items.len) {
+        return -7;
     }
 
-    maybe_engine_state = core.initState(sr, maybe_instructions.?.items, gpa) catch return -6;
+    maybe_engine_state = core.initState(sr, maybe_instructions.?.items, gpa) catch return -8;
     return @intCast(maybe_instructions.?.items.len);
 }
 

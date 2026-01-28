@@ -6,9 +6,7 @@ const rl = @import("raylib");
 const audio = @import("audio.zig");
 
 const core = @import("diogenic-core");
-const CompilerExceptionData = core.compiler.CompilerExceptionData;
 const EngineState = core.engine.EngineState;
-const Instruction = core.instruction.Instruction;
 
 const sourcemap = core.compiler.sourcemap;
 const SourceMap = sourcemap.SourceMap;
@@ -93,63 +91,45 @@ pub fn main() !void {
     var ast_alloc = std.heap.ArenaAllocator.init(gpa.allocator());
     defer ast_alloc.deinit();
 
-    var instructions = try std.ArrayList(Instruction).initCapacity(gpa.allocator(), 64);
-    defer instructions.deinit(gpa.allocator());
+    var mod_map = core.compiler.types.ModuleMap.init(ast_alloc.allocator());
+    defer mod_map.deinit();
 
-    var errors = try std.ArrayList(CompilerExceptionData).initCapacity(gpa.allocator(), 64);
-    defer errors.deinit(gpa.allocator());
+    var instr_seq = try std.ArrayList(core.instruction.Instruction).initCapacity(gpa.allocator(), 8);
+    defer instr_seq.deinit(gpa.allocator());
 
-    var custom_instr_arena = std.heap.ArenaAllocator.init(gpa.allocator());
-    defer custom_instr_arena.deinit();
+    var exceptions = try std.ArrayList(core.compiler.types.Exception).initCapacity(gpa.allocator(), 8);
+    defer exceptions.deinit(gpa.allocator());
 
-    const compiler_res = core.compiler.compile(
-        args.src,
-        &instructions,
-        &errors,
-        .{
-            .stack_alloc = gpa.allocator(),
-            .instr_alloc = gpa.allocator(),
-            .exception_alloc = gpa.allocator(),
-            .ast_alloc = ast_alloc.allocator(),
-            .env_alloc = ast_alloc.allocator(),
-            .custom_instr_alloc = custom_instr_arena.allocator(),
-        },
-    ) catch {
-        log.err("compilation failed", .{});
-        return;
+    var env = std.StringHashMap(usize).init(gpa.allocator());
+    defer env.deinit();
+
+    var state = core.compiler.types.State{
+        .map = &mod_map,
+        .instr_seq = &instr_seq,
+        .exceptions = &exceptions,
+        .env = &env,
+        .arena_alloc = ast_alloc.allocator(),
+        .stack_alloc = gpa.allocator(),
     };
+    const mod = try core.compiler.module.resolveImports(&state, "main", args.src);
+    try core.compiler.function.expand(&state, mod);
+    try core.compiler.rpn.expand(&state, mod.root.data.list.getLast());
 
-    if (!compiler_res) {
-        var srcmaps = std.StringHashMap(SourceMap).init(gpa.allocator());
-        defer srcmaps.deinit();
+    var e = try core.initState(44100.0, instr_seq.items, gpa.allocator());
+    defer e.deinit();
 
+    if (0 < state.exceptions.items.len) {
         var stderr_buffer: [4096]u8 = undefined;
         var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
         const stderr: *std.Io.Writer = &stderr_writer.interface;
-
-        log.err("compilation failed with the following errors", .{});
-        for (errors.items) |err| {
-            const srcmap = srcmaps.get(err.node.src_file) orelse blk: {
-                const srcmap = try SourceMap.init(gpa.allocator(), err.node.src_file);
-                try srcmaps.put(err.node.src_file, srcmap);
-                break :blk srcmap;
-            };
-            try sourcemap.printExceptionContext(srcmap, err, stderr);
+        for (state.exceptions.items) |ex| {
+            try core.compiler.exception.printExceptionContext(mod.sourcemap, ex, stderr);
             try stderr.flush();
         }
-
-        var iter = srcmaps.valueIterator();
-        while (iter.next()) |srcmap| {
-            srcmap.deinit();
-        }
-
         return;
     }
 
-    var e = try core.initState(48000, instructions.items, gpa.allocator());
-    defer e.deinit();
-
-    for (instructions.items) |instr| {
+    for (instr_seq.items) |instr| {
         switch (instr) {
             ._push => |v| log.debug("instr: value: {d}", .{v.value}),
             ._store => |v| log.debug("instr: store: idx = {d}", .{v.reg_index}),
@@ -184,7 +164,7 @@ pub fn main() !void {
                 rl.clearBackground(.black);
                 var x: i32 = 0;
                 for (0..@as(usize, @intFromFloat(@ceil(blocksPerFrame)))) |_| {
-                    core.eval(&e, instructions.items) catch {};
+                    core.eval(&e, instr_seq.items) catch {};
 
                     for (0..core.engine.BLOCK_LENGTH) |j| {
                         for (0..2) |k| {
@@ -207,7 +187,7 @@ pub fn main() !void {
             try audio.renderWav32(
                 "out.wav",
                 &e,
-                instructions.items,
+                instr_seq.items,
                 block_count,
                 gpa.allocator(),
             );
@@ -229,7 +209,7 @@ pub fn main() !void {
             defer _ = audio.deinit() catch {};
             var userdata: audio.CallbackData = .{
                 .engine_state = &e,
-                .instructions = instructions.items,
+                .instructions = instr_seq.items,
             };
 
             const stream = try audio.openStream(e.sr, &userdata);
