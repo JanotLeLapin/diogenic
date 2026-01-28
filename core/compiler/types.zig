@@ -48,6 +48,22 @@ pub const SourceMap = struct {
     }
 };
 
+pub const ExceptionType = enum {
+    unknown_expr,
+    unknown_arg,
+    unexpected_arg,
+    bad_arity,
+    bad_expr,
+    unresolved_symbol,
+    unresolved_import,
+};
+
+pub const Exception = struct {
+    t: ExceptionType,
+    node: *Node,
+    message: ?[]const u8,
+};
+
 pub const Argument = struct {
     id_node: *Node,
     doc: ?[]const u8,
@@ -90,6 +106,7 @@ pub const ModuleMap = std.StringHashMap(*Module);
 pub const State = struct {
     map: *ModuleMap,
     instr_seq: *std.ArrayList(Instr),
+    exceptions: *std.ArrayList(Exception),
     env: *std.StringHashMap(usize),
     reg_index: usize = 0,
     arena_alloc: std.mem.Allocator,
@@ -97,5 +114,13 @@ pub const State = struct {
 
     pub fn pushInstr(self: *State, instruction: Instr) !void {
         try self.instr_seq.append(self.stack_alloc, instruction);
+    }
+
+    pub fn pushException(self: *State, t: ExceptionType, n: *Node, msg: ?[]const u8) !void {
+        try self.exceptions.append(self.stack_alloc, .{
+            .t = t,
+            .node = n,
+            .message = msg,
+        });
     }
 };

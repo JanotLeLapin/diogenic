@@ -19,25 +19,25 @@ pub fn expand(state: *State, node: *Node) anyerror!void {
     const list = switch (node.data) {
         .list => |lst| lst.items,
         else => {
-            // FIXME: expected list
+            try state.pushException(.bad_expr, node, "expected list");
             return;
         },
     };
 
     if (list.len != 3) {
-        // FIXME: bad arity
+        try state.pushException(.bad_arity, node, null);
         return;
     }
 
     const bindings = switch (list[1].data) {
         .list => |lst| lst.items,
         else => {
-            // FIXME: expected list
+            try state.pushException(.bad_expr, list[1], "expected list");
             return;
         },
     };
     if (0 != (bindings.len % 2)) {
-        // FIXME: odd bindings?
+        try state.pushException(.unexpected_arg, bindings[bindings.len - 1], "trailing binding");
         return;
     }
 
@@ -48,7 +48,7 @@ pub fn expand(state: *State, node: *Node) anyerror!void {
         const name = switch (bindings[i].data) {
             .id => |id| id,
             else => {
-                // FIXME: expected id
+                try state.pushException(.bad_expr, bindings[i], "expected ident");
                 return;
             },
         };

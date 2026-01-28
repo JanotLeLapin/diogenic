@@ -29,7 +29,7 @@ fn reorderExprArgs(state: *State, node: *Node, comptime T: type) !void {
 
     var slot_idx: usize = 0;
     var maybe_name: ?[]const u8 = null;
-    for (args) |child| {
+    for (args, 0..) |child, i| {
         if (maybe_name) |name| {
             const arg_idx = blk: {
                 for (T.args, 0..) |arg, j| {
@@ -38,7 +38,7 @@ fn reorderExprArgs(state: *State, node: *Node, comptime T: type) !void {
                     }
                 }
 
-                // FIXME: unknown arg atom
+                try state.pushException(.unknown_arg, args[i - 1], null);
                 return;
             };
 
@@ -58,7 +58,7 @@ fn reorderExprArgs(state: *State, node: *Node, comptime T: type) !void {
             }
 
             if (slot_idx >= arg_slots.len) {
-                // FIXME: extra arg
+                try state.pushException(.bad_arity, child, null);
                 return;
             }
 
@@ -71,7 +71,7 @@ fn reorderExprArgs(state: *State, node: *Node, comptime T: type) !void {
     }
 
     if (maybe_name) |_| {
-        // FIXME: bad arity; trailing atom
+        try state.pushException(.bad_arity, args[args.len - 1], null);
         return;
     }
 
@@ -93,7 +93,7 @@ fn reorderExprArgs(state: *State, node: *Node, comptime T: type) !void {
                 };
                 try node.data.list.append(state.arena_alloc, default_node);
             } else {
-                // FIXME: missing arg without a default value
+                try state.pushException(.bad_arity, node, "missing required argument");
                 return;
             }
         }
@@ -119,25 +119,25 @@ pub fn expand(state: *State, node: *Node) anyerror!void {
                     ._load = instr.value.Load{ .reg_index = reg },
                 });
             } else {
-                // FIXME: unrecognized symbol
+                try state.pushException(.unresolved_symbol, node, "unknown expression");
             }
             return;
         },
         else => {
-            // FIXME: unknown expr
+            try state.pushException(.unresolved_symbol, node, "unknown expression");
             return;
         },
     };
 
     if (1 > expr.len) {
-        // FIXME: empty list?
+        try state.pushException(.bad_expr, node, "empty expression");
         return;
     }
 
     const op = switch (expr[0].data) {
         .id => |id| id,
         else => {
-            // FIXME: unexpected node
+            try state.pushException(.unexpected_arg, expr[0], "expected ident");
             return;
         },
     };
