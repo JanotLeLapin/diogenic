@@ -1,3 +1,4 @@
+pub const alpha = @import("compiler/alpha.zig");
 pub const function = @import("compiler/function.zig");
 pub const module = @import("compiler/module.zig");
 pub const rpn = @import("compiler/rpn.zig");

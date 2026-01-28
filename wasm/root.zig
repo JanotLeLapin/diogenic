@@ -47,13 +47,14 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
     };
     const mod = core.compiler.module.resolveImports(&state, "main", src) catch return -4;
     core.compiler.function.expand(&state, mod) catch return -5;
-    core.compiler.rpn.expand(&state, mod.root.data.list.getLast()) catch return -6;
+    core.compiler.alpha.expand(&state, mod.root.data.list.getLast()) catch return -6;
+    core.compiler.rpn.expand(&state, mod.root.data.list.getLast()) catch return -7;
 
     if (0 < exceptions.items.len) {
-        return -7;
+        return -8;
     }
 
-    maybe_engine_state = core.initState(sr, maybe_instructions.?.items, gpa) catch return -8;
+    maybe_engine_state = core.initState(sr, maybe_instructions.?.items, gpa) catch return -9;
     return @intCast(maybe_instructions.?.items.len);
 }
 

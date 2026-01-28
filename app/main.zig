@@ -113,6 +113,7 @@ pub fn main() !void {
     };
     const mod = try core.compiler.module.resolveImports(&state, "main", args.src);
     try core.compiler.function.expand(&state, mod);
+    try core.compiler.alpha.expand(&state, mod.root.data.list.getLast());
     try core.compiler.rpn.expand(&state, mod.root.data.list.getLast());
 
     var e = try core.initState(44100.0, instr_seq.items, gpa.allocator());
