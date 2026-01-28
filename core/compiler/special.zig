@@ -10,4 +10,5 @@ const SpecialHook = *const fn (*State, *Node) anyerror!void;
 
 pub const Specials = std.StaticStringMap(SpecialHook).initComptime(.{
     .{ "let", @import("special/let.zig").expand },
+    .{ "map", @import("special/map.zig").expand },
 });
