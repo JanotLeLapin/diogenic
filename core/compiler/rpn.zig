@@ -174,5 +174,8 @@ pub fn expand(state: *State, node: *Node) anyerror!void {
         }
     } else if (Specials.get(op)) |hook| {
         try hook(state, node);
+    } else {
+        try state.pushException(.unknown_expr, expr[0], null);
+        return;
     }
 }
