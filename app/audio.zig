@@ -100,6 +100,10 @@ pub fn openStream(sr: f32, userdata: *CallbackData) !Stream {
     return stream;
 }
 
+pub fn closeStream(stream: Stream) !void {
+    try wrapper(c.Pa_CloseStream(stream));
+}
+
 pub fn startStream(stream: Stream) !void {
     try wrapper(c.Pa_StartStream(stream));
 }
