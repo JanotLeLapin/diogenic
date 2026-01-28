@@ -5,6 +5,8 @@ const log = std.log.scoped(.repl);
 
 const core = @import("diogenic-core");
 const compiler = core.compiler;
+const CompilerState = compiler.types.State;
+const FunctionMap = compiler.types.FunctionMap;
 
 pub const State = struct {
     buf: std.ArrayList(u8),
@@ -89,12 +91,89 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         .modmap = core.compiler.types.ModuleMap.init(arena.allocator()),
     };
 
+    var mod_map = core.compiler.types.ModuleMap.init(arena.allocator());
+    defer mod_map.deinit();
+
+    var instr_seq = try std.ArrayList(core.instruction.Instruction).initCapacity(gpa, 8);
+    defer instr_seq.deinit(gpa);
+
+    var exceptions = try std.ArrayList(core.compiler.types.Exception).initCapacity(gpa, 8);
+    defer exceptions.deinit(gpa);
+
+    var env = std.StringHashMap(usize).init(gpa);
+    defer env.deinit();
+
+    var cs: CompilerState = .{
+        .map = &mod_map,
+        .instr_seq = &instr_seq,
+        .exceptions = &exceptions,
+        .env = &env,
+        .arena_alloc = arena.allocator(),
+        .stack_alloc = gpa,
+    };
+
+    var fn_map = FunctionMap.init(arena.allocator());
+
     while (true) {
-        log.info("input => ", .{});
+        exceptions.clearRetainingCapacity();
+
+        log.info("input =>", .{});
         const res = try readLoop(&state);
 
         if (std.mem.eql(u8, ":q", res)) {
             break;
         }
+
+        const mod = try compiler.module.resolveImports(&cs, "main", res);
+        if (0 == mod.root.data.list.items.len) {
+            continue;
+        }
+
+        var fn_iter = mod.functions.iterator();
+        while (fn_iter.next()) |e| {
+            try fn_map.put(e.key_ptr.*, e.value_ptr.*);
+        }
+
+        for (mod.imports.items) |import| {
+            fn_iter = import.functions.iterator();
+            while (fn_iter.next()) |e| {
+                try fn_map.put(e.key_ptr.*, e.value_ptr.*);
+            }
+        }
+
+        mod.functions = fn_map;
+
+        try compiler.function.expand(&cs, mod);
+
+        const node = mod.root.data.list.getLast();
+        const op = switch (node.data.list.items[0].data) {
+            .id => |id| id,
+            else => continue,
+        };
+
+        if (std.mem.eql(u8, "defun", op) or std.mem.eql(u8, "use", op)) {
+            continue;
+        }
+
+        instr_seq.clearRetainingCapacity();
+        try compiler.alpha.expand(&cs, node);
+        try compiler.rpn.expand(&cs, node);
+
+        if (0 < exceptions.items.len) {
+            var stderr_buffer: [4096]u8 = undefined;
+            var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
+            const stderr: *std.Io.Writer = &stderr_writer.interface;
+            for (exceptions.items) |ex| {
+                try core.compiler.exception.printExceptionContext(
+                    mod.sourcemap,
+                    ex,
+                    stderr,
+                );
+                try stderr.flush();
+            }
+            continue;
+        }
+
+        log.info("compiled {d} instructions", .{instr_seq.items.len});
     }
 }
