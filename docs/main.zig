@@ -41,40 +41,42 @@ fn generateStdDocs(gpa: std.mem.Allocator, file: []const u8) !void {
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
 
-    var t = Tokenizer{ .src = src };
-    const root = try parser.parse(&t, arena.allocator(), gpa);
+    var mod_map = core.compiler.types.ModuleMap.init(arena.allocator());
+    defer mod_map.deinit();
 
-    var exceptions = try std.ArrayList(core.compiler.CompilerExceptionData).initCapacity(arena.allocator(), 1);
+    var instr_seq = try std.ArrayList(core.instruction.Instruction).initCapacity(gpa, 8);
+    defer instr_seq.deinit(gpa);
 
-    var inline_state = core.compiler.inline_pass.State{
+    var exceptions = try std.ArrayList(core.compiler.types.Exception).initCapacity(gpa, 8);
+    defer exceptions.deinit(gpa);
+
+    var env = std.StringHashMap(usize).init(gpa);
+    defer env.deinit();
+
+    var state = core.compiler.types.State{
+        .map = &mod_map,
+        .instr_seq = &instr_seq,
         .exceptions = &exceptions,
-        .func = std.StringHashMap(core.compiler.inline_pass.Function).init(arena.allocator()),
-        .exceptions_alloc = arena.allocator(),
-        .func_alloc = arena.allocator(),
-        .ast_alloc = arena.allocator(),
-        .stack_alloc = arena.allocator(),
+        .env = &env,
+        .arena_alloc = arena.allocator(),
+        .stack_alloc = gpa,
     };
-    defer inline_state.func.deinit();
+    const mod = try core.compiler.module.resolveImports(&state, "main", src);
 
-    if (!try core.compiler.inline_pass.analyze(&inline_state, root)) {
-        return;
-    }
-
-    var func_key_iter = inline_state.func.keyIterator();
+    var func_key_iter = mod.functions.keyIterator();
     while (func_key_iter.next()) |func_key| {
-        const func = inline_state.func.get(func_key.*).?;
+        const func = mod.functions.get(func_key.*).?;
         std.debug.print("### `{s}`\n\n{s}\n\n", .{ func_key.*, func.doc orelse "*no description*" });
 
-        var arg_key_iter = func.args.keyIterator();
-        while (arg_key_iter.next()) |arg_key| {
-            const arg = func.args.get(arg_key.*).?;
-            std.debug.print("- `{s}`", .{arg_key.*});
+        for (func.args.items) |arg_key| {
+            const arg = func.arg_map.get(arg_key).?;
+            std.debug.print("- `{s}`", .{arg_key});
             if (arg.doc) |doc| {
                 std.debug.print(", {s}", .{doc});
             }
             std.debug.print("\n", .{});
         }
-        std.debug.print("\n```scm\n{s}\n```\n\n", .{func.node.src});
+        std.debug.print("\n```scm\n  {s}\n```\n\n", .{func.body.src});
     }
 }
 
