@@ -15,6 +15,12 @@ const Specials = @import("special.zig").Specials;
 const parser = @import("../parser.zig");
 const Node = parser.Node;
 
+const Constants = std.StaticStringMap(f32).initComptime(.{
+    .{ "E", std.math.e },
+    .{ "PI", std.math.pi },
+    .{ "PHI", std.math.phi },
+});
+
 fn reorderExprArgs(state: *State, node: *Node, comptime T: type) !void {
     var lst = switch (node.data) {
         .list => |lst| lst,
@@ -117,6 +123,10 @@ pub fn expand(state: *State, node: *Node) anyerror!void {
             if (state.env.get(id)) |reg| {
                 try state.pushInstr(Instr{
                     ._load = instr.value.Load{ .reg_index = reg },
+                });
+            } else if (Constants.get(id)) |v| {
+                try state.pushInstr(.{
+                    ._push = instr.value.Push{ .value = v },
                 });
             } else {
                 try state.pushException(.unresolved_symbol, node, "unknown expression");
