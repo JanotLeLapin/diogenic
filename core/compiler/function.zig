@@ -79,12 +79,12 @@ fn expandModule(state: *State, mod: *Module, node: *Node) !void {
         else => return,
     };
 
+    for (expr) |child| {
+        try expandModule(state, mod, child);
+    }
+
     if (resolveFunction(mod, expr)) |func| {
         try expandFunction(state, node, func);
-    } else {
-        for (expr) |child| {
-            try expandModule(state, mod, child);
-        }
     }
 }
 
