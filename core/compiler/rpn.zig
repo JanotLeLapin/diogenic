@@ -1,5 +1,8 @@
 const std = @import("std");
 
+const types = @import("types.zig");
+const State = types.State;
+
 const engine = @import("../engine.zig");
 const CompileData = engine.CompileData;
 
@@ -7,8 +10,7 @@ const instr = @import("../instruction.zig");
 const Instr = instr.Instruction;
 const Instrs = instr.Instructions;
 
-const types = @import("types.zig");
-const State = types.State;
+const Specials = @import("special.zig").Specials;
 
 const parser = @import("../parser.zig");
 const Node = parser.Node;
@@ -160,5 +162,7 @@ pub fn expand(state: *State, node: *Node) anyerror!void {
             },
             else => unreachable,
         }
+    } else if (Specials.get(op)) |hook| {
+        try hook(state, node);
     }
 }

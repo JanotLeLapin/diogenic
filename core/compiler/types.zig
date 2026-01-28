@@ -48,6 +48,7 @@ pub const State = struct {
     map: *ModuleMap,
     instr_seq: *std.ArrayList(Instr),
     env: *std.StringHashMap(usize),
+    reg_index: usize = 0,
     arena_alloc: std.mem.Allocator,
     stack_alloc: std.mem.Allocator,
 
