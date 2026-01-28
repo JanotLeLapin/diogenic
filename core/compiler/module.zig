@@ -10,6 +10,7 @@ const Function = types.Function;
 const FunctionMap = types.FunctionMap;
 const Module = types.Module;
 const ModuleMap = types.ModuleMap;
+const SourceMap = types.SourceMap;
 const State = types.State;
 
 const macroExpand = @import("macro.zig").expand;
@@ -191,6 +192,7 @@ pub fn resolveImports(
         .root = ast,
         .imports = imports,
         .functions = functions,
+        .sourcemap = try SourceMap.init(src, state.arena_alloc),
     };
 
     return mod;
