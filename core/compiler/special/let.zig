@@ -16,28 +16,48 @@ const Node = parser.Node;
 const Tokenizer = parser.Tokenizer;
 
 pub fn expand(state: *State, node: *Node) anyerror!void {
-    if (node.data.list.items.len != 3) {
-        // FIXME: bad arity
-        return;
-    }
-
-    const bindings = switch (node.data.list.items[1].data) {
-        .list => |lst| lst,
+    const list = switch (node.data) {
+        .list => |lst| lst.items,
         else => {
             // FIXME: expected list
             return;
         },
     };
-    const body = node.data.list.items[2];
+
+    if (list.len != 3) {
+        // FIXME: bad arity
+        return;
+    }
+
+    const bindings = switch (list[1].data) {
+        .list => |lst| lst.items,
+        else => {
+            // FIXME: expected list
+            return;
+        },
+    };
+    if (0 != (bindings.len % 2)) {
+        // FIXME: odd bindings?
+        return;
+    }
+
+    const body = list[2];
 
     var i: usize = 0;
-    while (i < bindings.items.len) : (i += 2) {
-        const name = bindings.items[i].data.id;
+    while (i < bindings.len) : (i += 2) {
+        const name = switch (bindings[i].data) {
+            .id => |id| id,
+            else => {
+                // FIXME: expected id
+                return;
+            },
+        };
+
         const reg_index = state.reg_index;
         state.reg_index += 1;
 
         try state.env.put(name, reg_index);
-        try rpn.expand(state, bindings.items[i + 1]);
+        try rpn.expand(state, bindings[i + 1]);
         try state.pushInstr(Instr{
             ._store = instr.value.Store{ .reg_index = reg_index },
         });
@@ -45,8 +65,8 @@ pub fn expand(state: *State, node: *Node) anyerror!void {
 
     try rpn.expand(state, body);
 
-    while (i < bindings.items.len) : (i += 2) {
-        const name = bindings.items[i].data.id;
+    while (i < bindings.len) : (i += 2) {
+        const name = bindings[i].data.id;
         _ = state.env.remove(name);
     }
 }
