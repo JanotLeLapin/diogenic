@@ -11,10 +11,60 @@ const audio = @import("audio.zig");
 const Colors = core.Colors;
 
 pub const State = struct {
+    running: bool,
+    stdout: std.fs.File.Writer,
+    gpa: std.mem.Allocator,
     buf: std.ArrayList(u8),
     buf_alloc: std.mem.Allocator,
     modmap: compiler.types.ModuleMap,
+    instr_seq: std.ArrayList(core.instruction.Instruction),
+    engine: ?core.engine.EngineState,
+    stream: ?*anyopaque,
+    stream_data: ?audio.CallbackData,
 };
+
+const CommandHook = *const fn (*State) anyerror!void;
+
+const CommandMap = std.StaticStringMap(CommandHook).initComptime(.{
+    .{ ":q", quitCmd },
+    .{ ":p", playCmd },
+    .{ ":h", helpCmd },
+});
+
+fn quitCmd(s: *State) !void {
+    s.running = false;
+}
+
+fn playCmd(s: *State) !void {
+    if (0 == s.instr_seq.items.len) {
+        _ = try Colors.setRed(&s.stdout.interface);
+        _ = try s.stdout.interface.write("instruction sequence is empty\n");
+        _ = try Colors.setReset(&s.stdout.interface);
+        return;
+    }
+
+    if (s.stream) |stream| {
+        try audio.stopStream(stream);
+        s.stream = null;
+        return;
+    }
+
+    s.engine = try core.initState(44100.0, s.instr_seq.items, s.gpa);
+    s.stream_data = .{
+        .engine_state = &s.engine.?,
+        .instructions = s.instr_seq.items,
+    };
+
+    s.stream = try audio.openStream(s.engine.?.sr, &s.stream_data.?);
+
+    try audio.startStream(s.stream);
+}
+
+fn helpCmd(s: *State) !void {
+    _ = try s.stdout.interface.write(
+        "\n :p   plays the latest compiled expression\n :q   quits\n\n",
+    );
+}
 
 fn readLine(line_buf: []u8, input: *std.Io.Reader) ![]const u8 {
     var w = std.io.Writer.fixed(line_buf);
@@ -94,17 +144,25 @@ pub fn repl(gpa: std.mem.Allocator) !void {
     defer src_arena.deinit();
 
     const buf = try std.ArrayList(u8).initCapacity(src_arena.allocator(), 1024);
+
+    var instr_seq = try std.ArrayList(core.instruction.Instruction).initCapacity(gpa, 8);
+    defer instr_seq.deinit(gpa);
+
     var state: State = .{
+        .running = true,
+        .stdout = stdout,
+        .gpa = gpa,
         .buf = buf,
         .buf_alloc = gpa,
         .modmap = core.compiler.types.ModuleMap.init(arena.allocator()),
+        .instr_seq = instr_seq,
+        .engine = null,
+        .stream = null,
+        .stream_data = null,
     };
 
     var mod_map = core.compiler.types.ModuleMap.init(arena.allocator());
     defer mod_map.deinit();
-
-    var instr_seq = try std.ArrayList(core.instruction.Instruction).initCapacity(gpa, 8);
-    defer instr_seq.deinit(gpa);
 
     var exceptions = try std.ArrayList(core.compiler.types.Exception).initCapacity(gpa, 8);
     defer exceptions.deinit(gpa);
@@ -126,13 +184,9 @@ pub fn repl(gpa: std.mem.Allocator) !void {
     try audio.init();
     defer audio.deinit() catch {};
 
-    var e: ?core.engine.EngineState = null;
-    var audio_stream_data: ?audio.CallbackData = null;
-    var audio_stream: ?*anyopaque = null;
-
     _ = try stdout.interface.write("diogenic\ntype ':h' for help\n");
 
-    while (true) {
+    while (state.running) {
         exceptions.clearRetainingCapacity();
 
         _ = try stdout.interface.write("input => ");
@@ -140,37 +194,8 @@ pub fn repl(gpa: std.mem.Allocator) !void {
 
         const res = try readLoop(&state);
 
-        if (std.mem.eql(u8, ":q", res)) {
-            break;
-        } else if (std.mem.eql(u8, ":p", res)) {
-            if (0 == instr_seq.items.len) {
-                _ = try Colors.setRed(&stdout.interface);
-                _ = try stdout.interface.write("instruction sequence is empty\n");
-                _ = try Colors.setReset(&stdout.interface);
-                continue;
-            }
-
-            if (audio_stream) |stream| {
-                try audio.stopStream(stream);
-                audio_stream = null;
-                continue;
-            }
-
-            e = try core.initState(44100.0, instr_seq.items, gpa);
-            audio_stream_data = .{
-                .engine_state = &e.?,
-                .instructions = instr_seq.items,
-            };
-
-            audio_stream = try audio.openStream(e.?.sr, &audio_stream_data.?);
-
-            try audio.startStream(audio_stream);
-
-            continue;
-        } else if (std.mem.eql(u8, ":h", res)) {
-            _ = try stdout.interface.write(
-                "\n :p   plays the latest compiled expression\n :q   quits\n\n",
-            );
+        if (CommandMap.get(res)) |hook| {
+            try hook(&state);
             continue;
         }
 
@@ -229,11 +254,11 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         _ = try Colors.setReset(&stdout.interface);
     }
 
-    if (audio_stream) |stream| {
+    if (state.stream) |stream| {
         try audio.stopStream(stream);
     }
 
-    if (e) |*engine| {
+    if (state.engine) |*engine| {
         engine.deinit();
     }
 }
