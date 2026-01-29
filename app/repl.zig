@@ -22,7 +22,7 @@ pub const State = struct {
     stream_data: ?audio.CallbackData,
 };
 
-const CommandHook = *const fn (*State) anyerror!void;
+const CommandHook = *const fn (*State, args: []const u8) anyerror!void;
 
 const CommandMap = std.StaticStringMap(CommandHook).initComptime(.{
     .{ ":q", quitCmd },
@@ -30,11 +30,11 @@ const CommandMap = std.StaticStringMap(CommandHook).initComptime(.{
     .{ ":h", helpCmd },
 });
 
-fn quitCmd(s: *State) !void {
+fn quitCmd(s: *State, _: []const u8) !void {
     s.running = false;
 }
 
-fn playCmd(s: *State) !void {
+fn playCmd(s: *State, _: []const u8) !void {
     if (0 == s.instr_seq.items.len) {
         _ = try Colors.setRed(s.stdout);
         _ = try s.stdout.write("instruction sequence is empty\n");
@@ -65,10 +65,15 @@ fn playCmd(s: *State) !void {
     try audio.startStream(s.stream);
 }
 
-fn helpCmd(s: *State) !void {
-    _ = try s.stdout.write(
-        "\n :p   plays the latest compiled expression\n :q   quits\n\n",
-    );
+fn helpCmd(s: *State, args: []const u8) !void {
+    if (0 == args.len) {
+        _ = try s.stdout.write(
+            "\n :p   plays the latest compiled expression\n :q   quits\n\n",
+        );
+        return;
+    }
+
+    try s.stdout.print("requesting help regarding '{s}'\n", .{args});
 }
 
 fn readLine(line_buf: []u8, input: *std.Io.Reader) ![]const u8 {
@@ -198,8 +203,22 @@ pub fn repl(gpa: std.mem.Allocator) !void {
 
         const res = try readLoop(&state);
 
-        if (CommandMap.get(res)) |hook| {
-            try hook(&state);
+        const space_idx = blk: {
+            var i: usize = 0;
+            while (i < res.len) : (i += 1) {
+                if (res[i] == ' ') {
+                    break;
+                }
+            }
+
+            break :blk i;
+        };
+
+        const cmd = res[0..space_idx];
+        const args = res[@min(space_idx + 1, res.len)..];
+
+        if (CommandMap.get(cmd)) |hook| {
+            try hook(&state, args);
             continue;
         }
 
