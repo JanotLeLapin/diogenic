@@ -1,8 +1,6 @@
 const builtin = @import("builtin");
 const std = @import("std");
 
-const log = std.log.scoped(.repl);
-
 const core = @import("diogenic-core");
 const compiler = core.compiler;
 const CompilerState = compiler.types.State;
@@ -81,6 +79,12 @@ fn readLoop(s: *State) ![]const u8 {
 }
 
 pub fn repl(gpa: std.mem.Allocator) !void {
+    var stdout_buf: [1024]u8 = undefined;
+    var stdout = std.fs.File.stdout().writer(&stdout_buf);
+
+    var stderr_buffer: [4096]u8 = undefined;
+    var stderr = std.fs.File.stderr().writer(&stderr_buffer);
+
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
 
@@ -124,10 +128,14 @@ pub fn repl(gpa: std.mem.Allocator) !void {
     var audio_stream_data: ?audio.CallbackData = null;
     var audio_stream: ?*anyopaque = null;
 
+    _ = try stdout.interface.write("diogenic\ntype ':h' for help\n");
+
     while (true) {
         exceptions.clearRetainingCapacity();
 
-        log.info("input =>", .{});
+        _ = try stdout.interface.write("input => ");
+        try stdout.interface.flush();
+
         const res = try readLoop(&state);
 
         if (std.mem.eql(u8, ":q", res)) {
@@ -149,6 +157,11 @@ pub fn repl(gpa: std.mem.Allocator) !void {
 
             try audio.startStream(audio_stream);
 
+            continue;
+        } else if (std.mem.eql(u8, ":h", res)) {
+            _ = try stdout.interface.write(
+                "\n :p   plays the latest compiled expression\n :q   quits\n\n",
+            );
             continue;
         }
 
@@ -188,21 +201,18 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         try compiler.rpn.expand(&cs, node);
 
         if (0 < exceptions.items.len) {
-            var stderr_buffer: [4096]u8 = undefined;
-            var stderr_writer = std.fs.File.stderr().writer(&stderr_buffer);
-            const stderr: *std.Io.Writer = &stderr_writer.interface;
             for (exceptions.items) |ex| {
                 try core.compiler.exception.printExceptionContext(
                     mod.sourcemap,
                     ex,
-                    stderr,
+                    &stderr.interface,
                 );
-                try stderr.flush();
+                try stderr.interface.flush();
             }
             continue;
         }
 
-        log.info("compiled {d} instructions", .{instr_seq.items.len});
+        _ = try stdout.interface.print("compiled {d} instructions\n", .{instr_seq.items.len});
     }
 
     if (audio_stream) |stream| {
