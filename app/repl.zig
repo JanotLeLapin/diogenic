@@ -8,6 +8,8 @@ const FunctionMap = compiler.types.FunctionMap;
 
 const audio = @import("audio.zig");
 
+const Colors = core.Colors;
+
 pub const State = struct {
     buf: std.ArrayList(u8),
     buf_alloc: std.mem.Allocator,
@@ -209,10 +211,15 @@ pub fn repl(gpa: std.mem.Allocator) !void {
                 );
                 try stderr.interface.flush();
             }
+            _ = try Colors.setRed(&stdout.interface);
+            _ = try stdout.interface.write("compilation failed\n");
+            _ = try Colors.setReset(&stdout.interface);
             continue;
         }
 
+        _ = try Colors.setGreen(&stdout.interface);
         _ = try stdout.interface.print("compiled {d} instructions\n", .{instr_seq.items.len});
+        _ = try Colors.setReset(&stdout.interface);
     }
 
     if (audio_stream) |stream| {

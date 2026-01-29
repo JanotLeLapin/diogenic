@@ -2,6 +2,8 @@ const types = @import("types.zig");
 const Exception = types.Exception;
 const SourceMap = types.SourceMap;
 
+const Colors = @import("../colors.zig");
+
 pub fn printExceptionContext(
     map: SourceMap,
     exception: Exception,
@@ -10,7 +12,13 @@ pub fn printExceptionContext(
     const row = exception.node.pos.row;
     const col = exception.node.pos.col;
 
-    try writer.print("{s} at {d}:{d}\n", .{ @tagName(exception.t), row + 1, col + 1 });
+    _ = try Colors.setMagenta(writer);
+    try writer.print("{s}", .{@tagName(exception.t)});
+    _ = try Colors.setReset(writer);
+    try writer.print(" at {d}:{d}\n", .{
+        row + 1,
+        col + 1,
+    });
 
     var i: isize = @as(isize, @intCast(row)) - 1;
     const end: isize = @as(isize, @intCast(row)) + 1;
@@ -42,7 +50,10 @@ pub fn printExceptionContext(
         }
     }
     if (exception.message) |msg| {
-        try writer.print("     > {s}", .{msg});
+        _ = try writer.write("     > ");
+        _ = try Colors.setMagenta(writer);
+        try writer.print("{s}", .{msg});
+        _ = try Colors.setReset(writer);
     }
     try writer.print("\n", .{});
 }

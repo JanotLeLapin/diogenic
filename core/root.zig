@@ -11,6 +11,8 @@ const Instruction = instruction.Instruction;
 
 pub const parser = @import("parser.zig");
 
+pub const Colors = @import("colors.zig");
+
 pub fn initState(sr: f32, instructions: []const Instruction, alloc: std.mem.Allocator) !EngineState {
     var stack_size: usize = 0;
     var state_size: usize = 0;
