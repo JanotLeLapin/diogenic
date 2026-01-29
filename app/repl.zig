@@ -143,6 +143,13 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         if (std.mem.eql(u8, ":q", res)) {
             break;
         } else if (std.mem.eql(u8, ":p", res)) {
+            if (0 == instr_seq.items.len) {
+                _ = try Colors.setRed(&stdout.interface);
+                _ = try stdout.interface.write("instruction sequence is empty\n");
+                _ = try Colors.setReset(&stdout.interface);
+                continue;
+            }
+
             if (audio_stream) |stream| {
                 try audio.stopStream(stream);
                 audio_stream = null;
