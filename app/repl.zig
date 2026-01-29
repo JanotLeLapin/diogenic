@@ -50,7 +50,7 @@ fn readLoop(s: *State) ![]const u8 {
     var stdin_buf: [1024]u8 = undefined;
     var stdin = std.fs.File.stdin().reader(&stdin_buf);
 
-    s.buf.clearRetainingCapacity();
+    const start = s.buf.items.len;
     while (true) {
         const res = try readLine(line_buf[0..], &stdin.interface);
         for (res) |ch| {
@@ -77,7 +77,7 @@ fn readLoop(s: *State) ![]const u8 {
         }
     }
 
-    return s.buf.items[1..];
+    return s.buf.items[(start + 1)..];
 }
 
 pub fn repl(gpa: std.mem.Allocator) !void {
