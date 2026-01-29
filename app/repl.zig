@@ -12,7 +12,7 @@ const Colors = core.Colors;
 
 pub const State = struct {
     running: bool,
-    stdout: std.fs.File.Writer,
+    stdout: *std.Io.Writer,
     gpa: std.mem.Allocator,
     buf: std.ArrayList(u8),
     buf_alloc: std.mem.Allocator,
@@ -36,18 +36,20 @@ fn quitCmd(s: *State) !void {
 
 fn playCmd(s: *State) !void {
     if (0 == s.instr_seq.items.len) {
-        _ = try Colors.setRed(&s.stdout.interface);
-        _ = try s.stdout.interface.write("instruction sequence is empty\n");
-        _ = try Colors.setReset(&s.stdout.interface);
+        _ = try Colors.setRed(s.stdout);
+        _ = try s.stdout.write("instruction sequence is empty\n");
+        _ = try Colors.setReset(s.stdout);
         return;
     }
 
     if (s.stream) |stream| {
+        _ = try s.stdout.write("pausing playback\n");
         try audio.stopStream(stream);
         s.stream = null;
         return;
     }
 
+    _ = try s.stdout.write("starting playback\n");
     s.engine = try core.initState(44100.0, s.instr_seq.items, s.gpa);
     s.stream_data = .{
         .engine_state = &s.engine.?,
@@ -60,7 +62,7 @@ fn playCmd(s: *State) !void {
 }
 
 fn helpCmd(s: *State) !void {
-    _ = try s.stdout.interface.write(
+    _ = try s.stdout.write(
         "\n :p   plays the latest compiled expression\n :q   quits\n\n",
     );
 }
@@ -149,7 +151,7 @@ pub fn repl(gpa: std.mem.Allocator) !void {
 
     var state: State = .{
         .running = true,
-        .stdout = stdout,
+        .stdout = &stdout.interface,
         .gpa = gpa,
         .buf = buf,
         .buf_alloc = gpa,
