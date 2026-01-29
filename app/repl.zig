@@ -16,6 +16,7 @@ pub const State = struct {
     gpa: std.mem.Allocator,
     buf: std.ArrayList(u8),
     buf_alloc: std.mem.Allocator,
+    fn_map: *FunctionMap,
     instr_seq: *std.ArrayList(core.instruction.Instruction),
     engine: ?core.engine.EngineState,
     stream: ?*anyopaque,
@@ -73,7 +74,27 @@ fn helpCmd(s: *State, args: []const u8) !void {
         return;
     }
 
-    try s.stdout.print("requesting help regarding '{s}'\n", .{args});
+    const f = s.fn_map.get(args) orelse {
+        try s.stdout.print("command '{s}' not found.\n", .{args});
+        return;
+    };
+
+    _ = try s.stdout.write("\n");
+    _ = try Colors.setMagenta(s.stdout);
+    _ = try s.stdout.write(args);
+    _ = try Colors.setReset(s.stdout);
+    try s.stdout.print(": {s}\n", .{f.doc orelse "/"});
+
+    for (f.args.items) |arg_key| {
+        const arg = f.arg_map.get(arg_key) orelse continue;
+        _ = try s.stdout.write("- ");
+        _ = try Colors.setMagenta(s.stdout);
+        _ = try s.stdout.write(arg_key);
+        _ = try Colors.setReset(s.stdout);
+        try s.stdout.print(": {s}\n", .{arg.doc orelse "/"});
+    }
+
+    _ = try s.stdout.write("\n");
 }
 
 fn readLine(line_buf: []u8, input: *std.Io.Reader) ![]const u8 {
@@ -150,6 +171,8 @@ pub fn repl(gpa: std.mem.Allocator) !void {
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
 
+    var fn_map = FunctionMap.init(arena.allocator());
+
     var src_arena = std.heap.ArenaAllocator.init(gpa);
     defer src_arena.deinit();
 
@@ -164,6 +187,7 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         .gpa = gpa,
         .buf = buf,
         .buf_alloc = gpa,
+        .fn_map = &fn_map,
         .instr_seq = &instr_seq,
         .engine = null,
         .stream = null,
@@ -187,8 +211,6 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         .arena_alloc = arena.allocator(),
         .stack_alloc = gpa,
     };
-
-    var fn_map = FunctionMap.init(arena.allocator());
 
     try audio.init();
     defer audio.deinit() catch {};
