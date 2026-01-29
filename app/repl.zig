@@ -68,9 +68,11 @@ fn playCmd(s: *State, _: []const u8) !void {
 
 fn helpCmd(s: *State, args: []const u8) !void {
     if (0 == args.len) {
-        _ = try s.stdout.write(
-            "\n :p   plays the latest compiled expression\n :q   quits\n\n",
-        );
+        _ = try s.stdout.write("\n");
+        _ = try s.stdout.write(" :p        plays the latest compiled expression\n");
+        _ = try s.stdout.write(" :h [fn]   displays this message, or help for the given function\n");
+        _ = try s.stdout.write(" :q        quits\n");
+        _ = try s.stdout.write("\n");
         return;
     }
 
