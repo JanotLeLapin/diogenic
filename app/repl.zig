@@ -49,6 +49,10 @@ fn playCmd(s: *State) !void {
         return;
     }
 
+    if (s.engine) |*engine| {
+        engine.deinit();
+    }
+
     _ = try s.stdout.write("starting playback\n");
     s.engine = try core.initState(44100.0, s.instr_seq.items, s.gpa);
     s.stream_data = .{
