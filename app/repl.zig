@@ -84,9 +84,10 @@ pub fn repl(gpa: std.mem.Allocator) !void {
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
 
-    var buf = try std.ArrayList(u8).initCapacity(gpa, 1024);
-    defer buf.deinit(gpa);
+    var src_arena = std.heap.ArenaAllocator.init(gpa);
+    defer src_arena.deinit();
 
+    const buf = try std.ArrayList(u8).initCapacity(src_arena.allocator(), 1024);
     var state: State = .{
         .buf = buf,
         .buf_alloc = gpa,
