@@ -207,4 +207,8 @@ pub fn repl(gpa: std.mem.Allocator) !void {
     if (audio_stream) |stream| {
         try audio.stopStream(stream);
     }
+
+    if (e) |*engine| {
+        engine.deinit();
+    }
 }
