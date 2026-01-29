@@ -8,6 +8,8 @@ const compiler = core.compiler;
 const CompilerState = compiler.types.State;
 const FunctionMap = compiler.types.FunctionMap;
 
+const audio = @import("audio.zig");
+
 pub const State = struct {
     buf: std.ArrayList(u8),
     buf_alloc: std.mem.Allocator,
@@ -114,6 +116,13 @@ pub fn repl(gpa: std.mem.Allocator) !void {
 
     var fn_map = FunctionMap.init(arena.allocator());
 
+    try audio.init();
+    defer audio.deinit() catch {};
+
+    var e: ?core.engine.EngineState = null;
+    var audio_stream_data: ?audio.CallbackData = null;
+    var audio_stream: ?*anyopaque = null;
+
     while (true) {
         exceptions.clearRetainingCapacity();
 
@@ -122,6 +131,24 @@ pub fn repl(gpa: std.mem.Allocator) !void {
 
         if (std.mem.eql(u8, ":q", res)) {
             break;
+        } else if (std.mem.eql(u8, ":p", res)) {
+            if (audio_stream) |stream| {
+                try audio.stopStream(stream);
+                audio_stream = null;
+                continue;
+            }
+
+            e = try core.initState(44100.0, instr_seq.items, gpa);
+            audio_stream_data = .{
+                .engine_state = &e.?,
+                .instructions = instr_seq.items,
+            };
+
+            audio_stream = try audio.openStream(e.?.sr, &audio_stream_data.?);
+
+            try audio.startStream(audio_stream);
+
+            continue;
         }
 
         const mod = try compiler.module.resolveImports(&cs, "main", res);
@@ -130,14 +157,14 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         }
 
         var fn_iter = mod.functions.iterator();
-        while (fn_iter.next()) |e| {
-            try fn_map.put(e.key_ptr.*, e.value_ptr.*);
+        while (fn_iter.next()) |entry| {
+            try fn_map.put(entry.key_ptr.*, entry.value_ptr.*);
         }
 
         for (mod.imports.items) |import| {
             fn_iter = import.functions.iterator();
-            while (fn_iter.next()) |e| {
-                try fn_map.put(e.key_ptr.*, e.value_ptr.*);
+            while (fn_iter.next()) |entry| {
+                try fn_map.put(entry.key_ptr.*, entry.value_ptr.*);
             }
         }
 
@@ -175,5 +202,9 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         }
 
         log.info("compiled {d} instructions", .{instr_seq.items.len});
+    }
+
+    if (audio_stream) |stream| {
+        try audio.stopStream(stream);
     }
 }
