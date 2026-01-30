@@ -3,8 +3,8 @@ const log = std.log.scoped(.core);
 
 const rl = @import("raylib");
 
-const audio = @import("audio.zig");
 const repl = @import("repl.zig");
+const render = @import("render.zig");
 
 const core = @import("diogenic-core");
 const EngineState = core.engine.EngineState;
@@ -45,8 +45,32 @@ pub const std_options = std.Options{
     .logFn = logFn,
 };
 
+const RenderOptions = struct {
+    path: []const u8,
+    sample_rate: f32 = 44100.0,
+    seconds: f32 = 30.0,
+
+    pub fn parse(gpa: std.mem.Allocator, args: []const [:0]const u8) !RenderOptions {
+        const src = try gpa.alloc(u8, args[0].len);
+        @memcpy(src, args[0]);
+        var self: RenderOptions = .{ .path = src };
+
+        var i: usize = 1;
+        while (i < args.len) : (i += 2) {
+            if (std.mem.eql(u8, "--sample-rate", args[i])) {
+                self.sample_rate = try std.fmt.parseFloat(f32, args[i + 1]);
+            } else if (std.mem.eql(u8, "--seconds", args[i])) {
+                self.seconds = try std.fmt.parseFloat(f32, args[i + 1]);
+            }
+        }
+
+        return self;
+    }
+};
+
 const Command = union(enum) {
     repl: void,
+    render: RenderOptions,
 };
 
 pub fn main() !void {
@@ -64,6 +88,13 @@ pub fn main() !void {
 
         if (std.mem.eql(u8, "repl", args[1])) {
             break :blk Command{ .repl = {} };
+        }
+        if (std.mem.eql(u8, "render", args[1])) {
+            const opts = RenderOptions.parse(gpa.allocator(), args[2..]) catch {
+                log.err("could not parse options", .{});
+                return;
+            };
+            break :blk Command{ .render = opts };
         } else {
             log.err("unknown command", .{});
             return;
@@ -72,5 +103,14 @@ pub fn main() !void {
 
     switch (args) {
         .repl => try repl.repl(gpa.allocator()),
+        .render => |opts| {
+            try render.render(
+                gpa.allocator(),
+                opts.path,
+                opts.sample_rate,
+                opts.seconds,
+            );
+            gpa.allocator().free(opts.path);
+        },
     }
 }
