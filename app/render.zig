@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const log = std.log.scoped(.render);
+
 const core = @import("diogenic-core");
 const Instr = core.instruction.Instruction;
 
@@ -45,6 +47,9 @@ pub fn render(
         .arena_alloc = arena.allocator(),
         .stack_alloc = gpa,
     };
+
+    log.info("compiling {s}", .{path});
+
     const mod = try core.compiler.module.resolveImports(&state, path, src);
     try core.compiler.function.expand(&state, mod);
 
@@ -52,7 +57,20 @@ pub fn render(
     try core.compiler.alpha.expand(&state, node);
     try core.compiler.rpn.expand(&state, node);
 
-    std.debug.assert(0 == exceptions.items.len); // FIXME: gracefully handle exceptions
+    var stderr_buffer: [4096]u8 = undefined;
+    var stderr = std.fs.File.stderr().writer(&stderr_buffer);
+
+    if (0 < exceptions.items.len) {
+        for (exceptions.items) |ex| {
+            try compiler.exception.printExceptionContext(
+                mod.sourcemap,
+                ex,
+                &stderr.interface,
+            );
+            try stderr.interface.flush();
+        }
+        return;
+    }
 
     var e = try core.initState(sample_rate, instr_seq.items, gpa);
     defer e.deinit();
@@ -60,6 +78,9 @@ pub fn render(
     const sample_count = sample_rate * seconds;
     const block_count = sample_count / @as(f32, @floatFromInt(core.engine.BLOCK_LENGTH));
 
+    log.info("rendering to out.wav", .{});
+
+    const start = std.time.nanoTimestamp();
     try audio.renderWav32(
         "out.wav",
         &e,
@@ -67,4 +88,8 @@ pub fn render(
         @intFromFloat(block_count),
         gpa,
     );
+    const end = std.time.nanoTimestamp();
+    const time = end - start;
+
+    log.info("done, took {d}ms", .{@divFloor(time, 1_000_000)});
 }
