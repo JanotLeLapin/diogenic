@@ -1,0 +1,80 @@
+---
+title: Introduction
+description: introduction rapide aux concepts de diogenic
+---
+
+import Snippet from '../../../../lib/Snippet.svelte'
+
+export const snippets = [
+  `(sine! 440.0)`,
+  `
+(sine! (+ 440.0
+          (* 110.0
+             (triangle! 0.2))))`,
+  `
+(sine! (+ 440.0
+          (* 110.0
+             (square! 0.2))))
+  `,
+  `
+(let (base 42.0
+      mod-freq (+ 1.0 (* 0.8 (triangle! 0.1)))
+      mod (sine! mod-freq))
+     (-> mod
+         (+ 6.0)
+         (* 6.0)
+         (+ base)
+         (floor)
+         (midi->freq)
+         (sine!)))
+  `
+]
+
+## Démo
+
+Diogenic est un langage/moteur DSP. Il permet d'écrire des patches
+par des S-expressions et les compile en une séquence d'instructions
+performante.
+
+Ce snippet s'évalue en un signal sinusoïde simple qui oscille
+à 440Hz:
+
+<Snippet doc={snippets[0].trim()} client:only />
+
+Un aspect important de diogenic est la modulation. On pourrait
+remplacer 440 par une S-expression:
+
+<Snippet doc={snippets[1].trim()} client:only />
+
+Ici, la fréquence de la sinusoïde varie entre 440±110 hertz.
+Remarquez l'expression `triangle!`. Cela signifie que la fréquence
+sera doucement interpolée entre 330 et 550 herts. On pourrait
+la remlacer par un oscillateur carré par exemple:
+
+<Snippet doc={snippets[2].trim()} client:only />
+
+Essayez de remplacer `square!` par `sawtooth!` pour voir ce qu'il
+se passe!
+
+Voici un dernier exemple:
+
+<Snippet doc={snippets[3].trim()} client:only />
+
+Premièrement, intéressons-nous aux variables déclarées:
+
+- `base`: `42.0`, la hauteur MIDI de base, un Fa#2
+- `mod-freq`: la fréquence à laquelle le prochain LFO va osciller
+- `mod`: un LFO (oscillateur à fréquence basse)
+
+On utilise ces variables pour exprimer un oscillateur sinusoïdal.
+Sa hauteur oscille entre `base - 6` et `base + 6`, donc entre
+`36` et `48`. On traduit cette hauteur MIDI en une fréquence
+d'oscillation avec l'expression `(midi->freq)`.
+On se retrouve avec un patch amusant, parce que la fréquence de la
+sinusoïde dépend d'un oscillateur, et la fréquence de cet
+oscillateur dépend elle aussi d'un oscillateur!
+
+C'était un exemple rapide qui permet de démontrer à quel point
+c'est trivial d'exprimer des patches profondément modulés avec
+diogenic, n'hésitez pas à lire la
+[référence du langage](/diogenic/fr/reference/) et à expérimenter.

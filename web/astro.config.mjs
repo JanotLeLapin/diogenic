@@ -23,6 +23,16 @@ export default defineConfig({
         starlight({
             title: 'diogenic',
             social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/JanotLeLapin/diogenic' }],
+            defaultLocale: 'en',
+            locales: {
+                en: {
+                    label: 'English',
+                },
+                fr: {
+                    label: 'Français',
+                    lang: 'fr-FR',
+                },
+            },
             sidebar: [
                 {
                     label: 'Guides',
