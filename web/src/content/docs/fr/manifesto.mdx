@@ -1,0 +1,64 @@
+---
+title: Manifeste
+description: manifeste diogenic
+---
+
+*v1.0*
+
+Pourquoi ne peut-on pas observer comment un plugin VST agit
+concrètement sur un signal ?
+Les artistes (et en particulier les débutants) sont incentivisés à
+empiler des boîtes noires les unes sur les autres, des appareils qui
+cachent une logique arbitraire derrière des interfaces épurées et
+abstraites.
+Pourquoi sommes-nous, en tant qu'artistes, contraints à se complaire
+dans l'utilisation d'outils opaques, souvent biaisés par des visions
+industrielles, capitalistes de la musique, quand la synthèse des
+textures sonores est si fondamentale dans cette ère de la création
+musicale ?
+Je veux remettre en question la légitimité de l'existence de ces
+outils, et présenter une alternative fonctionnelle versatile.
+
+diogenic est un langage/moteur de traîtement de signal numérique
+libre et open-source, la synthèse de textures se fait à travers
+l'écriture de S-expressions.
+Le compilateur ne produit jamais de fichiers intermédiaires, la
+distribution de bibliothèques pour diogenic implique donc un
+partage des fichiers source en clair. Cette contrainte empêche
+techniquement et fondamentalement la création de boîtes noires
+semblables aux plugins VST ; consulter l'implémentation d'un effet
+ou d'un synthétiseur est trivial, et révèle immédiatement les
+intentions de son auteur.
+diogenic n'empêche pas les utilisateurs de produire des patches
+arbitraires, mais rend les patches transparents et donc
+intrinsèquement facile à modifier.
+Ce rejet de la culture des boîtes noires en faveur des boîtes de
+verre est la seule réponse saine face à l'obscurantisme industriel.
+Les ingénieurs ne devraient pas être les seuls à comprendre les
+mécanismes internes des outils créatifs.
+
+Le projet diogenic inclut un compilateur et une machine virtuelle
+flexible, performante, et facilement extensible.
+En tant que langage, diogenic a été conçu pour être syntaxiquement
+simple, mais capable d'exprimer des patches infiniment complexes.
+En interne, chaque expression est un signal et peut moduler
+n'importe quel paramètre. Aucune règle sémantique arbitraire ne
+limite la créativité de l'utilisateur.
+En tant que machine virtuelle, diogenic évalue simplement une
+séquence d'instructions, de manière déterministe, sans faire appel
+à un processus externe. Tous les appareils de traîtement de signal
+sont sous licence GPL v3, et sont contenus dans le dépôt GitHub.
+Grâce à ces contraintes, une modification du moteur, ou
+l'introduction d'un nouvel appareil dans le moteur doit aussi être
+open-source, et spécifiquement sous licence GPL v3. Ainsi, aucune
+étape du traîtement du signal n'est cachée à l'utilisateur.
+
+Ce projet est destiné aux artistes limités par les outils qui nous
+entourent. Si vous avez déjà été frustré par un outil créatif, si
+vous avez déjà eu l'impression qu'un outil essayait de forcer sa
+vision arbitraire sur votre processus de création artistique,
+je veux que vous sachiez que vous n'êtes pas obligés d'accepter
+la complaisance. Affranchissez vous du statu quo. Rejetez la
+dictature de l'industrie.
+Et si diogenic n'est pas une solution pour vous, intéressez vous à
+d'autres alternatives sous licence libre.
