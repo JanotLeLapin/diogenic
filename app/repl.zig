@@ -173,6 +173,9 @@ pub fn repl(gpa: std.mem.Allocator) !void {
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
 
+    var instr_arena = std.heap.ArenaAllocator.init(gpa);
+    defer instr_arena.deinit();
+
     var fn_map = FunctionMap.init(arena.allocator());
 
     var src_arena = std.heap.ArenaAllocator.init(gpa);
@@ -212,6 +215,7 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         .env = &env,
         .arena_alloc = arena.allocator(),
         .stack_alloc = gpa,
+        .instr_alloc = instr_arena.allocator(),
     };
 
     try audio.init();

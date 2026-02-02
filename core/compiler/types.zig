@@ -111,6 +111,7 @@ pub const State = struct {
     reg_index: usize = 0,
     arena_alloc: std.mem.Allocator,
     stack_alloc: std.mem.Allocator,
+    instr_alloc: std.mem.Allocator,
 
     pub fn pushInstr(self: *State, instruction: Instr) !void {
         try self.instr_seq.append(self.stack_alloc, instruction);

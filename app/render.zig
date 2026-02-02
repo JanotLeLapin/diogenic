@@ -27,6 +27,9 @@ pub fn render(
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
 
+    var instr_arena = std.heap.ArenaAllocator.init(gpa);
+    defer instr_arena.deinit();
+
     var map = ModuleMap.init(arena.allocator());
     defer map.deinit();
 
@@ -46,6 +49,7 @@ pub fn render(
         .env = &env,
         .arena_alloc = arena.allocator(),
         .stack_alloc = gpa,
+        .instr_alloc = instr_arena.allocator(),
     };
 
     log.info("compiling {s}", .{path});

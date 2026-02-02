@@ -7,6 +7,7 @@ const Instruction = core.instruction.Instruction;
 
 const gpa = std.heap.wasm_allocator;
 
+var maybe_instr_arena: ?std.heap.ArenaAllocator = null;
 var maybe_instructions: ?std.ArrayList(Instruction) = null;
 var maybe_engine_state: ?EngineState = null;
 
@@ -22,6 +23,11 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
 
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
+
+    if (maybe_instr_arena) |instr_arena| {
+        instr_arena.deinit();
+    }
+    maybe_instr_arena = std.heap.ArenaAllocator.init(gpa);
 
     if (maybe_instructions) |*instructions| {
         instructions.clearRetainingCapacity();
@@ -44,6 +50,7 @@ export fn compile(src_ptr: [*]u8, src_len: usize, sr: f32) i32 {
         .env = &env,
         .arena_alloc = arena.allocator(),
         .stack_alloc = gpa,
+        .instr_alloc = maybe_instr_arena.?.allocator(),
     };
     const mod = core.compiler.module.resolveImports(&state, "main", src) catch return -4;
     core.compiler.function.expand(&state, mod) catch return -5;

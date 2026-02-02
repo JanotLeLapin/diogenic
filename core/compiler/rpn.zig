@@ -163,7 +163,7 @@ pub fn expand(state: *State, node: *Node) anyerror!void {
                 }
 
                 const d: CompileData = .{
-                    .alloc = state.arena_alloc, // FIXME: use dedicated alloc later
+                    .alloc = state.instr_alloc,
                     .node = node,
                 };
 
