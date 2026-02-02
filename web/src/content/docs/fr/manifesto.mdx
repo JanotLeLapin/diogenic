@@ -3,7 +3,7 @@ title: Manifeste
 description: manifeste diogenic
 ---
 
-*v1.0*
+*v1.1*
 
 Pourquoi ne peut-on pas observer comment un plugin VST agit
 concrètement sur un signal ?
@@ -52,6 +52,24 @@ Grâce à ces contraintes, une modification du moteur, ou
 l'introduction d'un nouvel appareil dans le moteur doit aussi être
 open-source, et spécifiquement sous licence GPL v3. Ainsi, aucune
 étape du traîtement du signal n'est cachée à l'utilisateur.
+
+diogenic ne transforme jamais un signal de manière arbitraire en
+interne. Par exemple, dans l'écrasante majorité des synthétiseurs
+mainstream, un LFO dont le voltage devrait changer très rapidement
+le temps d'un échantillon (comme un signal en dent-de-scie ou un
+signal carré) est en fait systématiquement emballé dans un limiteur
+de slew implicite. C'est un choix arbitraire légitime, il s'agit
+d'introduire une couche d'abstraction dogmatique qui résoud un
+problème concret, mais qui dans la foulée retire à l'utilisateur du
+contrôle sur le son.
+Avec diogenic, l'utilisateur peut passer son LFO dans un limiteur de
+slew, mais il peut aussi décider de garder le changement rapide de
+voltage qui caractérise un signal en dent-de-scie. Il garde tout
+le contrôle sur le son : diogenic ne faisant pas la différence entre
+un LFO et une porteuse, il n'en déduit pas un cas d'usage
+particulier et ne force donc pas une solution arbitraire sur
+l'utilisateur. C'est la philosophie qui fait la différence entre
+diogenic et un synthétiseur lambda.
 
 Ce projet est destiné aux artistes limités par les outils qui nous
 entourent. Si vous avez déjà été frustré par un outil créatif, si
