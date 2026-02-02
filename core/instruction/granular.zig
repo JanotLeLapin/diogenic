@@ -32,7 +32,7 @@ const GrainMeta = struct {
 };
 
 const State = struct {
-    history: []f32,
+    history: [][2]f32,
     grains: []GrainMeta,
     meta: Meta,
 };
@@ -64,7 +64,7 @@ pub const Granular = struct {
     pub fn compile(d: engine.CompileData) !@This() {
         const state = try d.alloc.create(State);
         state.* = .{
-            .history = try d.alloc.alloc(f32, HISTORY_SIZE),
+            .history = try d.alloc.alloc([2]f32, HISTORY_SIZE),
             .grains = try d.alloc.alloc(GrainMeta, MAX_POLYPHONY),
             .meta = .{
                 .counter = 0,
@@ -123,14 +123,11 @@ pub const Granular = struct {
             }
         }
 
-        for (0..engine.BLOCK_LENGTH) |i| {
-            history[(state.meta.head + i) & HISTORY_MASK] = 0.0;
-        }
-        for (in.channels, &d.output.channels) |in_chan, *out_chan| {
+        for (in.channels, &d.output.channels, 0..) |in_chan, *out_chan, j| {
             for (in_chan, out_chan, 0..) |in_vec, *out_vec, i| {
                 out_vec.* = @splat(0.0);
-                inline for (0..engine.SIMD_LENGTH) |j| {
-                    history[(state.meta.head + i * engine.SIMD_LENGTH + j) & HISTORY_MASK] += in_vec[j] * 0.5;
+                inline for (0..engine.SIMD_LENGTH) |k| {
+                    history[(state.meta.head + i * engine.SIMD_LENGTH + k) & HISTORY_MASK][j] = in_vec[k];
                 }
             }
         }
@@ -143,7 +140,6 @@ pub const Granular = struct {
             for (0..engine.BLOCK_LENGTH) |i| {
                 const read_idx: usize = @intFromFloat(@floor(@mod(g.cursor, @as(f32, @floatFromInt(HISTORY_SIZE)))));
                 const alpha = g.cursor - @floor(g.cursor);
-                const sample = history[read_idx] * (1 - alpha) + history[(read_idx + 1) & HISTORY_MASK] * alpha;
                 const amp = blk: {
                     const fade_param = if (g.fade > 1.0) g.fade else 1.0;
                     const fade_in = @min(@max(g.lifetime / fade_param, 0.0), 1.0);
@@ -151,6 +147,7 @@ pub const Granular = struct {
                     break :blk @min(fade_in, fade_out);
                 };
                 inline for (0..2) |j| {
+                    const sample = history[read_idx][j] * (1 - alpha) + history[(read_idx + 1) & HISTORY_MASK][j] * alpha;
                     const current = d.output.get(@intCast(j), @intCast(i));
                     d.output.set(@intCast(j), @intCast(i), current + sample * amp);
                 }
