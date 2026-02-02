@@ -60,6 +60,7 @@ fn generateStdDocs(gpa: std.mem.Allocator, file: []const u8) !void {
         .env = &env,
         .arena_alloc = arena.allocator(),
         .stack_alloc = gpa,
+        .instr_alloc = undefined,
     };
     const mod = try core.compiler.module.resolveImports(&state, "main", src);
 
