@@ -15,10 +15,10 @@
   (clip (* in gain) 1.0))
 
 (defun my-chorus (in)
-  (builtin/comb in
-                (map (sine! 0.08) -1 1 0.09 0.017)
-                0.6
-                -1))
+  (builtin/comb! in
+                 (map (sine! 0.08) -1 1 0.09 0.017)
+                 0.6
+                 -1))
 
 (-> (my-osc 20)
     (my-limiter (map (triangle! 0.08) -1 1 1.2 1.6))

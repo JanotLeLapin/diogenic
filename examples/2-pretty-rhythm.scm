@@ -7,7 +7,7 @@
 (defun quality-factor (freq)
   "crazy quality factor"
   (-> (sawtooth! freq)
-      (builtin/slew 0.01)
+      (builtin/slew! 0.01)
       (* 8.0)
       (exp2)))
 

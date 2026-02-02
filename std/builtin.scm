@@ -1,4 +1,4 @@
-(defun builtin/pitch-shift
+(defun builtin/pitch-shift!
   (in
    (target-pitch :doc "pitch difference, in semitones, between dry and wet signal")
    (grain-size :doc "grain size, in milliseconds"))
@@ -10,7 +10,7 @@
               :position (< target-pitch 0.0)
               :in in)))
 
-(defun builtin/comb
+(defun builtin/comb!
   (in
    (delay :doc "delay, in seconds, between dry and wet signal")
    (depth :doc "mix, in range [0; 1], between the dry and wet signal")
@@ -19,7 +19,7 @@
   (+ (* in (- 1 (* 0.5 depth)))
      (* (* polarity (delay! in delay)) (* 0.5 depth))))
 
-(defun builtin/slew
+(defun builtin/slew!
   (in
    (time :doc "slew time, in seconds"))
   "Smooths the input signal using a lowpass filter."

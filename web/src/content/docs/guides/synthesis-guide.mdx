@@ -31,7 +31,7 @@ export const snippets = [
     (clip 0.6)
     (b-lowpass!
       :freq (-> (sawtooth! 0.6)
-                (builtin/slew 0.1)
+                (builtin/slew! 0.1)
                 (map -1 1 200 800))
       :q 0.6)
     (quantize 4.2))
@@ -111,7 +111,7 @@ I'll also slowly sweep over the low pass frequency:
 (-> ...
     (b-lowpass!
       :freq (-> (sawtooth: 0.4)
-                (builtin/slew 0.1)
+                (builtin/slew! 0.1)
                 (map -1 1 500 1200))
       :q 0.6)
     ...)
