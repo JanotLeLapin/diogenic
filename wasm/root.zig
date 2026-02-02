@@ -88,8 +88,14 @@ export fn getBufLen() usize {
 }
 
 export fn deinit() void {
+    if (maybe_engine_state) |*e| {
+        e.deinit();
+    }
     if (maybe_instructions) |*instructions| {
         instructions.deinit(gpa);
         maybe_instructions = null;
+    }
+    if (maybe_instr_arena) |arena| {
+        arena.deinit();
     }
 }
