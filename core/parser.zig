@@ -202,7 +202,7 @@ pub fn parse(
                 new.* = .{
                     .data = .{ .str = str[1..(str.len - 1)] },
                     .pos = token.pos,
-                    .src = t.src, // FIXME: is this normal?
+                    .src = t.src,
                     .src_file = t.src,
                 };
                 try stack.getLast().data.list.append(ast_alloc, new);
