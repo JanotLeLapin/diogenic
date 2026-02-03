@@ -86,6 +86,10 @@ fn ceil(in: Vec) Vec {
     return @ceil(in);
 }
 
+fn abs(in: Vec) Vec {
+    return @abs(in);
+}
+
 fn midiToFreq(in: Vec) Vec {
     return @as(Vec, @splat(440.0)) * @exp2((in - @as(Vec, @splat(69.0))) / @as(Vec, @splat(12.0)));
 }
@@ -132,6 +136,7 @@ pub const Tanh = Math("tanh", "hyperbolic tangent", fromScalar(std.math.tanh));
 pub const Sigmoid = Math("sigmoid", "sigmoid", fromScalar(sigmoid));
 pub const Floor = Math("floor", "floor rounding", floor);
 pub const Ceil = Math("ceil", "ceil rounding", ceil);
+pub const Abs = Math("abs", "absolute value", abs);
 
 pub const MidiToFreq = Math("midi->freq", "midi pitch to frequency unit translation", midiToFreq);
 pub const FreqToMidi = Math("freq->midi", "frequency to midi pitch unit translation", freqToMidi);

@@ -79,6 +79,7 @@ pub const Instructions = .{
     math.Sigmoid,
     math.Floor,
     math.Ceil,
+    math.Abs,
     math.MidiToFreq,
     math.FreqToMidi,
     math.BiToUni,
