@@ -3,6 +3,8 @@ const std = @import("std");
 const types = @import("types.zig");
 const State = types.State;
 
+const util = @import("util.zig");
+
 const parser = @import("../parser.zig");
 const Node = parser.Node;
 
@@ -16,15 +18,8 @@ const instruction = @import("../instruction.zig");
 const Instr = instruction.Instruction;
 const Instrs = instruction.Instructions;
 
-pub fn canOptimizeExpr(expr: []const *Node) bool {
-    if (0 > expr.len) {
-        return false;
-    }
-
-    const id = switch (expr[0].data) {
-        .id => |id| id,
-        else => return false,
-    };
+pub fn canOptimizeExpr(node: *Node) bool {
+    const id, const expr = util.getExpr(node) orelse return false;
 
     // right now whether the operation ends with
     // '!' is our way to determine whether the
@@ -33,7 +28,7 @@ pub fn canOptimizeExpr(expr: []const *Node) bool {
         return false;
     }
 
-    for (expr[1..]) |child| {
+    for (expr) |child| {
         switch (child.data) {
             .num => {},
             else => return false,
@@ -52,7 +47,7 @@ pub fn preEvaluate(state: *State, expr: []*Node, comptime T: type) !f32 {
 
     var inputs: [@max(T.args.len, 1)]Block = undefined;
 
-    for (expr[1..], 0..) |child, i| {
+    for (expr, 0..) |child, i| {
         inputs[i] = Block.initValue(child.data.num);
     }
 
@@ -70,19 +65,7 @@ pub fn preEvaluate(state: *State, expr: []*Node, comptime T: type) !f32 {
 }
 
 pub fn fold(state: *State, node: *Node) !void {
-    const expr = switch (node.data) {
-        .list => |lst| lst.items,
-        else => return,
-    };
-
-    if (0 > expr.len) {
-        return false;
-    }
-
-    const id = switch (expr[0].data) {
-        .id => |id| id,
-        else => return,
-    };
+    const id, const expr = util.getExpr(node) orelse return;
 
     const expr_idx = instruction.getExpressionIndex(id) orelse return;
     switch (expr_idx) {
@@ -97,16 +80,14 @@ pub fn fold(state: *State, node: *Node) !void {
 }
 
 pub fn expand(state: *State, node: *Node) anyerror!void {
-    const expr = switch (node.data) {
-        .list => |lst| lst.items,
-        else => return,
-    };
+    const id, const expr = util.getExpr(node) orelse return;
+    _ = id;
 
     for (expr) |child| {
         try expand(state, child);
     }
 
-    if (canOptimizeExpr(expr)) {
+    if (canOptimizeExpr(node)) {
         try fold(state, node);
     }
 }
