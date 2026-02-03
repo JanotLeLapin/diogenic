@@ -27,3 +27,12 @@
               :q 0.2
               :freq (/ 5.0
                        (* (* 2 PI) time))))
+
+(defun builtin/fm!
+  ((carrier-freq :doc "carrier frequency, in hertz")
+   (mod-freq :doc "modulator frequency, in hertz")
+   (mod-index :doc "modulation index"))
+  "FM synthesis"
+  (sine! (+ carrier-freq
+            (* (* mod-freq mod-index)
+               (sine! mod-freq)))))
