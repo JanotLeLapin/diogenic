@@ -10,7 +10,7 @@ pub fn getExpr(node: *Node) ?struct {
         else => return null,
     };
 
-    if (0 > expr.len) {
+    if (0 == expr.len) {
         return null;
     }
 
