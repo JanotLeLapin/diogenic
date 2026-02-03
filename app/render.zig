@@ -59,6 +59,7 @@ pub fn render(
 
     const node = mod.root.data.list.getLast();
     try core.compiler.alpha.expand(&state, node);
+    try core.compiler.fold.expand(&state, node);
     try core.compiler.rpn.expand(&state, node);
 
     var stderr_buffer: [4096]u8 = undefined;
