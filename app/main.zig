@@ -69,6 +69,7 @@ const RenderOptions = struct {
 };
 
 const Command = union(enum) {
+    help: void,
     repl: void,
     render: RenderOptions,
 };
@@ -86,6 +87,9 @@ pub fn main() !void {
             return;
         }
 
+        if (std.mem.eql(u8, "help", args[1])) {
+            break :blk Command{ .help = {} };
+        }
         if (std.mem.eql(u8, "repl", args[1])) {
             break :blk Command{ .repl = {} };
         }
@@ -102,6 +106,16 @@ pub fn main() !void {
     };
 
     switch (args) {
+        .help => {
+            var stdout_buf: [1024]u8 = undefined;
+            var stdout = std.fs.File.stdout().writer(&stdout_buf);
+
+            _ = try stdout.interface.write("diogenic\n\n");
+            _ = try stdout.interface.write(" help      display this message\n");
+            _ = try stdout.interface.write(" repl      start an interactive repl\n");
+            _ = try stdout.interface.write(" render    generate an audio file from a diogenic file\n");
+            try stdout.interface.flush();
+        },
         .repl => try repl.repl(gpa.allocator()),
         .render => |opts| {
             try render.render(
