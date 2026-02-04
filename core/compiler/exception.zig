@@ -15,9 +15,10 @@ pub fn printExceptionContext(
     _ = try Colors.setMagenta(writer);
     try writer.print("{s}", .{@tagName(exception.t)});
     _ = try Colors.setReset(writer);
-    try writer.print(" at {d}:{d}\n", .{
+    try writer.print(" at {d}:{d} in '{s}'\n", .{
         row + 1,
         col + 1,
+        exception.node.src_file,
     });
 
     var i: isize = @as(isize, @intCast(row)) - 1;
