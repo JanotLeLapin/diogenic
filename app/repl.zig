@@ -247,7 +247,7 @@ pub fn repl(gpa: std.mem.Allocator) !void {
             continue;
         }
 
-        const mod = try compiler.module.resolveImports(&cs, "main", res);
+        const mod = try compiler.module.resolveImports(&cs, "<input>", res);
         if (0 == mod.root.data.list.items.len) {
             continue;
         }
