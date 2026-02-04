@@ -60,18 +60,8 @@ pub fn render(
     const exprNode = mod.root.data.list.getLast();
     try core.compileExpr(&state, exprNode);
 
-    var stderr_buffer: [4096]u8 = undefined;
-    var stderr = std.fs.File.stderr().writer(&stderr_buffer);
-
     if (0 < exceptions.items.len) {
-        for (exceptions.items) |ex| {
-            try compiler.exception.printExceptionContext(
-                mod.sourcemap,
-                ex,
-                &stderr.interface,
-            );
-            try stderr.interface.flush();
-        }
+        try core.printExceptions(&state, mod, exceptions.items);
         return;
     }
 

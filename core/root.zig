@@ -48,6 +48,24 @@ pub fn compileExpr(state: *compiler.types.State, node: *parser.Node) !void {
     try compiler.rpn.expand(state, node);
 }
 
+pub fn printExceptions(
+    state: *compiler.types.State,
+    root_mod: *compiler.types.Module,
+    exceptions: []compiler.types.Exception,
+) !void {
+    var stderr_buffer: [4096]u8 = undefined;
+    var stderr = std.fs.File.stderr().writer(&stderr_buffer);
+
+    for (exceptions) |ex| {
+        try compiler.exception.printExceptionContext(
+            (state.map.get(ex.node.src_file) orelse root_mod).sourcemap,
+            ex,
+            &stderr.interface,
+        );
+        try stderr.interface.flush();
+    }
+}
+
 pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
     var stack_head: usize = 0;
     var state_head: usize = 0;

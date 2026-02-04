@@ -167,9 +167,6 @@ pub fn repl(gpa: std.mem.Allocator) !void {
     var stdout_buf: [1024]u8 = undefined;
     var stdout = std.fs.File.stdout().writer(&stdout_buf);
 
-    var stderr_buffer: [4096]u8 = undefined;
-    var stderr = std.fs.File.stderr().writer(&stderr_buffer);
-
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
 
@@ -285,14 +282,7 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         try core.compileExpr(&cs, node);
 
         if (0 < exceptions.items.len) {
-            for (exceptions.items) |ex| {
-                try core.compiler.exception.printExceptionContext(
-                    mod.sourcemap,
-                    ex,
-                    &stderr.interface,
-                );
-                try stderr.interface.flush();
-            }
+            try core.printExceptions(&cs, mod, exceptions.items);
             _ = try Colors.setRed(&stdout.interface);
             _ = try stdout.interface.write("compilation failed\n");
             _ = try Colors.setReset(&stdout.interface);
