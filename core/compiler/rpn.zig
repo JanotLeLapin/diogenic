@@ -19,6 +19,7 @@ const Constants = std.StaticStringMap(f32).initComptime(.{
     .{ "E", std.math.e },
     .{ "PI", std.math.pi },
     .{ "PHI", std.math.phi },
+    .{ "INF", std.math.inf(f32) },
 });
 
 fn reorderExprArgs(state: *State, node: *Node, comptime T: type) !void {
