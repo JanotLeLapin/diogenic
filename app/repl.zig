@@ -282,9 +282,7 @@ pub fn repl(gpa: std.mem.Allocator) !void {
         }
 
         instr_seq.clearRetainingCapacity();
-        try compiler.alpha.expand(&cs, node);
-        try compiler.fold.expand(&cs, node);
-        try compiler.rpn.expand(&cs, node);
+        try core.compileExpr(&cs, node);
 
         if (0 < exceptions.items.len) {
             for (exceptions.items) |ex| {

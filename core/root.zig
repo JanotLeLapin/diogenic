@@ -42,6 +42,12 @@ pub fn initState(sr: f32, instructions: []const Instruction, alloc: std.mem.Allo
     return EngineState.init(sr, stack_size, state_size, reg_size, alloc);
 }
 
+pub fn compileExpr(state: *compiler.types.State, node: *parser.Node) !void {
+    try compiler.alpha.expand(state, node);
+    try compiler.fold.expand(state, node);
+    try compiler.rpn.expand(state, node);
+}
+
 pub fn eval(state: *EngineState, instructions: []const Instruction) !void {
     var stack_head: usize = 0;
     var state_head: usize = 0;

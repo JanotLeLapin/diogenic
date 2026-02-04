@@ -57,10 +57,8 @@ pub fn render(
     const mod = try core.compiler.module.resolveImports(&state, path, src);
     try core.compiler.function.expand(&state, mod);
 
-    const node = mod.root.data.list.getLast();
-    try core.compiler.alpha.expand(&state, node);
-    try core.compiler.fold.expand(&state, node);
-    try core.compiler.rpn.expand(&state, node);
+    const exprNode = mod.root.data.list.getLast();
+    try core.compileExpr(&state, exprNode);
 
     var stderr_buffer: [4096]u8 = undefined;
     var stderr = std.fs.File.stderr().writer(&stderr_buffer);
