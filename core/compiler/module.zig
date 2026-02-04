@@ -161,10 +161,8 @@ pub fn resolveImports(
     name: []const u8,
     src: []const u8,
 ) !*Module {
-    _ = name;
-
     var t: Tokenizer = .{ .src = src };
-    const ast = try parser.parse(&t, state.arena_alloc, state.stack_alloc);
+    const ast = try parser.parse(&t, state.arena_alloc, state.stack_alloc, name);
 
     try macroExpand(state, ast);
 

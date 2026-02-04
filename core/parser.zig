@@ -159,6 +159,7 @@ pub fn parse(
     t: *Tokenizer,
     ast_alloc: std.mem.Allocator,
     stack_alloc: std.mem.Allocator,
+    file_name: []const u8,
 ) !*Node {
     var stack = try std.ArrayList(*Node).initCapacity(stack_alloc, 8);
     defer stack.deinit(stack_alloc);
@@ -168,7 +169,7 @@ pub fn parse(
         .data = .{ .list = try std.ArrayList(*Node).initCapacity(ast_alloc, 8) },
         .src = t.src,
         .pos = .{ .col = 0, .row = 0 },
-        .src_file = t.src,
+        .src_file = file_name,
     };
     try stack.append(stack_alloc, root);
 
@@ -183,7 +184,7 @@ pub fn parse(
                         .data = .{ .list = try std.ArrayList(*Node).initCapacity(ast_alloc, 8) },
                         .src = t.src[start..],
                         .pos = token.pos,
-                        .src_file = t.src,
+                        .src_file = file_name,
                     };
                     try stack.getLast().data.list.append(ast_alloc, new);
                     try stack.append(stack_alloc, new);
@@ -203,7 +204,7 @@ pub fn parse(
                     .data = .{ .str = str[1..(str.len - 1)] },
                     .pos = token.pos,
                     .src = t.src,
-                    .src_file = t.src,
+                    .src_file = file_name,
                 };
                 try stack.getLast().data.list.append(ast_alloc, new);
                 continue;
@@ -213,7 +214,7 @@ pub fn parse(
 
         const new = try ast_alloc.create(Node);
         new.src = token.tag.lit;
-        new.src_file = t.src;
+        new.src_file = file_name;
         new.pos = token.pos;
         if (token.tag.lit[0] == ':') {
             new.data = .{ .atom = token.tag.lit };
