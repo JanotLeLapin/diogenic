@@ -78,7 +78,7 @@ fn resolveArg(node: *Node) ?struct {
         else => return null,
     };
 
-    if (3 > lst.len) {
+    if (1 > lst.len) {
         return null;
     }
 
@@ -87,16 +87,37 @@ fn resolveArg(node: *Node) ?struct {
         else => return null,
     };
 
-    const arg_doc = switch (lst[2].data) {
-        .str => |str| str,
-        else => return null,
+    var arg: Argument = .{
+        .id_node = lst[0],
+        .doc = null,
+        .default = null,
     };
 
-    return .{ arg_name, Argument{
-        .id_node = lst[0],
-        .doc = arg_doc,
-        .default = null,
-    } };
+    var i: usize = 1;
+    while (i < lst.len - 1) : (i += 2) {
+        const atom = switch (lst[i].data) {
+            .atom => |atom| atom,
+            else => continue, // FIXME: throw exception
+        };
+
+        if (std.mem.eql(u8, ":doc", atom)) {
+            const doc = switch (lst[i + 1].data) {
+                .str => |str| str,
+                else => continue,
+            };
+            arg.doc = doc;
+        } else if (std.mem.eql(u8, ":default", atom)) {
+            const default = switch (lst[i + 1].data) {
+                .num => |num| num,
+                else => continue,
+            };
+            arg.default = default;
+        } else {
+            // FIXME: throw exception here as well
+        }
+    }
+
+    return .{ arg_name, arg };
 }
 
 fn resolveFunc(node: *Node, alloc: std.mem.Allocator) !?struct {
