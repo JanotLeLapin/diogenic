@@ -74,8 +74,7 @@ fn freeFunction(should_deinit: bool, gpa: std.mem.Allocator, f: *Function) void 
         return;
     }
 
-    f.arg_map.deinit();
-    f.args.deinit(gpa);
+    f.deinit(gpa);
 }
 
 fn helpCmd(s: *State, args: []const u8) !void {
