@@ -3,10 +3,9 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "doc:sync": "./sync.sh",
-    "dev": "pnpm run doc:sync && astro dev",
-    "start": "pnpm run doc:sync && astro dev",
-    "build": "pnpm run doc:sync && astro build",
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
