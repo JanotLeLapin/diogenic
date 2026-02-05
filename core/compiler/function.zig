@@ -1,5 +1,7 @@
 const std = @import("std");
 
+const util = @import("util.zig");
+
 const types = @import("types.zig");
 const Function = types.Function;
 const Module = types.Module;
@@ -22,7 +24,14 @@ fn resolveFunction(mod: *Module, expr: []*Node) ?Function {
 }
 
 fn expandFunction(state: *State, node: *Node, func: Function) !void {
+    try util.reorderArgs(state, node, &func);
+
     const expr = node.data.list.items;
+
+    if (func.args.items.len != expr.len - 1) {
+        try state.pushException(.bad_arity, node, null);
+        return;
+    }
 
     const let_bindings_node = blk: {
         var lst = try std.ArrayList(*Node).initCapacity(
