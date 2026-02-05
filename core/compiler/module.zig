@@ -3,6 +3,8 @@ const std = @import("std");
 
 const Standard = @import("diogenic-std").Standard;
 
+const util = @import("util.zig");
+
 const types = @import("types.zig");
 const Argument = types.Argument;
 const ArgumentMap = types.ArgumentMap;
@@ -101,30 +103,18 @@ fn resolveFunc(node: *Node, alloc: std.mem.Allocator) !?struct {
     []const u8,
     Function,
 } {
-    const expr = switch (node.data) {
-        .list => |lst| lst.items,
-        else => return null,
-    };
+    const op, const expr = util.getExpr(node) orelse return null;
 
-    if (4 > expr.len) {
+    if (!std.mem.eql(u8, "defun", op) or 3 > expr.len) {
         return null;
     }
 
-    const op = switch (expr[0].data) {
+    const fn_name = switch (expr[0].data) {
         .id => |id| id,
         else => return null,
     };
 
-    if (!std.mem.eql(u8, "defun", op)) {
-        return null;
-    }
-
-    const fn_name = switch (expr[1].data) {
-        .id => |id| id,
-        else => return null,
-    };
-
-    const arg_nodes = switch (expr[2].data) {
+    const arg_nodes = switch (expr[1].data) {
         .list => |lst| lst.items,
         else => return null,
     };
@@ -139,15 +129,15 @@ fn resolveFunc(node: *Node, alloc: std.mem.Allocator) !?struct {
         try arg_map.put(arg_name, arg);
     }
 
-    const func = switch (expr[3].data) {
+    const func = switch (expr[2].data) {
         .str => |str| Function{
-            .body = expr[4],
+            .body = expr[3],
             .args = args,
             .arg_map = arg_map,
             .doc = str,
         },
         .list => Function{
-            .body = expr[3],
+            .body = expr[2],
             .args = args,
             .arg_map = arg_map,
             .doc = null,
