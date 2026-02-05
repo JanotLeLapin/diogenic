@@ -258,6 +258,7 @@ pub fn repl(gpa: std.mem.Allocator) !void {
     _ = try stdout.interface.write("diogenic\ntype ':h' for help\n");
 
     while (state.running) {
+        cs.reg_index = 0;
         exceptions.clearRetainingCapacity();
 
         _ = try stdout.interface.write("input => ");
