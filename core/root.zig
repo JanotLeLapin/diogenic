@@ -44,6 +44,7 @@ pub fn initState(sr: f32, instructions: []const Instruction, alloc: std.mem.Allo
 
 pub fn compileExpr(state: *compiler.types.State, node: *parser.Node) !void {
     try compiler.alpha.expand(state, node);
+    try compiler.propagate.expand(state, node);
     try compiler.fold.expand(state, node);
     try compiler.rpn.expand(state, node);
 }
