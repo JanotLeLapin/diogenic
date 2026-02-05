@@ -75,6 +75,9 @@ fn generateStdDocs(gpa: std.mem.Allocator, file: []const u8) !void {
             if (arg.doc) |doc| {
                 std.debug.print(", {s}", .{doc});
             }
+            if (arg.default) |default| {
+                std.debug.print(", default: `{d}`", .{default});
+            }
             std.debug.print("\n", .{});
         }
         std.debug.print("\n```scm\n  {s}\n```\n\n", .{func.body.src});
