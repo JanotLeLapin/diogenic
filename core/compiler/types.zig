@@ -98,6 +98,11 @@ pub const Function = struct {
 
         return self;
     }
+
+    pub fn deinit(self: *Function, gpa: std.mem.Allocator) void {
+        self.arg_map.deinit();
+        self.args.deinit(gpa);
+    }
 };
 
 pub const FunctionMap = std.StringHashMap(Function);
