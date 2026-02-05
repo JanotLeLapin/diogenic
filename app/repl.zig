@@ -123,7 +123,15 @@ fn helpCmd(s: *State, args: []const u8) !void {
         _ = try Colors.setMagenta(s.stdout);
         _ = try s.stdout.write(arg_key);
         _ = try Colors.setReset(s.stdout);
-        try s.stdout.print(": {s}\n", .{arg.doc orelse "/"});
+        try s.stdout.print(": {s}", .{arg.doc orelse "/"});
+        if (arg.default) |default| {
+            _ = try s.stdout.write(", ");
+            _ = try Colors.setMagenta(s.stdout);
+            _ = try s.stdout.write("default");
+            _ = try Colors.setReset(s.stdout);
+            try s.stdout.print(" = {d}", .{default});
+        }
+        _ = try s.stdout.write("\n");
     }
 
     _ = try s.stdout.write("\n");
