@@ -4,7 +4,10 @@ const std = @import("std");
 const core = @import("diogenic-core");
 const compiler = core.compiler;
 const CompilerState = compiler.types.State;
+const Function = compiler.types.Function;
 const FunctionMap = compiler.types.FunctionMap;
+
+const instr = core.instruction;
 
 const audio = @import("audio.zig");
 
@@ -66,20 +69,47 @@ fn playCmd(s: *State, _: []const u8) !void {
     try audio.startStream(s.stream);
 }
 
+fn freeFunction(should_deinit: bool, gpa: std.mem.Allocator, f: *Function) void {
+    if (!should_deinit) {
+        return;
+    }
+
+    f.arg_map.deinit();
+    f.args.deinit(gpa);
+}
+
 fn helpCmd(s: *State, args: []const u8) !void {
     if (0 == args.len) {
         _ = try s.stdout.write("\n");
-        _ = try s.stdout.write(" :p        plays the latest compiled expression\n");
-        _ = try s.stdout.write(" :h [fn]   displays this message, or help for the given function\n");
-        _ = try s.stdout.write(" :q        quits\n");
+        _ = try s.stdout.write(" :p              plays the latest compiled expression\n");
+        _ = try s.stdout.write(" :h [fn|instr]   displays this message, or help for the given function\n");
+        _ = try s.stdout.write(" :q              quits\n");
         _ = try s.stdout.write("\n");
         return;
     }
 
-    const f = s.fn_map.get(args) orelse {
+    var should_deinit_f = false;
+    var maybe_f: ?Function = s.fn_map.get(args);
+    if (null == maybe_f) {
+        if (instr.getExpressionIndex(args)) |idx| {
+            switch (idx) {
+                inline 5...(instr.Instructions.len - 1) => |c_idx| {
+                    should_deinit_f = true;
+                    maybe_f = try Function.fromInstruction(
+                        s.gpa,
+                        instr.Instructions[c_idx],
+                    );
+                },
+                else => {},
+            }
+        }
+    }
+
+    var f = maybe_f orelse {
         try s.stdout.print("command '{s}' not found.\n", .{args});
         return;
     };
+    defer freeFunction(should_deinit_f, s.gpa, &f);
 
     _ = try s.stdout.write("\n");
     _ = try Colors.setMagenta(s.stdout);

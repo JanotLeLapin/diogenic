@@ -76,6 +76,26 @@ pub const Function = struct {
     args: std.ArrayList([]const u8),
     arg_map: ArgumentMap,
     doc: ?[]const u8,
+
+    pub fn fromInstruction(gpa: std.mem.Allocator, comptime T: type) !Function {
+        var self: Function = .{
+            .body = undefined,
+            .args = try std.ArrayList([]const u8).initCapacity(gpa, T.args.len),
+            .arg_map = std.StringHashMap(Argument).init(gpa),
+            .doc = T.description,
+        };
+
+        for (0..T.args.len) |i| {
+            const arg = T.args[i];
+            try self.args.append(gpa, arg.name);
+            try self.arg_map.put(arg.name, .{
+                .id_node = undefined,
+                .doc = arg.description,
+            });
+        }
+
+        return self;
+    }
 };
 
 pub const FunctionMap = std.StringHashMap(Function);
