@@ -67,6 +67,7 @@ pub const Exception = struct {
 pub const Argument = struct {
     id_node: *Node,
     doc: ?[]const u8,
+    default: ?f32,
 };
 
 pub const ArgumentMap = std.StringHashMap(Argument);
@@ -91,6 +92,7 @@ pub const Function = struct {
             try self.arg_map.put(arg.name, .{
                 .id_node = undefined,
                 .doc = arg.description,
+                .default = arg.default,
             });
         }
 

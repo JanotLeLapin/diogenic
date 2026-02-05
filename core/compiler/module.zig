@@ -69,6 +69,7 @@ fn resolveArg(node: *Node) ?struct {
             return .{ id, Argument{
                 .id_node = node,
                 .doc = null,
+                .default = null,
             } };
         },
         .list => |lst| lst.items,
@@ -92,6 +93,7 @@ fn resolveArg(node: *Node) ?struct {
     return .{ arg_name, Argument{
         .id_node = lst[0],
         .doc = arg_doc,
+        .default = null,
     } };
 }
 
